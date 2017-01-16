@@ -285,6 +285,59 @@ public:
     //------------------------------------------------------------------------//
     // public run functions
     //------------------------------------------------------------------------//
+    template <typename _Ret, typename _Func, typename _Arg1, typename _Arg2,
+              typename _Arg3>
+    __inline__
+    void run(_Func function, _Arg1 arg1, _Arg2 arg2, _Arg3 arg3)
+    {
+        typedef task<_Ret, _Arg1, _Arg2, _Arg3> task_type;
+
+        for(size_type i = 0; i < size(); ++i)
+        {
+            task_type* t = new task_type(function, arg1, arg2, arg3);
+            m_data->tp()->add_task(t);
+        }
+    }
+    //------------------------------------------------------------------------//
+    template <typename _Func, typename _Arg1, typename _Arg2, typename _Arg3>
+    __inline__
+    void run(_Func function, _Arg1 arg1, _Arg2 arg2, _Arg3 arg3)
+    {
+        typedef task<void, _Arg1, _Arg2, _Arg3> task_type;
+
+        for(size_type i = 0; i < size(); ++i)
+        {
+            task_type* t = new task_type(function, arg1, arg2, arg3);
+            m_data->tp()->add_task(t);
+        }
+    }
+    //------------------------------------------------------------------------//
+    template <typename _Ret, typename _Func, typename _Arg1, typename _Arg2>
+    __inline__
+    void run(_Func function, _Arg1 arg1, _Arg2 arg2)
+    {
+        typedef task<_Ret, _Arg1, _Arg2> task_type;
+
+        for(size_type i = 0; i < size(); ++i)
+        {
+            task_type* t = new task_type(function, arg1, arg2);
+            m_data->tp()->add_task(t);
+        }
+    }
+    //------------------------------------------------------------------------//
+    template <typename _Func, typename _Arg1, typename _Arg2>
+    __inline__
+    void run(_Func function, _Arg1 arg1, _Arg2 arg2)
+    {
+        typedef task<void, _Arg1, _Arg2> task_type;
+
+        for(size_type i = 0; i < size(); ++i)
+        {
+            task_type* t = new task_type(function, arg1, arg2);
+            m_data->tp()->add_task(t);
+        }
+    }
+    //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func, typename _Arg>
     __inline__
     void run(_Func function, _Arg argument)

@@ -13,53 +13,6 @@
 #ifndef threading_hh_
 #define threading_hh_
 
-/*! \mainpage
- *  Madthreading (Mad prefix is not an acronym, it is simply a shortened version
- * of my name) is a general multithreading API that is backwards compatible with
- * C++98 using pthreads -- support for Windows will likely not be written by me.
- *
- * Madthreading is an excellent option to quickly add multithreading to an
- * existing project, especially those who do not compile with C++11 support.
- *
- * The primary benefit of using Madthreading is the instantiation of a
- * thread-pool. The thread-pool is created during the instantiation of the
- * thread-manager. Once the thread-manager has been created, you simply add
- * pass functions with or without arguments to the thread-manager, which
- * creates tasks and these tasks are iterated over until the task stack is
- * empty.
- *
- * Currently, there is support for functions using 3 arguments. If you compile
- * your code with C++11 enabled, additional arguments can easily handled
- * through the use of lambdas or the STL bind:
- *
- * \code
- * thread_manager* tm = new thread_manager(4);
- *
- * auto arg4 = 2;
- * auto arg5 = 4.5;
- * auto arg6 = -1;
- *
- * auto func1 = [arg4, arg5, arg6] (int arg1, double arg2, long arg3)
- * {
- *      full_func(arg1, arg2, arg3, arg4, arg5, arg6);
- * };
- *
- * auto func2 = std::bind(full_func, _1, _2, _3, arg4, arg5, arg6);
- *
- * tm->exec<void>(func1, 1, 1.3, 5L);
- * tm->exec<void>(func2, 3, 4.1, 7L);
- *
- * tm->join();
- *
- * \endcode
- * At some point in the future, when Madthreading is compiled with C++11,
- * I will use template forwarding to handle any amount of function parameters
- * but for the time being, simply use this easy workaround.
- *
- * Madthreading provides a generic interface to using atomics and, when C++11 is
- * not available, provides a mutexed-based interface that works like an atomic.
- */
-
 #include <sstream>
 #include <exception>
 #include <stdexcept>

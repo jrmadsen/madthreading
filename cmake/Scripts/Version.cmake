@@ -69,13 +69,6 @@ if(GENERATE)
   configure_file(${CMAKE_CURRENT_LIST_DIR}/../Templates/version.hh.in
                  ${OUTPUT_DIR}/version.hh
                  @ONLY)
-  configure_file(${CMAKE_CURRENT_LIST_DIR}/../Templates/config.hh.in
-                 ${OUTPUT_DIR}/config.hh
-                 @ONLY)                 
-elseif(NOT EXISTS ${OUTPUT_DIR}/config.hh)
-  configure_file(${CMAKE_CURRENT_LIST_DIR}/../Templates/config.hh.in
-                 ${OUTPUT_DIR}/config.hh
-                 @ONLY)                 
 endif()
 
 
