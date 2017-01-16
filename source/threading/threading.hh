@@ -1,0 +1,326 @@
+//
+//
+//
+//
+//
+// created by jrmadsen on Sun Jun 21 17:28:55 2015
+//
+//
+//
+//
+
+
+#ifndef threading_hh_
+#define threading_hh_
+
+/*! \mainpage
+ *  Madthreading (Mad prefix is not an acronym, it is simply a shortened version
+ * of my name) is a general multithreading API that is backwards compatible with
+ * C++98 using pthreads -- support for Windows will likely not be written by me.
+ *
+ * Madthreading is an excellent option to quickly add multithreading to an
+ * existing project, especially those who do not compile with C++11 support.
+ *
+ * The primary benefit of using Madthreading is the instantiation of a
+ * thread-pool. The thread-pool is created during the instantiation of the
+ * thread-manager. Once the thread-manager has been created, you simply add
+ * pass functions with or without arguments to the thread-manager, which
+ * creates tasks and these tasks are iterated over until the task stack is
+ * empty.
+ *
+ * Currently, there is support for functions using 3 arguments. If you compile
+ * your code with C++11 enabled, additional arguments can easily handled
+ * through the use of lambdas or the STL bind:
+ *
+ * \code
+ * thread_manager* tm = new thread_manager(4);
+ *
+ * auto arg4 = 2;
+ * auto arg5 = 4.5;
+ * auto arg6 = -1;
+ *
+ * auto func1 = [arg4, arg5, arg6] (int arg1, double arg2, long arg3)
+ * {
+ *      full_func(arg1, arg2, arg3, arg4, arg5, arg6);
+ * };
+ *
+ * auto func2 = std::bind(full_func, _1, _2, _3, arg4, arg5, arg6);
+ *
+ * tm->exec<void>(func1, 1, 1.3, 5L);
+ * tm->exec<void>(func2, 3, 4.1, 7L);
+ *
+ * tm->join();
+ *
+ * \endcode
+ * At some point in the future, when Madthreading is compiled with C++11,
+ * I will use template forwarding to handle any amount of function parameters
+ * but for the time being, simply use this easy workaround.
+ *
+ * Madthreading provides a generic interface to using atomics and, when C++11 is
+ * not available, provides a mutexed-based interface that works like an atomic.
+ */
+
+#include <sstream>
+#include <exception>
+#include <stdexcept>
+
+// Macro to put current thread to sleep
+//
+#if defined(WIN32)
+#define THREADSLEEP( tick ) { Sleep(tick); }
+#else
+#include <unistd.h>    // needed for sleep()
+#define THREADSLEEP( tick ) { sleep(tick); }
+#endif
+
+//----------------------------------------------------------------------------//
+
+#if defined(ENABLE_THREADING)
+
+#if ( defined(__MACH__) && defined(__clang__) && defined(__x86_64__) ) || \
+    ( defined(__MACH__) && defined(__GNUC__) && __GNUC__>=4 && __GNUC_MINOR__>=7 ) || \
+    defined(__linux__) || defined(_AIX) || defined(__bg__) || defined(__bgq__)
+    //
+    // Multi-threaded build: for POSIX systems
+    //
+    #include <pthread.h>
+    #include <semaphore.h>
+    #if defined(__MACH__)  // needed only for MacOSX for definition of pid_t
+      #include <sys/types.h>
+    #endif
+
+namespace mad
+{
+
+    typedef pthread_mutex_t CoreMutex;
+    typedef pthread_t CoreThread;
+    typedef pthread_mutexattr_t CoreMutexAttr;
+
+    typedef sem_t CoreSemaphore;
+
+    #define CORE_MUTEX_INITIALIZER PTHREAD_MUTEX_INITIALIZER
+
+    #define COREMUTEXLOCK pthread_mutex_lock
+    #define COREMUTEXUNLOCK pthread_mutex_unlock
+
+    #define COREMUTEXINIT(mutex) pthread_mutex_init(&mutex, NULL)
+    #define COREMUTEXDESTROY(mutex) pthread_mutex_destroy(&mutex)
+
+    #define CORERECURSIVEMUTEXINIT(mutex) \
+                pthread_mutexattr_t attr; \
+                pthread_mutexattr_init(&attr); \
+                pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE); \
+                pthread_mutex_init(&mutex, &attr);
+
+    #define CORETHREADCREATE( worker , func , arg )  { \
+                pthread_attr_t attr; \
+                pthread_attr_init(&attr); \
+                pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE); \
+                int ret = pthread_create( worker, &attr, func , arg ); \
+                if (ret != 0) \
+                { \
+                    std::stringstream msg; \
+                    msg << "pthread_create() failed: " << ret << std::endl; \
+                    throw std::runtime_error(msg.str()); \
+                } \
+            }
+
+    #if defined(__APPLE__) || defined(__ANDROID__)
+    #define CORETHREADCREATEID( worker , func , arg, id)  { \
+            pthread_attr_t attr; \
+            pthread_attr_init(&attr); \
+            pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE); \
+            int ret = pthread_create( worker, &attr, func , arg ); \
+            if (ret != 0) \
+            { \
+                std::stringstream msg; \
+                msg << "pthread_create() failed: " << ret << std::endl; \
+                throw std::runtime_error(msg.str()); \
+            } \
+    }
+    #else
+    #define CORETHREADCREATEID( worker , func , arg, id )  { \
+                pthread_attr_t attr; \
+                static cpu_set_t cpuset; \
+                pthread_attr_init(&attr); \
+                CPU_ZERO(&cpuset); \
+                CPU_SET(id, &cpuset); \
+                pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE); \
+                pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset); \
+                int ret = pthread_create( worker, &attr, func , arg ); \
+                if (ret != 0) \
+                { \
+                    std::stringstream msg; \
+                    msg << "pthread_create() failed: " << ret << std::endl; \
+                    throw std::runtime_error(msg.str()); \
+                } \
+        }
+    #endif
+
+    #define CORETHREADJOIN(worker) pthread_join(worker, NULL)
+    #define CORETHREADJOINVALUE(worker, value) pthread_join(worker, value)
+    #define CORETHREADEXIT pthread_exit
+    #define CORETHREADEQUAL pthread_equal
+    #define CORETHREADSELF pthread_self
+#ifndef __APPLE__
+    #define CORETHREADSELFINT pthread_self
+#else
+    #define CORETHREADSELFINT (unsigned long) pthread_self
+#endif
+
+    typedef void* ThreadFuncReturnType;
+    typedef void* ThreadFuncArgType;
+    typedef int (*thread_lock)(CoreMutex*);
+    typedef int (*thread_unlock)(CoreMutex*);
+
+    typedef pid_t Pid_t;
+
+    typedef pthread_cond_t CoreCondition;
+    #define CORE_CONDITION_INITIALIZER PTHREAD_COND_INITIALIZER
+    #define CORECONDITIONINIT(cond) pthread_cond_init(cond, NULL)
+    #define CORECONDITIONDESTROY(cond) pthread_cond_destroy(cond)
+    #define CORECONDITIONWAIT(cond, mutex) pthread_cond_wait(cond, mutex)
+    #define CORECONDITIONSIGNAL(cond) pthread_cond_signal(cond)
+    #define CORECONDITIONBROADCAST(cond) pthread_cond_broadcast(cond)
+
+    #define CORESEMAPHOREINIT(sema, initial) sem_init(&sema, 0, initial)
+    #define CORESEMAPHOREWAIT(sema) sem_wait(&sema)
+    #define CORESEMAPHOREPOST(sema) sem_post(&sema)
+    #define CORESEMAPHOREGET(sema, holder) sem_getvalue(&sema, &holder)
+
+} // namespace mad
+
+#elif defined(WIN32)
+    //
+    // Multi-threaded build: for Windows systems
+    //
+    #include "windefs.hh"  // Include 'safe...' <windows.h>
+
+    // NOT ALL TYPES HAVE BEEN ADDED
+    // I need to do this, but it is low in priority since we don't run on
+    // Windows and Windows sucks
+
+namespace mad
+{
+
+    typedef HANDLE CoreMutex;
+    typedef HANDLE CoreThread;
+
+    #define CORE_MUTEX_INITIALIZER CreateMutex(NULL,FALSE,NULL)
+    DWORD /*WINAPI*/ WaitForSingleObjectInf( __in CoreMutex m );
+    #define COREMUTEXLOCK WaitForSingleObjectInf
+
+    // #define COREMUTEXINIT(mutex) InitializeCriticalSection( &mutex );
+    #define COREMUTEXINIT(mutex);
+    #define COREMUTEXDESTROY(mutex);
+
+    //
+    BOOL ReleaseMutex( __in CoreMutex m);
+    #define COREMUTEXUNLOCK ReleaseMutex
+
+    #define CORETHREADCREATE( worker, func, arg ) \
+        { *worker = CreateThread( NULL, 16*1024*1024 , func , arg , 0 , NULL ); }
+    #define CORETHREADCREATEID( worker, func, arg, id ) \
+        CORETHREADCREATE( worker, func, arg )
+    #define CORETHREADJOIN( worker ) WaitForSingleObject( worker , INFINITE);
+    #define CORETHREADSELF GetCurrentThreadId
+    #define ThreadFunReturnType DWORD WINAPI
+    typedef LPVOID ThreadFunArgType;
+    typedef DWORD (*thread_lock)(CoreMutex);
+    typedef BOOL (*thread_unlock)(CoreMutex);
+    typedef DWORD Pid_t;
+
+    // Conditions
+    //
+    typedef CONDITION_VARIABLE CoreCondition;
+    #define CORE_CONDITION_INITIALIZER CONDITION_VARIABLE_INIT
+    #define CORECONDITIONWAIT( cond , criticalsectionmutex ) \
+        SleepConditionVariableCS( cond, criticalsectionmutex , INFINITE );
+    #define CORECONDTIONSIGNAL( cond ) WakeConditionVariable( cond );
+    #define CORECONDTIONBROADCAST( cond ) WakeAllConditionVariable( cond );
+
+} // namespace mad
+
+
+#else
+
+    #error "No Threading model technology supported for this platform. Use sequential build !"
+
+#endif
+
+#else // defined(ENABLE_THREADING)
+
+namespace mad
+{
+
+    //==========================================
+    // MULTITHREADED is OFF - Sequential build
+    //==========================================
+    typedef int CoreMutex;
+    typedef int CoreThread;
+    typedef int CoreSemaphore;
+    #define CORE_MUTEX_INITIALIZER 1
+    inline int fake_mutex_lock_unlock( CoreMutex* ) { return 0; }
+    #define COREMUTEXINIT(mutex) ;;
+    #define COREMUTEXDESTROY(mutex) ;;
+    #define CORERECURSIVEMUTEXINIT(mutex) ;;
+    #define COREMUTEXLOCK fake_mutex_lock_unlock
+    #define COREMUTEXUNLOCK fake_mutex_lock_unlock
+    #define CORETHREADCREATE( worker , func , arg ) ;;
+    #define CORETHREADCREATEID( worker , func , arg, id ) ;;
+    #define CORETHREADJOIN( worker ) ;;
+    #define CORETHREADSELF() 0
+    #define CORETHREADSELFINT() 0UL
+    #define CORETHREADEXIT(nothing) ;;
+    typedef void* ThreadFunReturnType;
+    typedef void* ThreadFunArgType;
+    typedef int (*thread_lock)(CoreMutex*);
+    typedef int (*thread_unlock)(CoreMutex*);
+    typedef int Pid_t;
+    typedef int CoreCondition;
+    #define CORE_CONDITION_INITIALIZER 1
+    #define CORECONDITIONINIT(cond) ;;
+    #define CORECONDITIONDESTROY(cond) ;;
+    #define CORECONDITIONWAIT( cond, mutex ) ;;
+    #define CORECONDITIONSIGNAL(cond) ;;
+    #define CORECONDITIONBROADCAST(cond) ;;
+    #define CORESEMAPHOREINIT(sema, inital) ;;
+    #define CORESEMAPHOREWAIT(sema) ;;
+    #define CORESEMAPHOREPOST(sema) ;;
+    #define CORESEMAPHOREGET(sema, holder) ;;
+    #define CORETHREADEQUAL(n1, n2) true
+} // namespace mad
+
+#endif // defined(ENABLE_THREADING)
+//----------------------------------------------------------------------------//
+
+#include "tls.hh"
+
+// Some functions that help with threading
+
+namespace mad
+{
+namespace Threading
+{
+  enum {
+        SEQUENTIAL_ID = -2,
+        MASTER_ID = -1,
+        WORKER_ID = 0,
+        GENERICTHREAD_ID = -1000
+    };
+  mad::Pid_t GetPidId();
+  int GetNumberOfCores();
+  int GetThreadId();
+  bool IsWorkerThread();
+  bool IsMasterThread();
+  void SetThreadId( int aNewValue );
+  void SetMultithreadedApplication(bool value);
+  bool IsMultithreadedApplication();
+
+} // namespace Threading
+
+} // namespace mad
+
+//----------------------------------------------------------------------------//
+
+#endif

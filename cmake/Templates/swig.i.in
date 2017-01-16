@@ -1,0 +1,45 @@
+
+%module @MODULE_NAME@
+%{
+    #include SWIG_FILE_WITH_INIT
+    #include "@HEADER_FILE@"
+%}
+
+%include <string>
+%include <vector>
+%include <map>
+%include <unordered_map>
+%include <unordered_set>
+%include <set>
+%include <iterator>
+%include <queue>
+%include <stack>
+%include <list>
+%include <deque>
+%include <cfloat>
+%include <cmath>
+%include <complex>
+%include <random>
+%include <functional>
+%include <numeric>
+%include <algorithm>
+%include <limits>
+%include <ios>
+%include <iomanip>
+%include <sstream>
+%include <istream>
+%include <fstream>
+%include <ostream>
+%include <iostream>
+%include <cstdlib>
+%include <cstdio>
+%include <cassert>
+%include <ctime>
+%include <cctype>
+%include <time.h>
+%include <locale>
+%include <typeinfo>
+%include <memory>
+%include <stdexcept>
+%include <cstdarg>
+%include "@HEADER_FILE@"

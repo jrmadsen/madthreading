@@ -1,0 +1,29 @@
+//  VERSION_STRING @VERSION_STRING@
+//  @PROJECT_NAME@ version.hh configuration header file  ---------------------//
+
+//  (C) Copyright Jonathan Madsen 2015.
+
+#ifndef @PROJECT_NAME@_VERSION_HH_
+#define @PROJECT_NAME@_VERSION_HH_
+
+//
+//  Caution, this is the only @PROJECT_NAME@ header that is guarenteed
+//  to change with every release, including this header
+//  will cause a recompile every time a new @PROJECT_NAME@ version is
+//  released.
+//
+//  @PROJECT_NAME@_VERSION % 100 is the patch level
+//  @PROJECT_NAME@_VERSION / 100 % 1000 is the minor version
+//  @PROJECT_NAME@_VERSION / 100000 is the major version
+
+#define @PROJECT_NAME@_VERSION @MAJOR_VERSN_00@@MINOR_VERSN_00@@PATCH_VERSN_00@
+
+//
+//  @PROJECT_NAME@_LIB_VERSION must be defined to be the same as
+//  @PROJECT_NAME@_VERSION but as a *string* in the form "x_y[_z]" where x is
+//  the major version number, y is the minor version number, and z is the patch
+//  level if not 0.
+
+#define @PROJECT_NAME@_LIB_VERSION "@VERSION_STRING@"
+
+#endif

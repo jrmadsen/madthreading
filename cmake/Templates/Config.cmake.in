@@ -1,0 +1,34 @@
+# - Config file for the @CONFIG_PROJECT_NAME@ package
+# It defines the following variables
+#  @_PROJECT_NAME@_INCLUDE_DIRS - include directories for @CONFIG_PROJECT_NAME@
+#  @_PROJECT_NAME@_LIBRARIES    - libraries to link against
+
+# Compute paths
+get_filename_component(@_PROJECT_NAME@_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+if(NOT @PROJECT_NAME@_BINARY_DIR)
+    set(@_PROJECT_NAME@_INCLUDE_DIRS "@CONF_INCLUDE_DIRS@/madthreading")
+else()
+    set(@_PROJECT_NAME@_INCLUDE_DIRS "@PROJECT_SOURCE_DIR@/source")
+endif()
+
+# Our library dependencies (contains definitions for IMPORTED targets)
+if(NOT @PROJECT_NAME@_BINARY_DIR)
+  include("${@_PROJECT_NAME@_CMAKE_DIR}/@_prefix@Targets.cmake")
+endif()
+
+# These are IMPORTED targets created by @_prefix@Targets.cmake
+set(@_PROJECT_NAME@_LIBRARIES @PROJECT_LIBRARY_NAMES@)
+
+set(CMAKE_CXX_FLAGS_DEBUG "@CMAKE_CXX_FLAGS_DEBUG@")
+set(CMAKE_CXX_FLAGS_MINSIZEREL "@CMAKE_CXX_FLAGS_MINSIZEREL@")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "@CMAKE_CXX_FLAGS_RELWITHDEBINFO@")
+set(CMAKE_CXX_FLAGS_RELEASE "@CMAKE_CXX_FLAGS_RELEASE@")
+set(COMPILE_DEFINITIONS @compile_defs@)
+
+string(TOUPPER @CMAKE_BUILD_TYPE@ _build_type)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} @CMAKE_CXX_FLAGS@ ${CMAKE_CXX_FLAGS_${_build_type}}")
+
+foreach(_def ${COMPILE_DEFINITIONS})
+    add_definitions(-D${_def})
+endforeach()
+

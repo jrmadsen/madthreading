@@ -1,0 +1,30 @@
+# This file is configured at cmake time, and loaded at cpack time.
+# To pass variables to cpack from cmake, they must be configured
+# in this file.  
+
+# This file is configured at cmake time, and loaded at cpack time.
+# To pass variables to cpack from cmake, they must be configured
+# in this file.  
+
+if(NOT DEFINED LC_PROJECT_NAME)
+    set(LC_PROJECT_NAME ${PROJECT_NAME})
+    string(TOLOWER ${LC_PROJECT_NAME} LC_PROJECT_NAME)
+endif()
+
+# - NSIS Specifics
+if(CPACK_GENERATOR MATCHES "NSIS")
+  # There is a bug in NSI that does not handle full unix paths properly. 
+  # Make sure there is at least one set of two (2) backlasshes.
+  set(CPACK_PACKAGE_ICON "@CMAKE_SOURCE_DIR@\\cmake\\Templates\\${LC_PROJECT_NAME}_small.bmp")
+  set(CPACK_NSIS_MUI_ICON "@CMAKE_SOURCE_DIR@\\cmake\\Templates\\${LC_PROJECT_NAME}.ico")
+  set(CPACK_NSIS_MUI_UNIICON "@CMAKE_SOURCE_DIR@\\cmake\\Templates\\${LC_PROJECT_NAME}.ico")
+  set(CPACK_NSIS_DISPLAY_NAME "${CPACK_PACKAGE_INSTALL_DIRECTORY}")
+  set(CPACK_NSIS_MODIFY_PATH ON)
+endif()
+
+# - PackageMaker Specifics
+if("${CPACK_GENERATOR}" STREQUAL "PackageMaker")
+  set(CPACK_PACKAGING_INSTALL_PREFIX "/${CPACK_PACKAGE_INSTALL_DIRECTORY}")
+  set(CPACK_PACKAGE_DEFAULT_LOCATION "/Applications")
+endif()
+
