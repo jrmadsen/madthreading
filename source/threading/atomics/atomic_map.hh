@@ -22,7 +22,6 @@
 //----------------------------------------------------------------------------//
 
 #include <map>
-#include <threading/atomics/atomic_typedefs.hh>
 
 #ifdef _HAS_ATOMICS_
 

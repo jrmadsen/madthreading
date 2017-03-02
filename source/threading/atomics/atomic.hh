@@ -24,7 +24,7 @@
 
 #include "atomic_typedefs.hh"
 
-#ifdef ENABLE_BOOST
+#ifdef USE_BOOST
 #  include <boost/serialization/split_member.hpp>
 #endif
 
@@ -199,7 +199,7 @@ protected:
     Base_t _value;
 
 public:
-#ifdef ENABLE_BOOST
+#ifdef USE_BOOST
     template<class Archive>
     void save(Archive & ar, const unsigned int version) const
     {

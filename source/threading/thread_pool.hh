@@ -17,8 +17,11 @@
 #ifdef SWIG
 %module thread_pool
 %{
-    #include "../thread_pool.hh"
+    #define SWIG_FILE_WITH_INIT
+    #include "thread_pool.hh"
 %}
+
+%include "thread_pool.hh"
 #endif
 //----------------------------------------------------------------------------//
 

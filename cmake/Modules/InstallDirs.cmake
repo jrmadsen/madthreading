@@ -124,7 +124,7 @@ if(NOT DEFINED CMAKE_INSTALL_INCLUDEDIR)
 endif()
 
 if(NOT DEFINED CMAKE_INSTALL_CMAKEDIR)
-  set(CMAKE_INSTALL_CMAKEDIR "cmake" CACHE PATH "CMake files to import package (cmake)")
+  set(CMAKE_INSTALL_CMAKEDIR "" CACHE PATH "CMake files to import package")
 endif()
 
 if(NOT DEFINED CMAKE_INSTALL_DATAROOTDIR)

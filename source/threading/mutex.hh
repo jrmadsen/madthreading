@@ -16,8 +16,11 @@
 #ifdef SWIG
 %module mutex
 %{
+    #define SWIG_FILE_WITH_INIT
     #include "mutex.hh"
 %}
+
+%include "mutex.hh"
 #endif
 
 #include "threading.hh"

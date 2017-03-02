@@ -16,8 +16,11 @@
 #ifdef SWIG
 %module condition
 %{
+    #define SWIG_FILE_WITH_INIT
     #include "condition.hh"
 %}
+
+%include "condition.hh"
 #endif
 
 #include "threading.hh"

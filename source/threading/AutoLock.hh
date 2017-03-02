@@ -17,6 +17,7 @@
 
 %module AutoLock
 %{
+    #define SWIG_FILE_WITH_INIT
     #include "threading.hh"
     #include "TemplateAutoLock.hh"
     #include "AutoLock.hh"

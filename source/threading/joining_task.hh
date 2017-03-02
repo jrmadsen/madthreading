@@ -16,8 +16,11 @@
 #ifdef SWIG
 %module joining_task
 %{
+    #define SWIG_FILE_WITH_INIT
     #include "joining_task.hh"
 %}
+
+%include "joining_task.hh"
 #endif
 
 #include "task.hh"
@@ -46,7 +49,9 @@ public:
     result_type operator()(result_type r)
     { return m_return_func_ptr(m_result, r); }
 
+#ifndef SWIG
     result_type operator=(result_type r) { return (m_result = r); }
+#endif
 
 protected:
     return_func_type m_return_func_ptr;

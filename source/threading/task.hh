@@ -16,8 +16,11 @@
 #ifdef SWIG
 %module task
 %{
+    #define SWIG_FILE_WITH_INIT
     #include "task.hh"
 %}
+
+%include "task.hh"
 #endif
 
 #if __cplusplus > 199711L   // C++11

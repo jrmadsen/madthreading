@@ -26,15 +26,20 @@
 
 %module thread_manager
 %{
-    #include "thread_manager.hh"
+    #define SWIG_FILE_WITH_INIT
     #include "thread_pool.hh"
     #include "joining_task.hh"
     #include "task_tree.hh"
     #include "../allocator/allocator.hh"
+    #include "thread_manager.hh"
     #define tmid  mad::thread_manager::sid(CORETHREADSELFINT())
     #define _tid_ mad::thread_manager::id (CORETHREADSELFINT())
 %}
 
+%import "thread_pool.hh"
+%import "joining_task.hh"
+%import "task_tree.hh"
+%import "../allocator/allocator.hh"
 %include "thread_manager.hh"
 
 MACRO(tmid)
@@ -55,7 +60,7 @@ MACRO(_tid_)
 #include "task.hh"
 #include "joining_task.hh"
 #include "task_tree.hh"
-#include "allocator.hh"
+#include "../allocator/allocator.hh"
 
 // task.hh defines mad::function and mad::bind if CXX11 or ENABLE_BOOST
 
@@ -262,6 +267,7 @@ public:
         m_data->tp()->add_task(t);
     }
     //------------------------------------------------------------------------//
+#ifndef SWIG
     template <typename _Func, typename _Arg>
     __inline__
     void exec(_Func function, _Arg argument)
@@ -270,6 +276,7 @@ public:
         task_type* t = new task_type(function, argument);
         m_data->tp()->add_task(t);
     }
+#endif
     //------------------------------------------------------------------------//
     template <typename _Func>
     __inline__
@@ -299,6 +306,7 @@ public:
         }
     }
     //------------------------------------------------------------------------//
+#ifndef SWIG
     template <typename _Func, typename _Arg1, typename _Arg2, typename _Arg3>
     __inline__
     void run(_Func function, _Arg1 arg1, _Arg2 arg2, _Arg3 arg3)
@@ -311,6 +319,7 @@ public:
             m_data->tp()->add_task(t);
         }
     }
+#endif
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func, typename _Arg1, typename _Arg2>
     __inline__
@@ -325,6 +334,7 @@ public:
         }
     }
     //------------------------------------------------------------------------//
+#ifndef SWIG
     template <typename _Func, typename _Arg1, typename _Arg2>
     __inline__
     void run(_Func function, _Arg1 arg1, _Arg2 arg2)
@@ -337,6 +347,7 @@ public:
             m_data->tp()->add_task(t);
         }
     }
+#endif
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func, typename _Arg>
     __inline__
@@ -351,6 +362,7 @@ public:
         }
     }
     //------------------------------------------------------------------------//
+#ifndef SWIG
     template <typename _Func, typename _Arg>
     __inline__
     void run(_Func function, _Arg argument)
@@ -363,6 +375,7 @@ public:
             m_data->tp()->add_task(t);
         }
     }
+#endif
     //------------------------------------------------------------------------//
     template <typename _Func>
     __inline__
@@ -412,6 +425,7 @@ public:
         }
     }
     //------------------------------------------------------------------------//
+#ifndef SWIG
     template <typename _Ret, typename _Func, typename InputIterator>
     __inline__
     void run_loop(_Func function, InputIterator _s, InputIterator _e)
@@ -424,11 +438,13 @@ public:
             m_data->tp()->add_task(t);
         }
     }
+#endif
     //------------------------------------------------------------------------//
     // Specialization for above when run_loop(func, 0, container->size())
     // is called. Generally, the "0" is defaulted to a signed type
     // so template deduction fails
     //------------------------------------------------------------------------//
+#ifndef SWIG
     template <typename _Func, typename _Arg1, typename _Arg>
     __inline__
     void run_loop(_Func function, const _Arg1& _s, const _Arg& _e)
@@ -441,6 +457,7 @@ public:
             m_data->tp()->add_task(t);
         }
     }
+#endif
     //------------------------------------------------------------------------//
 
 public:
@@ -470,6 +487,7 @@ public:
         }
     }
     //------------------------------------------------------------------------//
+#ifndef SWIG
     template <typename _Func, typename _Arg1, typename _Arg>
     __inline__
     void run_loop(_Func function, const _Arg1& _s, const _Arg& _e,
@@ -490,6 +508,7 @@ public:
             m_data->tp()->add_task(t);
         }
     }
+#endif
     //------------------------------------------------------------------------//
     template <typename _Ret,
               typename _Func,
@@ -544,6 +563,7 @@ public:
         m_data->tp()->add_background_task(_id, t);
     }
     //------------------------------------------------------------------------//
+#ifndef SWIG
     template <typename _Arg, typename _Func>
     __inline__
     void add_background_task(void* _id, _Func function, _Arg argument)
@@ -553,6 +573,7 @@ public:
         task_type* t = new task_type(function, argument);
         m_data->tp()->add_background_task(_id, t);
     }
+#endif
     //------------------------------------------------------------------------//
     template <typename _Func>
     __inline__

@@ -14,12 +14,15 @@
 #ifdef SWIG
 %module task_tree
 %{
+    #define SWIG_FILE_WITH_INIT
     #include "task_tree.hh"
 %}
 
 #   ifndef __always_inline__
 #       define __always_inline__ inline
 #   endif
+
+%include "task_tree.hh"
 #else
 #   ifndef __always_inline__
 #       define __always_inline__ inline

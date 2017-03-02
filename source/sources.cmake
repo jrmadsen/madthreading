@@ -9,5 +9,4 @@ include(MacroDefineModule)
 DEFINE_MODULE(NAME mad
                    HEADER_EXT ".h;.hh"
                    SOURCE_EXT ".cc;.cpp"
-                   LINK_LIBRARIES ""
 )

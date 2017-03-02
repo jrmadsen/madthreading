@@ -161,8 +161,10 @@ public:
     }
     //------------------------------------------------------------------------//
     // Rebind allocator to type U
+#ifndef SWIG
     template <class U>
     struct rebind { typedef allocator<U> other; };
+#endif
     //------------------------------------------------------------------------//
     // Pool of elements of sizeof(T)
     allocator_pool m_mem;
@@ -187,6 +189,7 @@ private:
     static alloc_type* this_alloc;
 
 public:
+#ifndef SWIG
     //------------------------------------------------------------------------//
     void* operator new(size_t /*size*/) throw (std::bad_alloc)
     {
@@ -214,6 +217,7 @@ public:
             this_alloc->free_single((T*)(ptr));
     }
     //------------------------------------------------------------------------//
+#endif
 };
 
 //============================================================================//
@@ -232,6 +236,7 @@ private:
     ThreadLocalStatic alloc_type* this_alloc;
 
 public:
+#ifndef SWIG
     //------------------------------------------------------------------------//
     void* operator new(size_t /*size*/) throw (std::bad_alloc)
     {
@@ -259,6 +264,7 @@ public:
             this_alloc->free_single((T*)(ptr));
     }
     //------------------------------------------------------------------------//
+#endif
 };
 
 //============================================================================//
@@ -608,4 +614,3 @@ bool operator!=(const allocator<T1, USE_TLP>&,
 } // namespace mad
 
 #endif // allocator_hh_
-
