@@ -30,7 +30,9 @@ add_feature(CMAKE_INSTALL_PREFIX "Installation prefix")
 add_feature(CMAKE_CXX_FLAGS "CXX flags")
 add_feature(CMAKE_BUILD_TYPE "Build type")
 
-include_directories(SYSTEM ${EXTERNAL_INCLUDE_DIRS})
+foreach(_INCLUDE_DIR ${EXTERNAL_INCLUDE_DIRS})
+    include_directories(SYSTEM ${_INCLUDE_DIR})
+endforeach()
 
 add_subdirectory(source)
 
