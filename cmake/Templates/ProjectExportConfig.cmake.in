@@ -1,0 +1,51 @@
+# - Config file for the @CMAKE_PROJECT_NAME@ package
+# It defines the following variables
+#  @CMAKE_PROJECT_NAME@_INCLUDE_DIRS - include directories for @CMAKE_PROJECT_NAME@
+#  @CMAKE_PROJECT_NAME@_LIBRARY_DIRS - library directories for @CMAKE_PROJECT_NAME@ (normally not used!)
+#  @CMAKE_PROJECT_NAME@_LIBRARIES    - libraries to link against
+
+# Tell the user project where to find our headers and libraries
+set(@CMAKE_PROJECT_NAME@_INCLUDE_DIRS "@CMAKE_INSTALL_FULL_INCLUDEDIR@")
+set(@CMAKE_PROJECT_NAME@_LIBRARY_DIRS "@CMAKE_INSTALL_FULL_LIBDIR@")
+
+# Our library dependencies (contains definitions for IMPORTED targets)
+include("@CMAKE_INSTALL_FULL_CMAKEDIR@/@CMAKE_PROJECT_NAME@LibraryDepends.cmake")
+
+# These are IMPORTED targets created by @CMAKE_PROJECT_NAME@LibraryDepends.cmake
+set(@CMAKE_PROJECT_NAME@_SHARED_LIBRARIES @PROJECT_SHARED_LIBRARY@)
+set(@CMAKE_PROJECT_NAME@_STATIC_LIBRARIES @PROJECT_STATIC_LIBRARY@)
+
+# Load information for each installed configuration.
+get_filename_component(_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+file(GLOB HEADER_CONFIG_FILES "${_DIR}/@CMAKE_PROJECT_NAME@ConfigHeader-*.cmake")
+foreach(f ${HEADER_CONFIG_FILES})
+  include(${f})
+endforeach()
+
+set(build_type ${CMAKE_BUILD_TYPE})
+if(NOT build_type)
+  set(build_type None)
+endif()
+# include the config header directory for this build
+if(@CMAKE_PROJECT_NAME@_INCLUDE_DIRS_${build_type})
+  list(APPEND @CMAKE_PROJECT_NAME@_INCLUDE_DIRS ${@CMAKE_PROJECT_NAME@_INCLUDE_DIRS_${build_type}})
+else() # if a config header directory does not exist for this build type
+  # include the config header directory for any existing build
+  foreach(_type Release RelWithDebInfo MinSizeRel Debug)
+    if(@CMAKE_PROJECT_NAME@_INCLUDE_DIRS_${_type})
+      list(APPEND @CMAKE_PROJECT_NAME@_INCLUDE_DIRS ${@CMAKE_PROJECT_NAME@_INCLUDE_DIRS_${_type}})
+      break()
+    endif()
+  endforeach()
+endif()
+
+set(@CMAKE_PROJECT_NAME@_LIBRARIES )
+if(@CMAKE_PROJECT_NAME@_SHARED_LIBRARIES)
+    set(@CMAKE_PROJECT_NAME@_LIBRARIES ${@CMAKE_PROJECT_NAME@_SHARED_LIBRARIES})
+elseif(@CMAKE_PROJECT_NAME@_STATIC_LIBRARIES)
+    set(@CMAKE_PROJECT_NAME@_LIBRARIES ${@CMAKE_PROJECT_NAME@_STATIC_LIBRARIES})
+endif()
+
+unset(_DIR)
+unset(HEADER_CONFIG_FILES)
+unset(build_type)
