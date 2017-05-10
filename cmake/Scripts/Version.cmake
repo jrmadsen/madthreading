@@ -70,5 +70,3 @@ if(GENERATE)
                  ${OUTPUT_DIR}/version.hh
                  @ONLY)
 endif()
-
-

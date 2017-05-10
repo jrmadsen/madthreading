@@ -13,10 +13,10 @@ endif()
 
 # Our library dependencies (contains definitions for IMPORTED targets)
 if(NOT @PROJECT_NAME@_BINARY_DIR)
-  include("${@_PROJECT_NAME@_CMAKE_DIR}/@_prefix@Targets.cmake")
+  include("${@_PROJECT_NAME@_CMAKE_DIR}/@_prefix@LibraryDepends.cmake")
 endif()
 
-# These are IMPORTED targets created by @_prefix@Targets.cmake
+# These are IMPORTED targets created by @_prefix@LibraryDepends.cmake
 set(@_PROJECT_NAME@_LIBRARIES @PROJECT_LIBRARY_NAMES@)
 
 set(CMAKE_CXX_FLAGS_DEBUG "@CMAKE_CXX_FLAGS_DEBUG@")

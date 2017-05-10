@@ -39,9 +39,11 @@ include(CMakeDependentOption)
 
 set(CMAKE_THREAD_PREFER_PTHREADS ON)
 find_package(Threads REQUIRED)
-add_package_definitions(THREADING)
+if(Threads_FOUND)
+    add_definitions(-DENABLE_THREADING -pthread)
+endif()
 list(APPEND EXTERNAL_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
-
+message(STATUS "THREAD LIBS: ${CMAKE_THREAD_LIBS_INIT}")
 
 
 ################################################################################
@@ -67,28 +69,35 @@ endif()
 ################################################################################
 
 option(USE_BOOST "Enable BOOST Libraries" OFF)
-add_feature(USE_BOOST "Enable Boost libraries (${Boost_LIBRARIES})")
+add_feature(USE_BOOST "Enable Boost libraries")
+
+foreach(_component chrono python serialization signals system thread timer)
+    STRING(TOUPPER ${_component} _COMPONENT)
+    if(USE_BOOST)
+        add_subfeature(USE_BOOST USE_BOOST_${_COMPONENT} "Use Boost ${_component} library")
+        set(USE_BOOST_${_COMPONENT} ON)
+    elseif(USE_BOOST_${_COMPONENT})
+        add_feature(USE_BOOST_${_COMPONENT} "Use Boost ${_component} library")
+    endif()
+    if(USE_BOOST_${_COMPONENT})
+        list(APPEND Boost_COMPONENTS ${_component})
+    endif()
+endforeach()
 
 if(USE_BOOST)
-    set(Boost_LIBRARIES atomic
-                        chrono
-                        python
-                        serialization
-                        signals
-                        system
-                        thread
-                        timer)
-
-    message(STATUS "Finding optional component : Boost")
+    message(STATUS "Finding Boost components : ${Boost_COMPONENTS}")
     ConfigureRootSearchPath(BOOST)
 
     set(Boost_NO_BOOST_CMAKE OFF)
-    find_package(Boost 1.53 REQUIRED COMPONENTS ${Boost_LIBRARIES})
+    find_package(Boost 1.53 REQUIRED COMPONENTS ${Boost_COMPONENTS})
     if(Boost_FOUND)
         include_directories(${Boost_INCLUDE_DIRS})
-        list(APPEND EXTERNAL_LINK_LIBRARIES ${Boost_LIBRARIES})
+        list(APPEND EXTERNAL_LIBRARIES ${Boost_LIBRARIES})
         list(APPEND EXTERNAL_INCLUDE_DIRS ${Boost_INCLUDE_DIRS})
-        add_package_definitions(BOOST)
+        foreach(_component ${Boost_COMPONENTS})
+            STRING(TOUPPER ${_component} _COMPONENT)
+            add_definitions(-DUSE_BOOST_${_COMPONENT})
+        endforeach()
     else()
         message(FATAL_ERROR "BOOST NOT FOUND")
     endif(Boost_FOUND)
@@ -120,7 +129,7 @@ if(USE_TBB)
         include_directories(${TBB_INCLUDE_DIRS})
         list(APPEND EXTERNAL_LIBRARIES ${TBB_LIBRARIES})
         list(APPEND EXTERNAL_INCLUDE_DIRS ${TBB_INCLUDE_DIRS})
-		add_package_definitions(TBB)
+        add_package_definitions(TBB)
     else()
         message(FATAL_ERROR "\n\tNO TBB_ROOT FOUND -- ${TBB_ROOT} -- Please set TBB_ROOT\n")
     endif()
@@ -143,4 +152,8 @@ foreach(_type ${_types})
 endforeach()
 unset(_types)
 
-
+if(USE_BOOST)
+    if(Boost_FOUND)
+        set(Boost_FOUND ON)
+    endif()
+endif()

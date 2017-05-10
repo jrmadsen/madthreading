@@ -28,19 +28,18 @@
 
 #include "threading.hh"
 
-using namespace mad;
-
 %template(PyAutoLock) mad::TemplateAutoLock<mad::CoreMutex, mad::thread_lock, mad::thread_unlock>;
 typedef mad::TemplateAutoLock<mad::CoreMutex,
                               mad::thread_lock,
                               mad::thread_unlock> PyAutoLock;
-typedef mad::CoreMutex CoreMutex;
+typedef mad::CoreMutex  CoreMutex;
+%import "mutex.hh"
 %include "AutoLock.hh"
-
 #endif
 
 #include "threading.hh"
 #include "TemplateAutoLock.hh"
+#include "mutex.hh"
 
 //----------------------------------------------------------------------------//
 
@@ -53,6 +52,8 @@ struct ImplAutoLock : public TemplateAutoLock<mad::CoreMutex,
                                               mad::thread_lock,
                                               mad::thread_unlock>
 {
+    //------------------------------------------------------------------------//
+
     ImplAutoLock(mad::CoreMutex* mtx)
     : TemplateAutoLock<mad::CoreMutex,
                        mad::thread_lock,
@@ -60,6 +61,38 @@ struct ImplAutoLock : public TemplateAutoLock<mad::CoreMutex,
                                            &COREMUTEXLOCK,
                                            &COREMUTEXUNLOCK)
     { }
+
+    //------------------------------------------------------------------------//
+
+    ImplAutoLock(mad::mutex* mtx)
+    : TemplateAutoLock<mad::CoreMutex,
+                       mad::thread_lock,
+                       mad::thread_unlock>(mtx->base_mutex_ptr(),
+                                           &COREMUTEXLOCK,
+                                           &COREMUTEXUNLOCK)
+    { }
+
+    //------------------------------------------------------------------------//
+#ifndef SWIG
+    ImplAutoLock(mad::CoreMutex& mtx)
+    : TemplateAutoLock<mad::CoreMutex,
+                       mad::thread_lock,
+                       mad::thread_unlock>(&mtx,
+                                           &COREMUTEXLOCK,
+                                           &COREMUTEXUNLOCK)
+    { }
+
+    //------------------------------------------------------------------------//
+
+    ImplAutoLock(mad::mutex& mtx)
+    : TemplateAutoLock<mad::CoreMutex,
+                       mad::thread_lock,
+                       mad::thread_unlock>(mtx.base_mutex_ptr(),
+                                           &COREMUTEXLOCK,
+                                           &COREMUTEXUNLOCK)
+    { }
+#endif
+    //------------------------------------------------------------------------//
 };
 
 
@@ -72,10 +105,5 @@ typedef ImplAutoLock AutoLock;
 } // namespace mad
 
 //----------------------------------------------------------------------------//
-
-#ifdef SWIG
-//%template(PyAutoLock) mad::TemplateAutoLock<mad::CoreMutex, thread_lock, thread_unlock>;
-//%typedef AutoLock ImplAutoLock
-#endif
 
 #endif // autolock_hh_

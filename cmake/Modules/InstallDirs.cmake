@@ -94,37 +94,39 @@ if(NOT DEFINED CMAKE_INSTALL_BINDIR)
   set(CMAKE_INSTALL_BINDIR "bin" CACHE PATH "user executables (bin)")
 endif()
 
-if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
-  set(_LIBDIR_DEFAULT "lib")
-  # Override this default 'lib' with 'lib64' iff:
-  #  - we are on Linux system but NOT cross-compiling
-  #  - we are NOT on debian
-  #  - we are on a 64 bits system
-  # reason is: amd64 ABI: http://www.x86-64.org/documentation/abi.pdf
-  # Note that the future of multi-arch handling may be even
-  # more complicated than that: http://wiki.debian.org/Multiarch
-  if(CMAKE_SYSTEM_NAME MATCHES "Linux"
-      AND NOT CMAKE_CROSSCOMPILING
-      AND NOT EXISTS "/etc/debian_version")
-    if(NOT DEFINED CMAKE_SIZEOF_VOID_P)
-      message(AUTHOR_WARNING
-        "Unable to determine default CMAKE_INSTALL_LIBDIR directory because no target architecture is known. "
-        "Please enable at least one language before including GNUInstallDirs.")
-    else()
-      if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
-        set(_LIBDIR_DEFAULT "lib64")
-      endif()
+set(_LIBDIR_DEFAULT "lib")
+# Override this default 'lib' with 'lib64' iff:
+#  - we are on Linux system but NOT cross-compiling
+#  - we are NOT on debian
+#  - we are on a 64 bits system
+# reason is: amd64 ABI: http://www.x86-64.org/documentation/abi.pdf
+# Note that the future of multi-arch handling may be even
+# more complicated than that: http://wiki.debian.org/Multiarch
+if(CMAKE_SYSTEM_NAME MATCHES "Linux"
+    AND NOT CMAKE_CROSSCOMPILING
+    AND NOT EXISTS "/etc/debian_version")
+  if(NOT DEFINED CMAKE_SIZEOF_VOID_P)
+    message(AUTHOR_WARNING
+      "Unable to determine default CMAKE_INSTALL_LIBDIR directory because no target architecture is known. "
+      "Please enable at least one language before including GNUInstallDirs.")
+  else()
+    if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
+      set(_LIBDIR_DEFAULT "lib64")
     endif()
   endif()
+endif()
+
+if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
   set(CMAKE_INSTALL_LIBDIR "${_LIBDIR_DEFAULT}" CACHE PATH "object code libraries (${_LIBDIR_DEFAULT})")
+endif()
+
+if(NOT DEFINED CMAKE_INSTALL_CMAKEDIR)
+  set(CMAKE_INSTALL_CMAKEDIR "${_LIBDIR_DEFAULT}/cmake/${CMAKE_PROJECT_NAME}"
+      CACHE PATH "CMake export directory")
 endif()
 
 if(NOT DEFINED CMAKE_INSTALL_INCLUDEDIR)
   set(CMAKE_INSTALL_INCLUDEDIR "include" CACHE PATH "C header files (include)")
-endif()
-
-if(NOT DEFINED CMAKE_INSTALL_CMAKEDIR)
-  set(CMAKE_INSTALL_CMAKEDIR "" CACHE PATH "CMake files to import package")
 endif()
 
 if(NOT DEFINED CMAKE_INSTALL_DATAROOTDIR)
@@ -155,25 +157,26 @@ endif()
 mark_as_advanced(
   CMAKE_INSTALL_BINDIR
   CMAKE_INSTALL_LIBDIR
+  CMAKE_INSTALL_CMAKEDIR
   CMAKE_INSTALL_INCLUDEDIR
   CMAKE_INSTALL_DATAROOTDIR
   CMAKE_INSTALL_DATADIR
   CMAKE_INSTALL_MANDIR
   CMAKE_INSTALL_DOCDIR
-  CMAKE_INSTALL_CMAKEDIR
   )
 
 # Result directories
 #
-foreach(dir BINDIR
-            LIBDIR
-            INCLUDEDIR
-            DATAROOTDIR
-            DATADIR
-            MANDIR
-            DOCDIR
-            CMAKEDIR
-)
+foreach(dir
+    BINDIR
+    LIBDIR
+    CMAKEDIR
+    INCLUDEDIR
+    DATAROOTDIR
+    DATADIR
+    MANDIR
+    DOCDIR
+    )
   if(NOT IS_ABSOLUTE ${CMAKE_INSTALL_${dir}})
     set(CMAKE_INSTALL_FULL_${dir} "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_${dir}}")
   else()
@@ -182,3 +185,4 @@ foreach(dir BINDIR
   endif()
 endforeach()
 
+unset(_LIBDIR_DEFAULT)

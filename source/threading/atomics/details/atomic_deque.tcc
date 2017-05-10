@@ -20,9 +20,9 @@
 
 #ifdef CXX11
     #include <memory>
-#elif defined(ENABLE_BOOST)
+#elif defined(USE_BOOST)
     #include <boost/utility.hpp>
-#else
+#elif defined(CXX0X)
     #include <memory>
     #include <tr1/memory>
 #endif
@@ -398,7 +398,6 @@ atomic_deque<_Tp, _Alloc>::_insert_aux(iterator __pos, const basic_type& __x)
 
 //============================================================================//
 
-
 namespace atomics
 {
 namespace details
@@ -407,10 +406,8 @@ namespace details
   {
 #ifdef CXX11
   using std::addressof;
-#elif defined(ENABLE_BOOST)
+#elif defined(USE_BOOST)
   using boost::addressof;
-#else
-  using std::tr1::addressof;
 #endif
     /*
     static const bool true_type = true;
@@ -464,7 +461,7 @@ namespace details
   template <typename _Alloc, typename _Tp>
   static void destroy( _Alloc& _a, _Tp* _ptr)
   {
-#ifdef CXX0X
+#ifdef CXX11
     typedef std::allocator_traits<_Alloc> __traits;
       __traits::destroy(_a, _ptr);
 #else
@@ -480,7 +477,11 @@ namespace details
     __destroy(_ForwardIterator __first, _ForwardIterator __last)
     {
       for (; __first != __last; ++__first)
-        _destroy(thisnp::addressof(*__first));
+#if defined(CXX11) || defined(USE_BOOST)
+          _destroy(thisnp::addressof(*__first));
+#else
+          _destroy(&(*__first));
+#endif
     }
     };
   //------------------------------------------------------------------------//
@@ -516,7 +517,11 @@ namespace details
          _Allocator& __alloc)
   {
       for (; __first != __last; ++__first)
-        destroy(__alloc, thisnp::addressof(*__first));
+#if defined(CXX11) || defined(USE_BOOST)
+          destroy(__alloc, thisnp::addressof(*__first));
+#else
+          destroy(__alloc, &(*__first));
+#endif
   }
 
   //------------------------------------------------------------------------//

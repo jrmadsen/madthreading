@@ -13,12 +13,23 @@
 #ifndef atomic_array_hh_
 #define atomic_array_hh_
 
+#ifdef SWIG
+#   ifdef USE_BOOST_SERIALIZATION
+#       undef USE_BOOST_SERIALIZATION
+#   endif
+#endif
+
 //----------------------------------------------------------------------------//
 #ifdef SWIG
 %module atomic_array
 %{
+    #define SWIG_FILE_WITH_INIT
+    #include "atomic.hh"
     #include "atomic_array.hh"
 %}
+
+%import "atomic.hh"
+%include "atomic_array.hh"
 #endif
 //----------------------------------------------------------------------------//
 
@@ -152,11 +163,13 @@ public:
     }
     //------------------------------------------------------------------------//
 
-public:
-#ifdef USE_BOOST
+#if defined(USE_BOOST_SERIALIZATION)
+private:
     //------------------------------------------------------------------------//
-    template<class Archive>
-    void save(Archive & ar, const unsigned int version) const
+    friend class boost::serialization::access;
+    //------------------------------------------------------------------------//
+    template <typename Archive>
+    void save(Archive& ar, const unsigned int /*version*/) const
     {
         for(iterator itr = begin(); itr != end(); ++itr)
         {
@@ -165,8 +178,8 @@ public:
         }
     }
     //------------------------------------------------------------------------//
-    template<class Archive>
-    void load(Archive & ar, const unsigned int version)
+    template <typename Archive>
+    void load(Archive& ar, const unsigned int /*version*/)
     {
         for(size_type i = 0; i < size(); ++i)
         {
@@ -176,8 +189,8 @@ public:
         }
     }
     //------------------------------------------------------------------------//
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int file_version)
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int file_version)
     {
         boost::serialization::split_member(ar, *this, file_version);
     }

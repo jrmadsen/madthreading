@@ -12,16 +12,28 @@
 #ifndef atomic_map_hh_
 #define atomic_map_hh_
 
+#ifdef SWIG
+#   ifdef USE_BOOST_SERIALIZATION
+#       undef USE_BOOST_SERIALIZATION
+#   endif
+#endif
+
 //----------------------------------------------------------------------------//
 #ifdef SWIG
 %module atomic_map
 %{
+    #define SWIG_FILE_WITH_INIT
+    #include "atomic.hh"
     #include "atomic_map.hh"
 %}
+
+%import "atomic.hh"
+%include "atomic_map.hh"
 #endif
 //----------------------------------------------------------------------------//
 
 #include <map>
+#include "atomic.hh"
 
 #ifdef _HAS_ATOMICS_
 
@@ -48,8 +60,8 @@ public:
 
     typedef atomic_map<_Key, _Tp, _Compare> this_type;
 
-    typedef CoreMutex  	Mutex_t;
-    typedef AutoLock 	Lock_t;
+    typedef mad::mutex  	Mutex_t;
+    typedef AutoLock        Lock_t;
 
 public:
     typedef typename Base_t::iterator               iterator;
@@ -60,11 +72,11 @@ public:
 public:
   // Constructor and Destructors
     atomic_map()
-    : mutex(CORE_MUTEX_INITIALIZER)
-    { CORERECURSIVEMUTEXINIT(mutex); }
+    : mutex(Mutex_t(true))
+    { }
   // Virtual destructors are required by abstract classes
   // so add it by default, just in case
-    virtual ~atomic_map() { COREMUTEXDESTROY(mutex); }
+    virtual ~atomic_map() { }
 
 public:
     mapped_type& operator[](const key_type& _key)
@@ -236,9 +248,13 @@ private:
   // Private variables
 
 
-public:
-    template<class Archive>
-    void save(Archive & ar, const unsigned int version) const
+#if defined(USE_BOOST_SERIALIZATION)
+private:
+    //------------------------------------------------------------------------//
+    friend class boost::serialization::access;
+    //------------------------------------------------------------------------//
+    template <typename Archive>
+    void save(Archive& ar, const unsigned int /*version*/) const
     {
         ar << size();
         for(iterator itr = begin(); itr != end(); ++itr)
@@ -249,9 +265,9 @@ public:
             ar << _val;
         }
     }
-
-    template<class Archive>
-    void load(Archive & ar, const unsigned int version)
+    //------------------------------------------------------------------------//
+    template <typename Archive>
+    void load(Archive& ar, const unsigned int /*version*/)
     {
         size_type _this_size;
         ar >> _this_size;
@@ -264,14 +280,14 @@ public:
             this->insert(Insert_t(_key, _val));
         }
     }
-
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int file_version)
+    //------------------------------------------------------------------------//
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int file_version)
     {
         boost::serialization::split_member(ar, *this, file_version);
     }
-
-
+    //------------------------------------------------------------------------//
+#endif
 };
 
 

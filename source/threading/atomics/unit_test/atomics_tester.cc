@@ -1,4 +1,6 @@
-#include <UnitTest++.h>
+
+#include <UnitTest++/UnitTest++.h>
+
 #include <iomanip>
 #include <iostream>
 
@@ -25,9 +27,9 @@ SUITE( Atomic_Tests )
     using mad::atomic_array;
     using mad::atomic_deque;
     using mad::atomic_map;
-    using mad::CoreMutex;
     using mad::AutoLock;
     using mad::CoreThread;
+    typedef mad::mutex  Mutex_t;
     //------------------------------------------------------------------------//
 
     //========================================================================//
@@ -49,12 +51,19 @@ SUITE( Atomic_Tests )
         uint32 wait_until;
         atomic<uint32> counter;
 
-        Basic() : value(value_type(0.)), wait_until(0), counter(0) { }
+        Basic()
+        : value(value_type(0.)), wait_until(0), counter(0)
+        { }
+
         Basic(uint32 _wait)
         : value(value_type(0.)), wait_until(_wait), counter(0)
         { }
 
+#ifdef DEBUG
         bool wait() const { return (counter < wait_until) ? true : false; }
+#else
+        bool wait() const { return false; }
+#endif
     };
     //========================================================================//
     void* increment_int_with_lock(void* threadarg)
@@ -66,9 +75,10 @@ SUITE( Atomic_Tests )
         mydata->counter++;
         while(mydata->wait()) { }
 
-        static CoreMutex mtx = CORE_MUTEX_INITIALIZER;
+        static Mutex_t mtx;
         AutoLock lock(&mtx);
         mydata->value += 1;
+        return (void*) mydata;
     }
     //========================================================================//
     void* increment_atomic_int(void* threadarg)
@@ -81,6 +91,7 @@ SUITE( Atomic_Tests )
         while(mydata->wait()) { }
 
         mydata->value += 1;
+        return (void*) mydata;
     }
     //========================================================================//
     void* pre_increment_atomic_int(void* threadarg)
@@ -93,6 +104,7 @@ SUITE( Atomic_Tests )
         while(mydata->wait()) { }
 
         ++mydata->value;
+        return (void*) mydata;
     }
     //========================================================================//
     void* post_increment_atomic_int(void* threadarg)
@@ -105,6 +117,7 @@ SUITE( Atomic_Tests )
         while(mydata->wait()) { }
 
         mydata->value++;
+        return (void*) mydata;
     }
     //========================================================================//
     void* increment_int_without_lock(void* threadarg)
@@ -117,6 +130,7 @@ SUITE( Atomic_Tests )
         while(mydata->wait()) { }
 
         mydata->value += 1;
+        return (void*) mydata;
     }
     //========================================================================//
     void* increment_float_with_lock(void* threadarg)
@@ -128,9 +142,10 @@ SUITE( Atomic_Tests )
         mydata->counter++;
         while(mydata->wait()) { }
 
-        static CoreMutex mtx = CORE_MUTEX_INITIALIZER;
+        static Mutex_t mtx;
         AutoLock lock(&mtx);
         mydata->value += 1.0;
+        return (void*) mydata;
     }
     //========================================================================//
     void* increment_atomic_float(void* threadarg)
@@ -143,6 +158,7 @@ SUITE( Atomic_Tests )
         while(mydata->wait()) { }
 
         mydata->value += 1.0;
+        return (void*) mydata;
     }
     //========================================================================//
     void* increment_float_without_lock(void* threadarg)
@@ -155,6 +171,7 @@ SUITE( Atomic_Tests )
         while(mydata->wait()) { }
 
         mydata->value += 1.0;
+        return (void*) mydata;
     }
     //========================================================================//
 
@@ -385,7 +402,7 @@ SUITE( Atomic_Tests )
     //========================================================================//
 
 #define ATOMIC_ARRAY_SIZE 4
-#define NTHREADS_ARRAYS 12
+#define NTHREADS_ARRAYS 16
     //========================================================================//
     // Below class is used to create situation where all threads < N-1 (N = num
     // of threads) wait until the last thread is spawned before proceeding to
@@ -398,7 +415,11 @@ SUITE( Atomic_Tests )
     public:
         SetupContainer() : wait_until(0), counter(0) { }
         SetupContainer(const uint32& _wait) : wait_until(_wait), counter(0) { }
+#ifdef DEBUG
         bool wait() const { return (counter < wait_until) ? true : false; }
+#else
+        bool wait() const { return false; }
+#endif
         void SetWait(const uint32& val) { wait_until = val; }
         uint32 operator++() { return ++counter;  }
         uint32 operator++(int) { uint32 c = counter; counter++; return c; }
@@ -444,6 +465,7 @@ SUITE( Atomic_Tests )
         struct SetupIntDequeArgs* setup_deque_args
         = (SetupIntDequeArgs*)threadarg;
         setup_deque_args->setup(setup_deque_args->index);
+        return (void*) setup_deque_args;
     }
     //========================================================================//
     //========================================================================//
@@ -478,6 +500,7 @@ SUITE( Atomic_Tests )
     {
         struct SetupIntArrayArgs* setup_array_args = (SetupIntArrayArgs*)threadarg;
         setup_array_args->setup(setup_array_args->index);
+        return (void*) setup_array_args;
     }
     //========================================================================//
     class SetupIntMap : public SetupContainer
@@ -513,6 +536,7 @@ SUITE( Atomic_Tests )
         struct SetupIntMapArgs* setup_map_args
         = (SetupIntMapArgs*)threadarg;
         setup_map_args->setup(setup_map_args->index);
+        return (void*) setup_map_args;
     }
     //========================================================================//
     class SetupIntMutexedPOD : public SetupContainer
@@ -549,6 +573,7 @@ SUITE( Atomic_Tests )
         struct SetupIntMutexedPODArgs* setup_mpod_args
         = (SetupIntMutexedPODArgs*)threadarg;
         setup_mpod_args->setup(setup_mpod_args->index);
+        return (void*) setup_mpod_args;
     }
     //========================================================================//
 

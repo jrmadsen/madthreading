@@ -28,15 +28,15 @@ function(compile_definitions_config _target)
         foreach(_mode ${CMAKE_CONFIGURATION_TYPES})
             string(TOUPPER ${_mode} _mode_upper)
             set_property(TARGET ${_target}
-                         APPEND PROPERTY COMPILE_DEFINITIONS_${_mode_upper} DEVELOPER_${_mode_upper}
-                        )
+                         APPEND PROPERTY COMPILE_DEFINITIONS_${_mode_upper}
+                         DEVELOPER_${_mode_upper})
         endforeach()
     elseif(CMAKE_BUILD_TYPE)
         # - Single mode tools, only if set
         string(TOUPPER ${CMAKE_BUILD_TYPE} _mode_upper)
         set_property(TARGET ${_target}
-                     APPEND PROPERTY COMPILE_DEFINITIONS_${_mode_upper} DEVELOPER_${_mode_upper}
-                    )
+                     APPEND PROPERTY COMPILE_DEFINITIONS_${_mode_upper}
+                     DEVELOPER_${_mode_upper})
     endif()
 endfunction()
 
@@ -57,7 +57,8 @@ macro(OBJECT_TARGET)
     # -static targets (We should strictly do this for the external
     # libraries as well if we want a pure static build).
     add_library(${OBJTARG_NAME} OBJECT ${OBJTARG_SOURCES})
-    #compile_definitions_config(${LIBTARG_NAME})
+    compile_definitions_config(${OBJTARG_NAME})
+    target_compile_features(${OBJTARG_NAME} PUBLIC ${${PROJECT_NAME}_TARGET_COMPILE_FEATURES})
 
     # from DEFINE_MODULE
     get_property(SOURCE_GROUPS GLOBAL PROPERTY SOURCE_GROUPS)
@@ -66,9 +67,7 @@ macro(OBJECT_TARGET)
         get_property(SOURCE_FOLDER GLOBAL PROPERTY ${_src_grp}_SOURCE_FOLDER)
         get_property(HEADER_FILES GLOBAL PROPERTY ${_src_grp}_HEADER_FILES)
         get_property(SOURCE_FILES GLOBAL PROPERTY ${_src_grp}_SOURCE_FILES)
-        #message(STATUS "${_src_grp} has headers in ${HEADER_FOLDER} (${HEADER_FILES}) ")
         source_group("${HEADER_FOLDER}" FILES ${HEADER_FILES})
-        #message(STATUS "${_src_grp} has headers in ${SOURCE_FOLDER} (${SOURCE_FILES}) ")
         source_group("${SOURCE_FOLDER}" FILES ${SOURCE_FILES})
     endforeach()
     # But we can rename the output library to the correct name
@@ -102,7 +101,8 @@ macro(LIBRARY_TARGET)
     # -static targets (We should strictly do this for the external
     # libraries as well if we want a pure static build).
     add_library(${LIBTARG_NAME} STATIC ${LIBTARG_SOURCES})
-    #compile_definitions_config(${LIBTARG_NAME})
+    compile_definitions_config(${LIBTARG_NAME})
+    target_compile_features(${LIBTARG_NAME} PUBLIC ${${PROJECT_NAME}_TARGET_COMPILE_FEATURES})
     target_link_libraries(${LIBTARG_NAME}
                           ${LIBTARG_LINK_LIBRARIES})
 
@@ -150,10 +150,12 @@ macro(HEADER_TARGET)
     # libraries as well if we want a pure static build).
     if(BUILD_SHARED_LIBS)
         add_library(${HEADTARG_NAME} SHARED ${HEADTARG_SOURCES})
+        target_compile_features(${HEADTARG_NAME} PUBLIC ${${PROJECT_NAME}_TARGET_COMPILE_FEATURES})
     endif()
 
     if(BUILD_STATIC_LIBS)
         add_library(${HEADTARG_NAME}-static STATIC ${HEADTARG_SOURCES})
+        target_compile_features(${HEADTARG_NAME}-static PUBLIC ${${PROJECT_NAME}_TARGET_COMPILE_FEATURES})
     endif()
 
     # from DEFINE_MODULE
@@ -236,7 +238,6 @@ MACRO(GLOBAL_OBJECT_TARGET)
     foreach(_header ${${GLOBOBJ_NAME}_GLOBAL_HEADERS})
         file(RELATIVE_PATH _fpath "${PROJECT_SOURCE_DIR}/source" "${_header}")
         get_filename_component(_fpath ${_fpath} PATH)
-        #message(STATUS "Setting up install for ${_header} into ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/${_fpath}...")
         install(FILES ${_header}
                 DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/${_fpath}
                 COMPONENT Development)

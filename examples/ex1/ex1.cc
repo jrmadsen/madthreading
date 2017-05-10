@@ -44,7 +44,7 @@ void _run_itr(_Tp itr)
 
 void full_func(int a1, double a2, long a3, short a4, float a5, unsigned a6)
 {
-    static mad::CoreMutex mutex = CORE_MUTEX_INITIALIZER;
+    static mad::mutex mutex;
     mad::AutoLock l(&mutex);
     tmcout << "Hello World! - " << a1 << ", " << a2 << ", "
            << a3 << ", " << a4 << ", " << a5 << ", " << a6 << std::endl;
@@ -63,8 +63,10 @@ int main(int argc, char** argv)
 
     tmcout << "Number of threads: " << tm->size() << std::endl;
 
-    static mad::CoreMutex mutex = CORE_MUTEX_INITIALIZER;
-
+    static mad::mutex mutex;
+    // NOTE: This also works:
+    // static mad::CoreMutex mutex = CORE_MUTEX_INITIALIZER;
+        
     //------------------------------------------------------------------------//
 
     auto _run1 = [] (int n)

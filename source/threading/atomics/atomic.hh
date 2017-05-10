@@ -13,19 +13,41 @@
 #ifndef atomic_hh_
 #define atomic_hh_
 
+#ifdef SWIG
+#   ifdef USE_BOOST_SERIALIZATION
+#       undef USE_BOOST_SERIALIZATION
+#   endif
+#endif
+
 //----------------------------------------------------------------------------//
 #ifdef SWIG
 %module atomic
 %{
+    #define SWIG_FILE_WITH_INIT
+    #include "atomic_typedefs.hh"
+    #if defined(_MUTEXED_POD_ATOMICS_)
+    #   include "mutex.hh"
+    #endif
     #include "atomic.hh"
 %}
+
+#include "atomic_typedefs.hh"
+
+%include "atomic.hh"
 #endif
 //----------------------------------------------------------------------------//
 
 #include "atomic_typedefs.hh"
 
-#ifdef USE_BOOST
-#  include <boost/serialization/split_member.hpp>
+#if defined(_MUTEXED_POD_ATOMICS_)
+#   include "mutex.hh"
+#endif
+
+#if defined(USE_BOOST_SERIALIZATION)
+#   include <boost/serialization/split_member.hpp>
+#   include <boost/serialization/version.hpp>
+#   include <boost/serialization/access.hpp>
+#   include <boost/serialization/serialization.hpp>
 #endif
 
 #if defined(_HAS_ATOMICS_)
@@ -58,9 +80,8 @@ public:
 
     this_type& operator=(const value_type& rhs)
     {
-#ifdef _MUTEXED_POD_ATOMICS_
-        static CoreMutex mutex;
-        CORERECURSIVEMUTEXINIT(mutex);
+#if defined(_MUTEXED_POD_ATOMICS_)
+        static mad::mutex mutex;
         AutoLock lock(&mutex);
         _value = rhs;
 #else
@@ -198,44 +219,51 @@ public:
 protected:
     Base_t _value;
 
-public:
-#ifdef USE_BOOST
-    template<class Archive>
-    void save(Archive & ar, const unsigned int version) const
+#if defined(USE_BOOST_SERIALIZATION)
+private:
+    //------------------------------------------------------------------------//
+    friend class boost::serialization::access;
+    //------------------------------------------------------------------------//
+    template <typename Archive>
+    void save(Archive& ar, const unsigned int /*version*/) const
     {
         value_type _val = this->load();
         ar << _val;
     }
-
-    template<class Archive>
-    void load(Archive & ar, const unsigned int version)
+    //------------------------------------------------------------------------//
+    template <typename Archive>
+    void load(Archive& ar, const unsigned int /*version*/)
     {
         value_type _val = 0;
         ar >> _val;
         store(_val);
     }
-
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int file_version)
+    //------------------------------------------------------------------------//
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int file_version)
     {
+        ar.template register_type<_Tp>();
         boost::serialization::split_member(ar, *this, file_version);
     }
-
-    //BOOST_SERIALIZATION_SPLIT_MEMBER()
+    //------------------------------------------------------------------------//
 #endif
 };
 
 #ifdef SWIG
-%template(atomicS) mad::atomic<short>;
-%template(atomicI) mad::atomic<int>;
-%template(atomicL) mad::atomic<long>;
-%template(atomicUS) mad::atomic<unsigned short>;
-%template(atomicUI) mad::atomic<unsigned int>;
-%template(atomicUL) mad::atomic<unsigned long>;
-%template(atomicF) mad::atomic<float>;
-%template(atomicD) mad::atomic<double>;
-%template(atomicLD) mad::atomic<long double>;
+
+%template(atomic_s)     mad::atomic<short>;
+%template(atomic_i)     mad::atomic<int>;
+%template(atomic_l)     mad::atomic<long>;
+%template(atomic_u)     mad::atomic<unsigned>;
+%template(atomic_us)    mad::atomic<unsigned short>;
+%template(atomic_ui)    mad::atomic<unsigned int>;
+%template(atomic_ul)    mad::atomic<unsigned long>;
+%template(atomic_f)     mad::atomic<float>;
+%template(atomic_d)     mad::atomic<double>;
+%template(atomic_ld)    mad::atomic<long double>;
+
 #endif
+
 namespace atomics
 {
     using namespace mem_order;

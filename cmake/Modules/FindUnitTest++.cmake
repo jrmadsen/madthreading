@@ -51,7 +51,6 @@
 
 find_path(UnitTest++_INCLUDE_DIR
           NAMES
-              UnitTest++.h
               UnitTest++/UnitTest++.h
               unittest++/UnitTest++.h
           HINTS
@@ -67,13 +66,7 @@ find_path(UnitTest++_INCLUDE_DIR
               ENV DYLD_LIBRARY_PATH
           PATH_SUFFIXES
               include
-              UnitTest++
-              unittest++
-              include/UnitTest++
-              include/unittest++
               ../include
-              ../include/UnitTest++
-              ../include/unittest++
           DOC
               "Path to the UnitTest++ headers")
 
@@ -113,13 +106,11 @@ find_package_handle_standard_args(UnitTest++ DEFAULT_MSG
 
 #------------------------------------------------------------------------------#
 
-set(UnitTest++_INCLUDE_DIRS ${UnitTest++_INCLUDE_DIR})
-set(UnitTest++_LIBRARIES ${UnitTest++_LIBRARY})
-
-if(UnitTest++_INCLUDE_DIRS AND UnitTest++_LIBRARIES)
-    set(UnitTest++_FOUND TRUE)
-else()
-    set(UnitTest++_FOUND FALSE)
+if(UnitTest++_FOUND)
+    get_filename_component(UnitTest++_INCLUDE_DIRS
+        ${UnitTest++_INCLUDE_DIR} REALPATH)
+    get_filename_component(UnitTest++_LIBRARIES
+        ${UnitTest++_LIBRARY} REALPATH)
 endif()
 
 #------------------------------------------------------------------------------#

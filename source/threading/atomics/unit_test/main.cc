@@ -1,4 +1,5 @@
-#include "unittest.hh"
+
+#include "UnitTest.hh"
 
 int
 main( int argc, char* argv[] ) {

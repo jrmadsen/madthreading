@@ -44,7 +44,7 @@
 #include "../threading/threading.hh"
 #include "../threading/AutoLock.hh"
 
-#ifdef ENABLE_TBB
+#ifdef USE_TBB
 #include <tbb/tbb.h>
 #include <tbb/scalable_allocator.h>
 #include <tbb/cache_aligned_allocator.h>
@@ -56,7 +56,7 @@ namespace mad
 namespace details
 {
 
-#ifdef ENABLE_TBB
+#ifdef USE_TBB
 static size_t cache_size = cache::cache_line_size();
 #endif
 
@@ -274,7 +274,7 @@ typename PoolAllocator_tl<T>::alloc_type* PoolAllocator_tl<T>::this_alloc = 0;
 
 //============================================================================//
 
-#ifdef ENABLE_TBB
+#ifdef USE_TBB
 
 #ifdef TBB_CACHE_ALIGNED_ALLOCATOR
 
@@ -460,7 +460,7 @@ class Allocator { };
 
 #endif // TBB_CACHE_ALIGNED_ALLOCATOR/TBB_SCALABLE_ALLOCATOR
 
-#else // ENABLE_TBB
+#else // USE_TBB
 
 #define Allocator_t(type) std::allocator<type>
 #define PairAllocator_t(key, type) std::allocator<std::pair<key, type> >
@@ -471,7 +471,7 @@ class Allocator { };
 
 //============================================================================//
 
-#endif // ENABLE_TBB
+#endif // USE_TBB
 
 namespace details
 {

@@ -27,6 +27,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <iomanip>
 
 #include "Tools.hh"
 
@@ -44,14 +45,14 @@ namespace memory
     // On failure, returns 0.0, 0.0
 
     static inline
-    void process_mem_usage(double& vm_usage, double& resident_set)
+    void process_mem_usage(std::size_t& vm_usage, std::size_t& resident_set)
     {
        using std::ios_base;
        using std::ifstream;
        using std::string;
 
-       vm_usage     = 0.0;
-       resident_set = 0.0;
+       vm_usage     = 0;
+       resident_set = 0;
 
        // 'file' stat seems to give the most reliable results
        //
@@ -79,13 +80,70 @@ namespace memory
 
        stat_stream.close();
 
-    // in case x86-64 is configured to use 2MB pages
-       long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024.0;
-       vm_usage     = vsize / 1024.0;
+       // in case x86-64 is configured to use 2MB pages
+       std::size_t page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024;
+       vm_usage     = vsize / 1024;
        resident_set = rss * page_size_kb;
     }
 
+    static inline
+    std::size_t getHeapPss()
+    {
+        using std::ios_base;
+        using std::ifstream;
+        using std::string;
+        using std::size_t;
 
+        size_t pss = 0;
+
+        ifstream stat_stream("/proc/self/smaps", ios_base::in);
+
+        if(!stat_stream)
+            return 0;
+
+        bool include = false;
+        bool got_heap = false;
+        while(!stat_stream.eof())
+        {
+            string field;
+            stat_stream >> field;
+
+            if(field.length() == 4 && field[3] == 'p')
+                include = false;
+
+            if(field == "[heap]")
+                include = true;
+
+            if(include && field == "Pss:")
+            {
+                string unit;
+                size_t amt;
+                stat_stream >> amt >> unit;
+
+                if(stat_stream.eof())
+                    break;
+
+                for(unsigned i = 0; i < unit.length(); ++i)
+                    unit[i] = tolower(unit[i]);
+
+                if(unit == "kb")
+                    pss += amt;
+                else if(unit == "mb")
+                    pss += amt * 1024;
+                else if(unit == "gb")
+                    pss += amt * 1024 * 1024;
+
+                got_heap = true;
+            }
+
+            if(got_heap && !include)
+                break;
+        }
+
+        stat_stream.close();
+
+        return pss;
+    }
 }
 
 /*
@@ -166,7 +224,7 @@ namespace memory
     #if defined(__APPLE__) && defined(__MACH__)
         return (size_t)rusage.ru_maxrss;
     #else
-        return (size_t)(rusage.ru_maxrss * 1024L);
+        return (size_t)(rusage.ru_maxrss);
     #endif
 
     #else
@@ -213,7 +271,7 @@ namespace memory
             return (size_t)0L;      /* Can't read? */
         }
         fclose( fp );
-        return (size_t)rss * (size_t)sysconf( _SC_PAGESIZE);
+        return (size_t)rss * (size_t)sysconf( _SC_PAGESIZE) / 1024;
 
     #else
         /* AIX, BSD, Solaris, and Unknown OS ------------------------ */
@@ -234,21 +292,24 @@ namespace memory
         typedef std::size_t     size_type;
 
         int evt_id;
-        double stat_vm;
-        double stat_rss;
+        size_type stat_vm;
+        size_type stat_rss;
         size_type psinfo_peak_rss;
         size_type psinfo_curr_rss;
+        size_type smaps_heap_pss;
 
         memory_usage()
         : evt_id(0),
-          stat_vm(0.0), stat_rss(0.0),
-          psinfo_peak_rss(0), psinfo_curr_rss(0)
+          stat_vm(0), stat_rss(0),
+          psinfo_peak_rss(0), psinfo_curr_rss(0),
+          smaps_heap_pss(0)
         { }
 
         memory_usage(int _id, size_type minus = 0)
         : evt_id(_id),
-          stat_vm(0.0), stat_rss(0.0),
-          psinfo_peak_rss(0), psinfo_curr_rss(0)
+          stat_vm(0), stat_rss(0),
+          psinfo_peak_rss(0), psinfo_curr_rss(0),
+          smaps_heap_pss(0)
         {
             record();
             if(minus > 0)
@@ -258,10 +319,16 @@ namespace memory
                     psinfo_curr_rss -= minus;
                 else
                     psinfo_curr_rss = 1;
+
                 if(minus < psinfo_peak_rss)
                     psinfo_peak_rss -= minus;
                 else
                     psinfo_peak_rss = 1;
+
+                if(minus < smaps_heap_pss)
+                    smaps_heap_pss -= minus;
+                else
+                    smaps_heap_pss = 1;
 
             }
         }
@@ -270,7 +337,8 @@ namespace memory
         : evt_id(rhs.evt_id),
           stat_vm(rhs.stat_vm), stat_rss(rhs.stat_rss),
           psinfo_peak_rss(rhs.psinfo_peak_rss),
-          psinfo_curr_rss(rhs.psinfo_curr_rss)
+          psinfo_curr_rss(rhs.psinfo_curr_rss),
+          smaps_heap_pss(rhs.smaps_heap_pss)
         { }
 
         memory_usage& operator=(const memory_usage& rhs)
@@ -281,6 +349,7 @@ namespace memory
                 stat_rss = rhs.stat_rss;
                 psinfo_peak_rss = rhs.psinfo_peak_rss;
                 psinfo_curr_rss = rhs.psinfo_curr_rss;
+                smaps_heap_pss = rhs.smaps_heap_pss;
             }
             return *this;
         }
@@ -307,14 +376,22 @@ namespace memory
             this_type r = lhs;
             r.stat_vm -= rhs.stat_vm;
             r.stat_rss -= rhs.stat_rss;
+
             if(rhs.psinfo_peak_rss < r.psinfo_peak_rss)
                 r.psinfo_peak_rss -= rhs.psinfo_peak_rss;
             else
                 r.psinfo_peak_rss = 1;
+
             if(rhs.psinfo_curr_rss < r.psinfo_curr_rss)
                 r.psinfo_curr_rss -= rhs.psinfo_curr_rss;
             else
                 r.psinfo_curr_rss = 1;
+
+            if(rhs.smaps_heap_pss < r.smaps_heap_pss)
+                r.smaps_heap_pss -= rhs.smaps_heap_pss;
+            else
+                r.smaps_heap_pss = 1;
+
             return r;
         }
 
@@ -324,7 +401,42 @@ namespace memory
             stat_rss -= rhs.stat_rss;
             psinfo_peak_rss -= rhs.psinfo_peak_rss;
             psinfo_curr_rss -= rhs.psinfo_curr_rss;
+            smaps_heap_pss -= rhs.smaps_heap_pss;
             return *this;
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const memory_usage& m)
+        {
+            if(m.psinfo_curr_rss == 0)
+                const_cast<memory_usage&>(m).record();
+
+            using std::setw;
+
+            unsigned _w = 20;
+            unsigned prec = os.precision();
+            os.precision(2);
+
+            os << "Memory usage: " << std::endl;
+
+            os << "\t" << setw(_w) << "Virtual memory: " << std::fixed
+               << setw(_w) << (m.stat_vm/(1024.0*1024.0)) << " GB" << std::endl;
+
+            os << "\t" << setw(_w) << "Resident set: "
+               << setw(_w) << (m.stat_rss/1024.0) << " MB" << std::endl;
+
+            os << "\t" << setw(_w) << "Peak RSS: "
+               << setw(_w) << (m.psinfo_peak_rss/1024.0) << " MB" << std::endl;
+
+            os << "\t" << setw(_w) << "Current RSS: "
+               << setw(_w) << (m.psinfo_curr_rss/1024.0) << " MB" << std::endl;
+
+            os << "\t" << setw(_w) << "Heap allocation: "
+               << setw(_w) << (m.smaps_heap_pss/1024.0) << " MB" << std::endl;
+
+            os.unsetf(std::ios_base::fixed);
+            os.precision(prec);
+            return os;
+
         }
     };
     //========================================================================//
@@ -332,11 +444,11 @@ namespace memory
     inline
     void memory_usage::record()
     {
+        // everything is kB
         memory::process_mem_usage(stat_vm, stat_rss);
-        stat_vm *= 1024.0; // in KB, put in bytes
-        stat_rss *= 1024.0; // in KB, put in bytes
         psinfo_peak_rss = memory::getPeakRSS();
         psinfo_curr_rss = memory::getCurrentRSS();
+        smaps_heap_pss = memory::getHeapPss();
     }
 
     //============================================================================//

@@ -38,7 +38,7 @@
         using std::function;
         using std::bind;
     }
-#elif defined(ENABLE_BOOST)
+#elif defined(USE_BOOST)
     #include <boost/function.hpp>
     #include <boost/bind.hpp>
     namespace mad
@@ -52,7 +52,7 @@ namespace mad
 {
 //----------------------------------------------------------------------------//
 
-#if defined(CXX11) || defined(ENABLE_BOOST)
+#if defined(CXX11) || defined(USE_BOOST)
     #define FUNCTION_TYPEDEF_0(alias, ret) \
         typedef function<ret()> alias
     #define FUNCTION_TYPEDEF_1(alias, ret, arg) \

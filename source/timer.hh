@@ -17,8 +17,11 @@
 #ifdef SWIG
 %module timer
 %{
+    #define SWIG_FILE_WITH_INIT
     #include "timer.hh"
 %}
+
+%include "timer.hh"
 #endif
 //----------------------------------------------------------------------------//
 
@@ -58,6 +61,7 @@ protected:
     typedef std::vector<clockpos_t>             vpos_t;
 
 protected:
+#ifndef SWIG
     struct clock_position_sorter
     {
         bool operator()(clockpos_t lhs, clockpos_t rhs)
@@ -65,6 +69,7 @@ protected:
             return lhs.first < rhs.first;
         }
     };
+#endif
 
 public:
     base_timer(short = 6, std::string
@@ -98,6 +103,7 @@ protected:
     vpos_t m_format_positions;
 
 protected:
+#ifndef SWIG
     struct timing
     {
         clock_t m_start_real_time;
@@ -105,6 +111,7 @@ protected:
         tms m_start_times;
         tms m_end_times;
     };
+#endif
 
 protected:
     mutable bool m_valid_times;

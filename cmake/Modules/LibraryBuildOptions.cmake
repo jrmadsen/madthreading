@@ -32,18 +32,8 @@ endif()
 # - BUILD_CXXSTD
 # Choose C++ Standard to build against, if supported.
 # Mark as advanced because most users will not need it.
-if(CXXSTD_IS_AVAILABLE)
-  enum_option(BUILD_CXXSTD
-    DOC "C++ Standard to compile against"
-    VALUES ${CXXSTD_IS_AVAILABLE}
-    CASE_INSENSITIVE
-    )
-  #mark_as_advanced(BUILD_CXXSTD)
-  add_feature(BUILD_CXXSTD "Compiling against C++ Standard '${BUILD_CXXSTD}'")
-
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${${BUILD_CXXSTD}_FLAGS}")
-endif()
-
+Include(ConfigureCXXSTD)
+set(CMAKE_CXX_FLAGS "-std=${BUILD_CXXSTD} ${CMAKE_CXX_FLAGS}")
 
 #-----------------------------------------------------------------------
 # Setup Shared and/or Static Library builds

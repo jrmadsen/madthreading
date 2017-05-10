@@ -39,12 +39,23 @@
 #ifndef atomic_deque_hh_
 #define atomic_deque_hh_
 
+#ifdef SWIG
+#   ifdef USE_BOOST_SERIALIZATION
+#       undef USE_BOOST_SERIALIZATION
+#   endif
+#endif
+
 //----------------------------------------------------------------------------//
 #ifdef SWIG
 %module atomic_deque
 %{
+    #define SWIG_FILE_WITH_INIT
+    #include "atomic.hh"
     #include "atomic_deque.hh"
 %}
+
+%import "atomic.hh"
+%include "atomic_deque.hh"
 #endif
 //----------------------------------------------------------------------------//
 
@@ -363,10 +374,13 @@ protected:
 
   //------------------------------------------------------------------------//
 
-public:
-#ifdef USE_BOOST
-    template<class Archive>
-    void save(Archive & ar, const unsigned int version) const
+#if defined(USE_BOOST_SERIALIZATION)
+private:
+    //------------------------------------------------------------------------//
+    friend class boost::serialization::access;
+    //------------------------------------------------------------------------//
+    template <typename Archive>
+    void save(Archive& ar, const unsigned int /*version*/) const
     {
         size_type _this_size = size();;
         ar << _this_size;
@@ -376,9 +390,9 @@ public:
             ar << val;
         }
     }
-
-    template<class Archive>
-    void load(Archive & ar, const unsigned int version)
+    //------------------------------------------------------------------------//
+    template <typename Archive>
+    void load(Archive& ar, const unsigned int /*version*/)
     {
         size_type _this_size;
         ar >> _this_size;
@@ -389,12 +403,13 @@ public:
             this->push_back(_val);
         }
     }
-
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int file_version)
+    //------------------------------------------------------------------------//
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int file_version)
     {
         boost::serialization::split_member(ar, *this, file_version);
     }
+    //------------------------------------------------------------------------//
 #endif
 };
 

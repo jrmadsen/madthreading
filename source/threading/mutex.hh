@@ -24,6 +24,7 @@
 #endif
 
 #include "threading.hh"
+#include "condition.hh"
 
 // utility mutex class. Cannot be used with AutoLock currently,
 // but nice in some situations since it doesn't have to initialized
@@ -38,6 +39,7 @@ class mutex
 {
 public:
     typedef mad::CoreMutex      base_mutex_type;
+    typedef mad::condition      condition_type;
 
 public:
     //------------------------------------------------------------------------//
@@ -45,18 +47,15 @@ public:
     : m_is_locked(false)
     {
         if(recursive)
-        {
-            m_mutex = CORE_MUTEX_INITIALIZER;
-            CORERECURSIVEMUTEXINIT(m_mutex);
-        } else
-        {
-            COREMUTEXINIT(m_mutex);
-        }
+            { CORERECURSIVEMUTEXINIT(m_mutex); }
+        else
+            { COREMUTEXINIT(m_mutex); }
     }
     //------------------------------------------------------------------------//
     virtual ~mutex()
     {
-        while(m_is_locked);
+        while(m_is_locked)
+            m_condition.wait(&m_mutex);
         unlock(); // Unlock mutex after shared resource is safe
         COREMUTEXDESTROY(m_mutex);
     }
@@ -64,7 +63,7 @@ public:
 
 public:
     //------------------------------------------------------------------------//
-    bool is_locked() const
+    bool is_locked() const volatile
     {
         return m_is_locked;
     }
@@ -73,12 +72,14 @@ public:
     {
         COREMUTEXLOCK(&m_mutex);
         m_is_locked = true;
+        m_condition.broadcast();
     }
     //------------------------------------------------------------------------//
     void unlock()
     {
         m_is_locked = false;
         COREMUTEXUNLOCK(&m_mutex);
+        m_condition.broadcast();
     }
     //------------------------------------------------------------------------//
 
@@ -90,6 +91,7 @@ public:
 private:
     base_mutex_type m_mutex;
     volatile bool m_is_locked;
+    condition_type m_condition;
 };
 
 //----------------------------------------------------------------------------//

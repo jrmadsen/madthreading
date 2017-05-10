@@ -1,4 +1,6 @@
 
+cmake_policy(SET CMP0011 NEW)
+
 ################################################################################
 #
 #  Include this template cmake file after specifying any include and library
@@ -7,6 +9,9 @@
 ################################################################################
 
 include(CMakeMacroParseArguments)
+
+# use full path to libraries
+cmake_policy(SET CMP0060 NEW)
 
 macro(ADD_UNIT_TEST)
     CMAKE_PARSE_ARGUMENTS(  Test    # prefix
@@ -56,6 +61,10 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${UnitTest++_INCLUDE_DIRS})
 
 add_executable( ${appName} ${${appName}_srcs} )
 
+set_target_properties( ${appName} PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY   ${CMAKE_CURRENT_BINARY_DIR}
+)
+
 ########################################
 #  Collect the suite names defined for these tests
 set( SuiteNames )
@@ -99,6 +108,7 @@ foreach( suiteName ${SuiteNames} )
       endif()
 
       #set_property( TEST ${CTestID} APPEND PROPERTY LABELS Serial ${SubProjectName} )
+      set_tests_properties(${CTestID} PROPERTIES TIMEOUT 4800.)
 
       # Specify to the job dispatch system that these are serial
       set_property( TEST ${CTestID} PROPERTY PROCESSORS 1 )

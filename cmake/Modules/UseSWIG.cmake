@@ -174,8 +174,6 @@ macro(SWIG_ADD_SOURCE_TO_MODULE name outfiles infile)
       "${swig_generated_file_fullname}.c")
   endif()
 
-  #message("Full path to source file: ${swig_source_file_fullname}")
-  #message("Full path to the output file: ${swig_generated_file_fullname}")
   get_directory_property(cmake_include_directories INCLUDE_DIRECTORIES)
   list(REMOVE_DUPLICATES cmake_include_directories)
   set(swig_include_dirs)
@@ -186,10 +184,7 @@ macro(SWIG_ADD_SOURCE_TO_MODULE name outfiles infile)
   set(swig_special_flags)
   # default is c, so add c++ flag if it is c++
   if(swig_source_file_cplusplus)
-  #  message(STATUS "Adding -c++ flag to [${name}] [${infile}] [${outfile}] ... ")
     set(swig_special_flags ${swig_special_flags} "-c++")
-  #else()
-  #    message(STATUS "Not adding the -c++ flag to [${name}] [${infile}] [${outfile}] ... ")
   endif()
   set(swig_extra_flags)
   if(SWIG_MODULE_${name}_EXTRA_FLAGS)
@@ -215,6 +210,7 @@ macro(SWIG_ADD_SOURCE_TO_MODULE name outfiles infile)
   set_source_files_properties("${swig_generated_file_fullname}" ${swig_extra_generated_files}
     PROPERTIES GENERATED 1)
   set(${outfiles} "${swig_generated_file_fullname}" ${swig_extra_generated_files})
+  unset(swig_include_dirs)
 endmacro()
 
 #
@@ -249,6 +245,7 @@ macro(SWIG_ADD_MODULE name language main_file)
     ${swig_generated_sources}
     ${swig_other_sources})
   set_target_properties(${SWIG_MODULE_${name}_REAL_NAME} PROPERTIES NO_SONAME ON)
+
   # If CMAKE_SWIG_OUTDIR was specified then pass it to -outdir
   if(CMAKE_SWIG_OUTDIR)
     set(swig_outdir ${CMAKE_SWIG_OUTDIR})

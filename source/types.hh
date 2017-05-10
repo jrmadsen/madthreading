@@ -30,7 +30,7 @@
     #include "threading/atomics/atomic.hh"
 #endif
 
-#ifdef ENABLE_TBB
+#ifdef USE_TBB
     #include <tbb/tbb_stddef.h>
 #endif
 
@@ -39,7 +39,7 @@
 namespace mad
 {
 
-#ifdef ENABLE_TBB
+#ifdef USE_TBB
     typedef tbb::split splitter;
 #else
     class splitter { };

@@ -14,17 +14,32 @@
 #define mutexed_pod_hh_
 
 #ifdef SWIG
+#   ifdef USE_BOOST_SERIALIZATION
+#       undef USE_BOOST_SERIALIZATION
+#   endif
+#endif
+
+#ifdef SWIG
 %module mutexed_pod
 %{
+    #define SWIG_FILE_WITH_INIT
+    #include "../threading.hh"
+    #include "../AutoLock.hh"
     #include "mutexed_pod.hh"
 %}
+
+%import "AutoLock.hh"
+%include "mutexed_pod.hh"
 #endif
 
 #include "../threading.hh"
 #include "../AutoLock.hh"
 
-#ifdef USE_BOOST
+#if defined(USE_BOOST_SERIALIZATION)
 #   include <boost/serialization/split_member.hpp>
+#   include <boost/serialization/version.hpp>
+#   include <boost/serialization/serialization.hpp>
+#   include <boost/serialization/access.hpp>
 #endif
 
 //----------------------------------------------------------------------------//
@@ -55,23 +70,24 @@ public:
     : _value(rhs._value)
     { CORERECURSIVEMUTEXINIT(m_mutex); }
 
+#ifndef SWIG
     mutexed_pod& operator=(const mutexed_pod& rhs)
     {
         if(this != &rhs)
         {
-            m_mutex = CORE_MUTEX_INITIALIZER;
             CORERECURSIVEMUTEXINIT(m_mutex);
             _value = rhs._value;
         }
         return *this;
     }
+
     mutexed_pod& operator=(const _Tp& rhs)
     {
-        m_mutex = CORE_MUTEX_INITIALIZER;
         CORERECURSIVEMUTEXINIT(m_mutex);
         _value = rhs;
         return *this;
     }
+#endif
 
     ~mutexed_pod()
     {
@@ -89,13 +105,17 @@ public:
 
     void store(_Tp _desired, const int& = 0)
     { Lock_t lock(&m_mutex); _value = _desired; }
-    void store(_Tp _desired, const int& = 0) volatile
-    { Lock_t lock(&m_mutex); _value = _desired; }
 
     _Tp load(const int& = 0) const
     { return _value; }
+
+#ifndef SWIG
+    void store(_Tp _desired, const int& = 0) volatile
+    { Lock_t lock(&m_mutex); _value = _desired; }
+
     _Tp load(const int& = 0) const volatile
     { return _value; }
+#endif
 
     operator _Tp() const { return this->load(); }
     operator _Tp() const volatile { return this->load(); }
@@ -115,6 +135,8 @@ public:
         }
         return success;
     }
+
+#ifndef SWIG
     bool compare_exchange_weak(_Tp& _expected, _Tp _desired,
                                const int& = 0,
                                const int& = 0)
@@ -131,6 +153,7 @@ public:
         }
         return success;
     }
+#endif
 
     bool compare_exchange_weak(_Tp& _expected, _Tp _desired,
                                const int& = 0)
@@ -141,6 +164,7 @@ public:
         return false;
     }
 
+#ifndef SWIG
     bool compare_exchange_weak(_Tp& _expected, _Tp _desired,
                                const int& = 0)
     volatile
@@ -150,6 +174,7 @@ public:
         { _value = _desired; return true; }
         return false;
     }
+#endif
 
     bool compare_exchange_strong(_Tp& _expected, _Tp _desired,
                                  const int& = 0,
@@ -161,6 +186,7 @@ public:
         return false;
     }
 
+#ifndef SWIG
     bool compare_exchange_strong(_Tp& _expected, _Tp _desired,
                                  const int& = 0,
                                  const int& = 0)
@@ -171,6 +197,7 @@ public:
         { _value = _desired; return true; }
         return false;
     }
+#endif
 
     bool compare_exchange_strong(_Tp& _expected, _Tp _desired,
                                  const int& = 0)
@@ -181,6 +208,7 @@ public:
         return false;
     }
 
+#ifndef SWIG
     bool compare_exchange_strong(_Tp& _expected, _Tp _desired,
                                  const int& = 0)
     volatile
@@ -190,6 +218,7 @@ public:
         { _value = _desired; return true; }
         return false;
     }
+#endif
 
     // value_type operators
     mutexed_pod& operator+=(const _Tp& rhs)
@@ -220,7 +249,7 @@ public:
     mutexed_pod& operator/=(const mutexed_pod& rhs) volatile
     { Lock_t lock(&m_mutex); _value /= rhs._value; return *this; }
 
-
+#ifndef SWIG
     // increment operators
     mutexed_pod& operator++() { { Lock_t lock(&m_mutex); ++_value; } return *this; }
     mutexed_pod operator++(int)
@@ -229,6 +258,7 @@ public:
     mutexed_pod& operator--() { Lock_t lock(&m_mutex); --_value; return *this; }
     mutexed_pod operator--(int)
     { Lock_t lock(&m_mutex); mutexed_pod _tmp(_value); --_value; return _tmp; }
+#endif
 
 public:
     mutable Mutex_t m_mutex;
@@ -236,30 +266,32 @@ public:
 protected:
     Base_t _value;
 
-public:
-#ifdef USE_BOOST
-    template<class Archive>
-    void save(Archive & ar, const unsigned int version) const
+#if defined(USE_BOOST_SERIALIZATION)
+private:
+    //------------------------------------------------------------------------//
+    friend class boost::serialization::access;
+    //------------------------------------------------------------------------//
+    template <typename Archive>
+    void save(Archive& ar, const unsigned int /*version*/) const
     {
         value_type _val = this->load();
         ar << _val;
     }
-
-    template<class Archive>
-    void load(Archive & ar, const unsigned int version)
+    //------------------------------------------------------------------------//
+    template <typename Archive>
+    void load(Archive& ar, const unsigned int /*version*/)
     {
         value_type _val = 0;
         ar >> _val;
         store(_val);
     }
-
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int file_version)
+    //------------------------------------------------------------------------//
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int file_version)
     {
         boost::serialization::split_member(ar, *this, file_version);
     }
-
-    //BOOST_SERIALIZATION_SPLIT_MEMBER()
+    //------------------------------------------------------------------------//
 #endif
 };
 

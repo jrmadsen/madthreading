@@ -96,7 +96,6 @@ macro(DEFINE_PYTHON_SWIG_MODULE)
             OUTPUT_VARIABLE _gnucxx_version
             OUTPUT_STRIP_TRAILING_WHITESPACE)
         string(REPLACE "." ";" _gnucxx_version "${_gnucxx_version}")
-        #message(STATUS "GNU CXX version : ${_gnucxx_version}")
         list(GET _gnucxx_version 0 _gnucxx_version_major)
         list(GET _gnucxx_version 1 _gnucxx_version_minor)
         list(APPEND defs -D__GNUC__=${_gnucxx_version_major})

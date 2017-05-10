@@ -257,26 +257,144 @@ ENDMACRO(GENERATE_DISTCLEAN_TARGET)
 
 
 #-----------------------------------------------------------------------
+# Resolve symbolic links and remove duplicates in CMAKE_PREFIX_PATH
+#
+#-----------------------------------------------------------------------
+function(clean_prefix_path)
+    set(_prefix_path )
+    foreach(_path ${CMAKE_PREFIX_PATH})
+        get_filename_component(_path ${_path} REALPATH)
+        list(APPEND _prefix_path ${_path})
+    endforeach()
+
+    if(NOT "${_prefix_path}" STREQUAL "")
+        list(REMOVE_DUPLICATES _prefix_path)
+    endif()
+    set(CMAKE_PREFIX_PATH ${_prefix_path} CACHE PATH
+        "Prefix path for finding packages" FORCE)
+endfunction()
+
+
+#-----------------------------------------------------------------------
 # Add a defined ${PACKAGE_NAME}_ROOT variable defined via CMake or in
 # environment to the CMAKE_PREFIX_PATH
+#
+# This macro should NOT be called directly, instead call
+# ConfigureRootSearchPath (i.e. with "_" prefix)
 #-----------------------------------------------------------------------
+function(subConfigureRootSearchPath _package_name _search_other)
 
-macro(ConfigureRootSearchPath _package_name)
-
-    if(NOT "$ENV{${_package_name}_ROOT}" STREQUAL "")
-        set_ifnot(${_package_name}_ROOT $ENV{${_package_name}_ROOT})
+    # if ROOT not already defined and ENV variable defines it
+    if(NOT ${_package_name}_ROOT AND
+       NOT "$ENV{${_package_name}_ROOT}" STREQUAL "")
+        cache_ifnot(${_package_name}_ROOT $ENV{${_package_name}_ROOT}
+                    FILEPATH "ROOT search path for ${_package_name}")
     endif()
 
-    if(${_package_name}_ROOT)
-        if(EXISTS "${${_package_name}_ROOT}")
+    # if ROOT is still not defined, check upper case and capitalize version
+    # and return
+    if(NOT ${_package_name}_ROOT)
+        if(_search_other)
+            string(TOUPPER "${_package_name}" ALT_PACKAGE_NAME)
+            if("${ALT_PACKAGE_NAME}" STREQUAL "${_package_name}")
+                string(TOLOWER "${_package_name}" ALT_PACKAGE_NAME)
+                string(SUBSTRING "${ALT_PACKAGE_NAME}" 0 1 FIRST)
+                string(SUBSTRING "${ALT_PACKAGE_NAME}" 1 -1 REST)
+                string(TOUPPER "${FIRST}" FIRST)
+                string(CONCAT ALT_PACKAGE_NAME "${FIRST}" "${REST}")
+                subConfigureRootSearchPath(${ALT_PACKAGE_NAME} OFF)
+            else()
+                subConfigureRootSearchPath(${ALT_PACKAGE_NAME} OFF)
+            endif()
+        endif()
+        return()
+    endif()
+
+    # if ROOT is defined and has changed
+    if(${_package_name}_ROOT AND PREVIOUS_${_package_name}_ROOT AND
+       NOT "${PREVIOUS_${_package_name}_ROOT}" STREQUAL "${${_package_name}_ROOT}")
+        if(NOT "${PREVIOUS_${_package_name}_ROOT}" STREQUAL "${${_package_name}_ROOT}")
+            set(UNCACHE_PACKAGE_VARS ON)
+        endif()
+        # make sure it exists and is a directory
+        if(EXISTS "${${_package_name}_ROOT}" AND
+           IS_DIRECTORY "${${_package_name}_ROOT}")
             set(CMAKE_PREFIX_PATH ${${_package_name}_ROOT} ${CMAKE_PREFIX_PATH}
                 CACHE PATH "CMake prefix paths" FORCE)
+            # store previous root to see if it changed
+            set(PREVIOUS_${_package_name}_ROOT ${${_package_name}_ROOT}
+                CACHE FILEPATH "Previous root search path for ${_package_name}" FORCE)
+            clean_prefix_path()
         else()
-            message(WARNING "${_package_name}_ROOT specified an invalid PATH")
+            message(WARNING "${_package_name}_ROOT specified an invalid directory")
+            unset(${_package_name}_ROOT CACHE)
+        endif()
+        # root changed so we want to refind the package
+        if(UNCACHE_PACKAGE_VARS)
+          string(TOLOWER "${_package_name}" CAP_PACKAGE_NAME)
+          string(SUBSTRING "${CAP_PACKAGE_NAME}" 0 1 FIRST)
+          string(SUBSTRING "${CAP_PACKAGE_NAME}" 1 -1 REST)
+          string(TOUPPER "${FIRST}" FIRST)
+          string(CONCAT CAP_PACKAGE_NAME "${FIRST}" "${REST}")
+          string(TOUPPER "${_package_name}" UPP_PACKAGE_NAME)
+          string(TOLOWER "${_package_name}" LOW_PACKAGE_NAME)
+
+          get_cmake_property(CACHED_VARIABLES CACHE_VARIABLES)
+          foreach(_name ${_package_name} ${CAP_PACKAGE_NAME}
+                  ${UPP_PACKAGE_NAME} ${LOW_PACKAGE_NAME})
+              # skip maintain
+              if(NOT MAINTAIN_${_name}_CACHE)
+                  # loop over cached variables
+                  foreach(_var ${CACHED_VARIABLES})
+                      if("${_var}_" MATCHES "${_name}")
+                          if(NOT "${_var}" STREQUAL "${_name}_ROOT" AND
+                             NOT "${_var}" STREQUAL "PREVIOUS_${_name}_ROOT" AND
+                             NOT "${_var}" STREQUAL "MAINTAIN_${_name}_CACHE")
+                              unset(${_var} CACHE)
+                              list(REMOVE_ITEM CACHED_VARIABLES "${_var}")
+                          endif()
+                      endif()
+                  endforeach(_var ${CACHE_VARIABLES})
+              endif()
+          endforeach()
+        endif()
+    else()
+        if(EXISTS "${${_package_name}_ROOT}" AND
+           IS_DIRECTORY "${${_package_name}_ROOT}")
+            set(_add ON)
+            foreach(_path ${CMAKE_PREFIX_PATH})
+                if("${_path}" STREQUAL "${${_package_name}_ROOT}")
+                    set(_add OFF)
+                    break()
+                endif()
+            endforeach()
+            if(_add)
+                set(CMAKE_PREFIX_PATH ${${_package_name}_ROOT} ${CMAKE_PREFIX_PATH}
+                    CACHE PATH "CMake prefix paths" FORCE)
+                clean_prefix_path()
+            endif()
+            # store previous root to see if it changed
+            set(PREVIOUS_${_package_name}_ROOT ${${_package_name}_ROOT}
+                CACHE FILEPATH "Previous root search path for ${_package_name}" FORCE)
+        else()
+            message(WARNING "${_package_name}_ROOT specified an invalid directory")
             unset(${_package_name}_ROOT CACHE)
         endif()
     endif()
 
+endfunction()
+
+
+#-----------------------------------------------------------------------
+# Add a defined ${PACKAGE_NAME}_ROOT variable defined via CMake or in
+# environment to the CMAKE_PREFIX_PATH
+#
+# Different from _ConfigureRootSearchPath
+#-----------------------------------------------------------------------
+macro(ConfigureRootSearchPath)
+    foreach(_package_name ${ARGN})
+        subConfigureRootSearchPath(${_package_name} ON)
+    endforeach()
 endmacro()
 
 #-----------------------------------------------------------------------
@@ -303,7 +421,7 @@ function(ADD_FEATURE _var _description)
 endfunction()
 
 #------------------------------------------------------------------------------#
-# function add_subfeature(<NAME> <DOCSTRING>)
+# function add_subfeature(<ROOT_OPTION> <NAME> <DOCSTRING>)
 #          Add a subfeature, whose activation is specified by the
 #          existence of the variable <NAME>, to the list of enabled/disabled
 #          features, plus a docstring describing the feature

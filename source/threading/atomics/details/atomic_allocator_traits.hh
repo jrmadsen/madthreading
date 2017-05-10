@@ -20,8 +20,13 @@
 #ifdef SWIG
 %module atomic_allocator_traits
 %{
+    #define SWIG_FILE_WITH_INIT
+    #include "atomic.hh"
     #include "atomic_allocator_traits.hh"
 %}
+
+%import "atomic.hh"
+%include "atomic_allocator_traits.hh"
 #endif
 //----------------------------------------------------------------------------//
 

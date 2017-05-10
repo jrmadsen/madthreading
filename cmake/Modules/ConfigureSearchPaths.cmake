@@ -15,10 +15,6 @@ set(_BIN_PATH_ $ENV{PATH})
 set(_LIB_PATH_ $ENV{LD_LIBRARY_PATH} $ENV{DYLD_LIBRARY_PATH} $ENV{LIBRARY_PATH})
 set(_MAN_PATH_ $ENV{MANPATH})
 
-#message(STATUS "_BIN_PATH_ : ${_BIN_PATH_}")
-#message(STATUS "_LIB_PATH_ : ${_LIB_PATH_}")
-#message(STATUS "_MAN_PATH_ : ${_MAN_PATH_}")
-
 if(NOT "${_BIN_PATH_}" STREQUAL "")
     STRING(REPLACE ":" ";" _BIN_PATH_ ${_BIN_PATH_})
 endif()
@@ -30,10 +26,6 @@ endif()
 if(NOT "${_MAN_PATH_}" STREQUAL "")
     STRING(REPLACE ":" ";" _MAN_PATH_ ${_MAN_PATH_})
 endif()
-
-#message(STATUS "_BIN_PATH_ : ${_BIN_PATH_}")
-#message(STATUS "_LIB_PATH_ : ${_LIB_PATH_}")
-#message(STATUS "_MAN_PATH_ : ${_MAN_PATH_}")
 
 macro(ParsePath _VAR _LIST _RM)
     #set(_tmp ${${_LIST}})
@@ -97,3 +89,4 @@ unset(_LIBRARY_PATH)
 unset(_INCLUDE_PATH)
 
 mark_as_advanced(CMAKE_PREFIX_PATH CMAKE_INCLUDE_PATH CMAKE_LIBRARY_PATH)
+

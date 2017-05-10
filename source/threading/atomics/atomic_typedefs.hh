@@ -78,7 +78,7 @@
 
 //============================================================================//
 // This defines what kind of atomic library being used. Note: the definitions
-// ENABLE_BOOST_ATOMICS, FORCE_BOOST_ATOMICS, and/or FORCE_MUTEX_POD are
+// USE_BOOST_ATOMICS, FORCE_BOOST_ATOMICS, and/or FORCE_MUTEX_POD are
 // custom definitions that must be passed to the compiler. CXX11 is
 // automatically determined
 #if defined(_CXX11_) && !defined(FORCE_BOOST_ATOMICS) && !defined(FORCE_MUTEX_POD)
@@ -89,9 +89,9 @@
   #ifndef _CXX11_ATOMICS_
   #define _CXX11_ATOMICS_
   #endif
-#elif (defined(ENABLE_BOOST_ATOMICS) || defined(FORCE_BOOST_ATOMICS)) && \
+#elif (defined(USE_BOOST_ATOMICS) || defined(FORCE_BOOST_ATOMICS)) && \
       !defined(FORCE_MUTEX_POD)
-  #ifdef ENABLE_BOOST_ATOMICS
+  #ifdef USE_BOOST_ATOMICS
     #include <boost/version.hpp>
   #endif
   // Boost 1.53 first version with atomics
@@ -110,7 +110,7 @@
     #endif
 //    #warning ATOMICS NOT SUPPORTED! ONLY SUPPORT FOR C++11, Boost, TBB atomics
 //    #warning To enable, compile with C++11 or definitions:
-//    #warning     ENABLE_BOOST
+//    #warning     USE_BOOST
 //    #warning Order of atomic selection is C++11 > Boost
 #endif
 

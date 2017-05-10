@@ -23,6 +23,9 @@
 %{
     #include "atomic_allocator_policy.hh"
 %}
+
+%import "atomic.hh"
+%include "atomic_allocator_policy.hh"
 #endif
 //----------------------------------------------------------------------------//
 

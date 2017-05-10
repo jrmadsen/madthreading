@@ -135,9 +135,6 @@ macro(define_module)
     # include the directory
     include_directories(${${MODULE_NAME}_INCDIR})
 
-    #message(STATUS "MODULE : ${${DEFMOD}_NAME} (${MODULE_NAME}) has headers -- ${${MODULE_NAME}_HEADERS}")
-    #message(STATUS "MODULE : ${${DEFMOD}_NAME} (${MODULE_NAME}) has sources -- ${${MODULE_NAME}_SOURCES}")
-    #message(STATUS "MODULE : ${${DEFMOD}_NAME} (${MODULE_NAME}) has linked libraries -- ${DEFMOD_LINK_LIBRARIES}")
     set_source_files_properties(${${MODULE_NAME}_SOURCES} PROPERTIES LANGUAGE CXX )
 
     set(${MODULE_NAME}_LINK_LIBRARIES ${DEFMOD_LINK_LIBRARIES})
@@ -152,7 +149,6 @@ macro(define_module)
     if(NOT ${DEFMOD_NO_SOURCE_GROUP})
         set_property(GLOBAL APPEND PROPERTY SOURCE_GROUPS ${MODULE_NAME})
         STRING(REPLACE "." "\\\\" _mod_name ${MODULE_NAME})
-        #message(STATUS "MODULE_NAME_FOLDER: ${_mod_name}")
         set(_inc_folder "${_mod_name}\\Header Files")
         set(_imp_folder "${_mod_name}\\Source Files")
         set_property(GLOBAL PROPERTY ${MODULE_NAME}_HEADER_FOLDER ${_inc_folder})

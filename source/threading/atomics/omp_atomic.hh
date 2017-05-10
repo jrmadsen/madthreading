@@ -13,20 +13,35 @@
 #ifndef omp_atomic_hh_
 #define omp_atomic_hh_
 
+#ifdef SWIG
+#   ifdef USE_BOOST_SERIALIZATION
+#       undef USE_BOOST_SERIALIZATION
+#   endif
+#endif
+
 //----------------------------------------------------------------------------//
 #ifdef SWIG
 %module omp_atomic
 %{
+    #define SWIG_FILE_WITH_INIT
+    #include <omp.h>
     #include "omp_atomic.hh"
 %}
+
+%include "omp_atomic.hh"
 #endif
 //----------------------------------------------------------------------------//
 
-#ifdef ENABLE_OPENMP
+#ifdef USE_OPENMP
 
 #include <omp.h>
-#include <omp_atomic.hh>
-#include <boost/serialization/split_member.hpp>
+
+#if defined(USE_BOOST_SERIALIZATION)
+#   include <boost/serialization/split_member.hpp>
+#   include <boost/serialization/version.hpp>
+#   include <boost/serialization/serialization.hpp>
+#   include <boost/serialization/access.hpp>
+#endif
 
 //----------------------------------------------------------------------------//
 
@@ -281,30 +296,33 @@ public:
 protected:
     Base_t _value;
 
-public:
-    template<class Archive>
-    void save(Archive & ar, const unsigned int version) const
+#if defined(USE_BOOST_SERIALIZATION)
+private:
+    //------------------------------------------------------------------------//
+    friend class boost::serialization::access;
+    //------------------------------------------------------------------------//
+    template <typename Archive>
+    void save(Archive& ar, const unsigned int /*version*/) const
     {
         value_type _val = this->load();
         ar << _val;
     }
-
-    template<class Archive>
-    void load(Archive & ar, const unsigned int version)
+    //------------------------------------------------------------------------//
+    template <typename Archive>
+    void load(Archive& ar, const unsigned int /*version*/)
     {
         value_type _val = 0;
         ar >> _val;
         store(_val);
     }
-
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int file_version)
+    //------------------------------------------------------------------------//
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int file_version)
     {
         boost::serialization::split_member(ar, *this, file_version);
     }
-
-    //BOOST_SERIALIZATION_SPLIT_MEMBER()
-
+    //------------------------------------------------------------------------//
+#endif
 };
 
 //----------------------------------------------------------------------------//
@@ -313,6 +331,12 @@ public:
 
 //----------------------------------------------------------------------------//
 
-#endif // ENABLE_OPENMP
+#ifndef SWIG
+#   if defined(USE_BOOST_SERIALIZATION)
+BOOST_CLASS_VERSION(omp_atomic, 1)
+#   endif
+#endif
+
+#endif // USE_OPENMP
 
 #endif // omp_atomic_hh_

@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
 
+set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX
+   ${CMAKE_SOURCE_DIR}/cmake/Modules/MakeRules_cxx.cmake)
+
 project(madthreading CXX)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules
@@ -8,6 +11,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules
 include(MakeRules_cxx)
 include(GenericCMakeFunctions)
 SET_PROJECT_VERSION("0" "1" "0" "Multithreading API using pthreads")
+SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 include(VersionUpdate)
 include(InstallDirs)
@@ -15,12 +19,13 @@ include(Packages)
 include(GenericCMakeOptions)
 include(LibraryBuildOptions)
 
-ENABLE_OPENMP_SUPPORT(ON)
+OPTION_USE_OPENMP(ON)
 OPTION_RETURN_TYPE_COMPILER_WARNINGS(OFF)
 OPTION_EXTRA_COMPILER_WARNINGS(OFF)
 OPTION_GPROF(OFF)
 OPTION_ENABLE_PIC(ON)
 
+string(TOUPPER ${CMAKE_BUILD_TYPE} UPPER_BUILD_TYPE)
 add_feature(USE_OPENMP "Enable OpenMP multithreading")
 add_feature(EXTRA_COMPILER_WARNINGS "Turn on -Wextra for ${CMAKE_CXX_COMPILER_ID}")
 add_feature(RETURN_TYPE_COMPILER_WARNINGS "Turn on -Wreturn-type for ${CMAKE_CXX_COMPILER_ID}")
@@ -29,6 +34,7 @@ add_feature(EXTRA_LIBS "Extra link libraries")
 add_feature(CMAKE_INSTALL_PREFIX "Installation prefix")
 add_feature(CMAKE_CXX_FLAGS "CXX flags")
 add_feature(CMAKE_BUILD_TYPE "Build type")
+add_feature(CMAKE_CXX_FLAGS_${UPPER_BUILD_TYPE} "CXX flags for ${CMAKE_BUILD_TYPE}")
 
 foreach(_INCLUDE_DIR ${EXTERNAL_INCLUDE_DIRS})
     include_directories(SYSTEM ${_INCLUDE_DIR})

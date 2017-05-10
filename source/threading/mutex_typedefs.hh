@@ -52,7 +52,7 @@
 
 //============================================================================//
 // This defines what kind of mutex library being used. Note: the definitions
-// ENABLE_BOOST_MUTEX, ENABLE_TBB_MUTEX, and/or FORCE_TBB_MUTEX are custom
+// USE_BOOST_MUTEX, USE_TBB_MUTEX, and/or FORCE_TBB_MUTEX are custom
 // definitions that must be passed to the compiler. CXX11 is automatically
 // determined
 #if defined(_CXX11_) && !defined(FORCE_TBB_MUTEX)
@@ -63,8 +63,8 @@
   #ifndef _CXX11_MUTEX_
   #define _CXX11_MUTEX_
   #endif
-#elif defined(ENABLE_BOOST_MUTEX) && !defined(FORCE_TBB_MUTEX)
-  #if defined(ENABLE_BOOST) || defined(ENABLE_BOOST_MUTEX)
+#elif defined(USE_BOOST_MUTEX) && !defined(FORCE_TBB_MUTEX)
+  #if defined(USE_BOOST) || defined(USE_BOOST_MUTEX)
     #include <boost/version.hpp>
   #endif
   // Boost 1.31 first version with thread library
@@ -74,16 +74,16 @@
     #endif
     #else
         #warning Boost mutexes are only support in Boost v1.31 or higher
-        #warning Enable C++11 or define either ENABLE_TBB_MUTEX or
+        #warning Enable C++11 or define either USE_TBB_MUTEX or
         #warning FORCE_TBB_MUTEX
     #endif
-#elif defined(ENABLE_TBB_MUTEX) || defined(FORCE_TBB_MUTEX)
+#elif defined(USE_TBB_MUTEX) || defined(FORCE_TBB_MUTEX)
   #ifndef _TBB_MUTEX_
   #define _TBB_MUTEX_
   #endif
   #error Mutexes are not supported! Please enable C++11, on include the \
-    Boost thread library (and define ENABLE_BOOST_MUTEX) or include the \
-    TBB library (and define ENABLE_TBB_MUTEX)
+    Boost thread library (and define USE_BOOST_MUTEX) or include the \
+    TBB library (and define USE_TBB_MUTEX)
 #endif
 
 //----------------------------------------------------------------------------//

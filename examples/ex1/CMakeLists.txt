@@ -9,6 +9,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 include_directories(${Madthreading_INCLUDE_DIRS})
 
-add_executable(ex1 ex1.cc)
+add_executable(ex1 ex1.cc ${PROJECT_SOURCE_DIR}/../Common.hh)
 target_link_libraries(ex1 madthreading-SHARED)
- 
+

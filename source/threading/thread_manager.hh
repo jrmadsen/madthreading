@@ -32,8 +32,6 @@
     #include "task_tree.hh"
     #include "../allocator/allocator.hh"
     #include "thread_manager.hh"
-    #define tmid  mad::thread_manager::sid(CORETHREADSELFINT())
-    #define _tid_ mad::thread_manager::id (CORETHREADSELFINT())
 %}
 
 %import "thread_pool.hh"
@@ -62,11 +60,12 @@ MACRO(_tid_)
 #include "task_tree.hh"
 #include "../allocator/allocator.hh"
 
-// task.hh defines mad::function and mad::bind if CXX11 or ENABLE_BOOST
+// task.hh defines mad::function and mad::bind if CXX11 or USE_BOOST
 
 #include <algorithm>
 #include <numeric>
 #include <iomanip>
+#include <cmath>
 
 namespace mad
 {
@@ -154,19 +153,19 @@ public:
 
 public:
     // Constructor and Destructors
-    thread_manager() : m_data(new data_type)
+    thread_manager()
+    : m_data(new data_type)
     {
         check_instance();
         fgInstance = this;
-        //m_data->tp()->use_affinity(true);
     }
 
-    thread_manager(size_type _n)
-        : m_data(new data_type(_n))
+    thread_manager(size_type _n, bool _use_affinity = false)
+    : m_data(new data_type(_n))
     {
         check_instance();
         fgInstance = this;
-        //m_data->tp()->use_affinity(true);
+        this->use_affinity(_use_affinity);
     }
 
     // Virtual destructors are required by abstract classes
@@ -207,6 +206,22 @@ public:
         std::stringstream ss;
         ss.fill('0');
         ss << "[" << std::setw(4) << _id << "] ";
+        return ss.str();
+    }
+
+    /// function for returning the thread id in string format
+    template <typename _Tp>
+    static std::string id_string(_Tp thread_self)
+    {
+        long _id = thread_manager::id(thread_self);
+        if(_id < 0)
+            return "0";
+        thread_manager* _tm = thread_manager::Instance();
+        short _w = 4;
+        _w = std::min(_w, (short) std::ceil(std::log10(_tm->size())));
+        std::stringstream ss;
+        ss.fill('0');
+        ss << std::setw(_w) << _id;
         return ss.str();
     }
 
@@ -536,7 +551,6 @@ public:
             if(i+1 == _n)
                 _l = _e;
 
-            //std::cout << "range : [" << _f << ", " << _l << "]" << std::endl;
             tree_node = new task_tree_node_type(_operator,
                                                 new task_type(function, _f, _l),
                                                 identity, tree->root());
@@ -716,22 +730,28 @@ protected:
 
 } // namespace mad
 
-#define tmid  mad::thread_manager::sid(CORETHREADSELFINT())
-#define _tid_ mad::thread_manager::id (CORETHREADSELFINT())
+#define tmid    mad::thread_manager::sid      (CORETHREADSELFINT())
+#define _tid_   mad::thread_manager::id       (CORETHREADSELFINT())
+#define tmidstr mad::thread_manager::id_string(CORETHREADSELFINT())
 
 #include <iostream>
 
 #ifdef ENABLE_THREADING
-#   define tmcout std::cout << tmid
-#   define tmcerr std::cerr << tmid
+#   define tmcout std::cout  << tmid
+#   define tmcerr std::cerr  << tmid
+#   define tmwout std::wcout << tmid
+#   define tmwerr std::wcerr << tmid
 #else
 #   define tmcout std::cout
 #   define tmcerr std::cerr
+#   define tmwout std::wcout
+#   define tmwerr std::wcerr
 #endif
 
 #ifdef SWIG
-%template(id)  mad::thread_manager::id<unsigned long>;
-%template(sid) mad::thread_manager::sid<unsigned long>;
+%template(id)           mad::thread_manager::id<unsigned long>;
+%template(sid)          mad::thread_manager::sid<unsigned long>;
+%template(id_string)    mad::thread_manager::id_string<unsigned long>;
 #endif
 //----------------------------------------------------------------------------//
 

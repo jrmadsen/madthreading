@@ -2,7 +2,7 @@
 //
 //
 
-#ifdef ENABLE_OMP
+#ifdef USE_OPENMP
     #include <omp.h>
     #define SIMD omp simd
 #else
@@ -14,7 +14,6 @@
 
 #include <madthreading/types.hh>
 #include <madthreading/timer.hh>
-#include <madthreading/threading/mutex.hh>
 #include <madthreading/threading/thread_manager.hh>
 
 using namespace mad;

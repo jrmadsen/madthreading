@@ -2,7 +2,7 @@
 //
 //
 
-#ifdef ENABLE_OMP
+#ifdef USE_OPENMP
     #include <omp.h>
     #define SIMD omp simd
 #else

@@ -7,9 +7,9 @@ include_directories(${PROJECT_SOURCE_DIR}/source/threading/atomics)
 include(CMakeMacroParseArguments)
 include(MacroDefineSWIGModule)
 
-#DEFINE_PYTHON_SWIG_MODULE(NAME allocator
-#              FILE allocator.hh
-#              LINK_LIBRARIES ${PROJECT_LIBRARIES})
+DEFINE_PYTHON_SWIG_MODULE(NAME allocator
+              FILE allocator.hh
+              LINK_LIBRARIES ${PROJECT_LIBRARIES})
 #DEFINE_PYTHON_SWIG_MODULE(NAME allocator_list
 #              FILE allocator_list.hh
 #              LINK_LIBRARIES ${PROJECT_LIBRARIES})
