@@ -140,7 +140,7 @@ void base_timer::report(std::ostream& os) const
                 break;
             case PERCENT:
                 ss.precision(1);
-                ss << (user_elapsed()/(real_elapsed()+system_elapsed())*100.0);
+                ss << ((user_elapsed()+system_elapsed())/(real_elapsed())*100.0);
                 break;
         }
         // skip over %{w,u,s,t,p} field

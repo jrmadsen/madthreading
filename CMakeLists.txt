@@ -83,6 +83,11 @@ print_features()
 include(CMakeUninstallTarget)
 
 set(Madthreading_DIR ${PROJECT_BINARY_DIR})
-include_directories(${PROJECT_SOURCE_DIR})
+include_directories(${PROJECT_BINARY_DIR})
+if(NOT EXISTS ${PROJECT_SOURCE_DIR}/madthreading)
+  execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
+    ${PROJECT_SOURCE_DIR}/source
+    ${PROJECT_BINARY_DIR}/madthreading)
+endif()
 add_subdirectory(examples)
 

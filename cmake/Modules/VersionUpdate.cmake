@@ -9,6 +9,3 @@ execute_process(COMMAND ${CMAKE_COMMAND}
                         -P ${CMAKE_SOURCE_DIR}/cmake/Scripts/Version.cmake
 )
 
-configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/config.hh.in
-               ${PROJECT_SOURCE_DIR}/source/config.hh
-               @ONLY)
