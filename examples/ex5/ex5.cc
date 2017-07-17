@@ -19,11 +19,11 @@
 #include <thread>
 
 #include <madthreading/types.hh>
-#include <madthreading/timer.hh>
+#include <madthreading/utility/timer.hh>
 #include <madthreading/threading/thread_manager.hh>
 #include <madthreading/vectorization/vectorization_typedefs.hh>
 #include <madthreading/allocator/allocator.hh>
-#include <madthreading/constants.hh>
+#include <madthreading/utility/constants.hh>
 #include <madthreading/threading/AutoLock.hh>
 
 using namespace std;

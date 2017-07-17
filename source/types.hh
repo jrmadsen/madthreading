@@ -46,7 +46,7 @@
 #include "threading/AutoLock.hh"
 
 #ifdef ENABLE_THREADING
-    #include "threading/atomics/atomic.hh"
+    #include "atomics/atomic.hh"
 #endif
 
 #ifdef USE_TBB

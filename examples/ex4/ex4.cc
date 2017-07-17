@@ -16,7 +16,7 @@
 #include <iomanip>
 
 #include <madthreading/types.hh>
-#include <madthreading/timer.hh>
+#include <madthreading/utility/timer.hh>
 #include <madthreading/threading/thread_manager.hh>
 #include <madthreading/vectorization/vectorization_typedefs.hh>
 #include <madthreading/allocator/allocator.hh>

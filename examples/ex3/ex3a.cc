@@ -10,7 +10,7 @@
 #include <iomanip>
 
 #include <madthreading/types.hh>
-#include <madthreading/timer.hh>
+#include <madthreading/utility/timer.hh>
 #include <madthreading/threading/thread_manager.hh>
 
 using namespace mad;

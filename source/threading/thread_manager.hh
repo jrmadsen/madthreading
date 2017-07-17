@@ -79,7 +79,7 @@ MACRO(_tid_)
 #include "task_tree.hh"
 #include "../allocator/allocator.hh"
 #include "task_group.hh"
-#include "fpe_detection.hh"
+#include "utility/fpe_detection.hh"
 
 // task.hh defines mad::function and mad::bind if CXX11 or USE_BOOST
 
