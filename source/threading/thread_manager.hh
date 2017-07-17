@@ -46,17 +46,19 @@
 %module thread_manager
 %{
     #define SWIG_FILE_WITH_INIT
-    #include "thread_pool.hh"
-    #include "joining_task.hh"
-    #include "task_tree.hh"
     #include "../allocator/allocator.hh"
+    #include "thread_pool.hh"
+    #include "task/joining_task.hh"
+    #include "task/task_tree.hh"
+    #include "task/task_group.hh"
     #include "thread_manager.hh"
 %}
 
+%import "allocator/allocator.hh"
 %import "thread_pool.hh"
-%import "joining_task.hh"
-%import "task_tree.hh"
-%import "../allocator/allocator.hh"
+%import "task/joining_task.hh"
+%import "task/task_tree.hh"
+%import "task/task_group.hh"
 %include "thread_manager.hh"
 
 MACRO(tmid)
@@ -77,7 +79,7 @@ MACRO(_tid_)
 #include "task.hh"
 #include "joining_task.hh"
 #include "task_tree.hh"
-#include "../allocator/allocator.hh"
+#include "allocator/allocator.hh"
 #include "task_group.hh"
 #include "utility/fpe_detection.hh"
 
@@ -180,7 +182,7 @@ public:
     thread_manager(size_type _n, bool _use_affinity = false);
     virtual ~thread_manager();
 
-    thread_manager* clone(task_group* = 0) const;
+    thread_manager* clone(mad::task_group* = 0) const;
 
 private:
     // disable external copying and assignment
@@ -255,7 +257,7 @@ public:
     //------------------------------------------------------------------------//
 
 private:
-    task_group* set_task_group(task_group* tg)
+    mad::task_group* set_task_group(mad::task_group* tg)
     {
         if(tg && tg != m_current_group && tg != m_default_group)
         {
@@ -288,7 +290,7 @@ public:
               typename _Arg1, typename _Arg2, typename _Arg3>
     __inline__
     void exec(_Func function, _Arg1 argument1, _Arg2 argument2, _Arg3 argument3,
-              task_group* tg = 0)
+              mad::task_group* tg = 0)
     {
         typedef task<_Ret, _Arg1, _Arg2, _Arg3> task_type;
 
@@ -300,7 +302,7 @@ public:
     template <typename _Ret, typename _Func, typename _Arg1, typename _Arg2>
     __inline__
     void exec(_Func function, _Arg1 argument1, _Arg2 argument2,
-              task_group* tg = 0)
+              mad::task_group* tg = 0)
     {
         typedef task<_Ret, _Arg1, _Arg2> task_type;
 
@@ -312,7 +314,7 @@ public:
     template <typename _Ret, typename _Func, typename _Arg>
     __inline__
     void exec(_Func function, _Arg argument,
-              task_group* tg = 0)
+              mad::task_group* tg = 0)
     {
         typedef task<_Ret, _Arg> task_type;
 
@@ -325,7 +327,7 @@ public:
     template <typename _Func, typename _Arg>
     __inline__
     void exec(_Func function, _Arg argument,
-              task_group* tg = 0)
+              mad::task_group* tg = 0)
     {
         typedef task<void, _Arg> task_type;
 
@@ -338,7 +340,7 @@ public:
     template <typename _Func>
     __inline__
     void exec(_Func function,
-              task_group* tg = 0)
+              mad::task_group* tg = 0)
     {
         typedef task<void, void> task_type;
 
@@ -356,7 +358,7 @@ public:
               typename _Arg3>
     __inline__
     void run(_Func function, _Arg1 arg1, _Arg2 arg2, _Arg3 arg3,
-             task_group* tg = 0)
+             mad::task_group* tg = 0)
     {
         typedef task<_Ret, _Arg1, _Arg2, _Arg3> task_type;
 
@@ -372,7 +374,7 @@ public:
     template <typename _Func, typename _Arg1, typename _Arg2, typename _Arg3>
     __inline__
     void run(_Func function, _Arg1 arg1, _Arg2 arg2, _Arg3 arg3,
-             task_group* tg = 0)
+             mad::task_group* tg = 0)
     {
         typedef task<void, _Arg1, _Arg2, _Arg3> task_type;
 
@@ -388,7 +390,7 @@ public:
     template <typename _Ret, typename _Func, typename _Arg1, typename _Arg2>
     __inline__
     void run(_Func function, _Arg1 arg1, _Arg2 arg2,
-             task_group* tg = 0)
+             mad::task_group* tg = 0)
     {
         typedef task<_Ret, _Arg1, _Arg2> task_type;
 
@@ -404,7 +406,7 @@ public:
     template <typename _Func, typename _Arg1, typename _Arg2>
     __inline__
     void run(_Func function, _Arg1 arg1, _Arg2 arg2,
-             task_group* tg = 0)
+             mad::task_group* tg = 0)
     {
         typedef task<void, _Arg1, _Arg2> task_type;
 
@@ -419,7 +421,7 @@ public:
     template <typename _Ret, typename _Func, typename _Arg>
     __inline__
     void run(_Func function, _Arg argument,
-             task_group* tg = 0)
+             mad::task_group* tg = 0)
     {
         typedef task<_Ret, _Arg> task_type;
 
@@ -435,7 +437,7 @@ public:
     template <typename _Func, typename _Arg>
     __inline__
     void run(_Func function, _Arg argument,
-             task_group* tg = 0)
+             mad::task_group* tg = 0)
     {
         typedef task<void, _Arg> task_type;
 
@@ -451,7 +453,7 @@ public:
     template <typename _Func>
     __inline__
     void run(_Func function,
-             task_group* tg = 0)
+             mad::task_group* tg = 0)
     {
         typedef task<void, void> task_type;
 
@@ -471,7 +473,7 @@ public:
     template <typename _Func, typename InputIterator>
     __inline__
     void run_loop(_Func function, InputIterator _s, InputIterator _e,
-                  task_group* tg = 0)
+                  mad::task_group* tg = 0)
     {
         typedef task<void, InputIterator> task_type;
 
@@ -490,7 +492,7 @@ public:
     template <typename _Ret, typename _Func, typename _Arg1, typename _Arg>
     __inline__
     void run_loop(_Func function, const _Arg1& _s, const _Arg& _e,
-                  task_group* tg = 0)
+                  mad::task_group* tg = 0)
     {
         typedef task<_Ret, _Arg> task_type;
 
@@ -506,7 +508,7 @@ public:
     template <typename _Ret, typename _Func, typename InputIterator>
     __inline__
     void run_loop(_Func function, InputIterator _s, InputIterator _e,
-                  task_group* tg = 0)
+                  mad::task_group* tg = 0)
     {
         typedef task<_Ret, InputIterator> task_type;
 
@@ -527,7 +529,7 @@ public:
     template <typename _Func, typename _Arg1, typename _Arg>
     __inline__
     void run_loop(_Func function, const _Arg1& _s, const _Arg& _e,
-                  task_group* tg = 0)
+                  mad::task_group* tg = 0)
     {
         typedef task<void, _Arg> task_type;
 
@@ -551,7 +553,7 @@ public:
                   const _Arg1& _s,
                   const _Arg& _e,
                   unsigned long chunks,
-                  task_group* tg = 0)
+                  mad::task_group* tg = 0)
     {
         typedef task<_Ret, _Arg, _Arg> task_type;
 
@@ -575,7 +577,7 @@ public:
     __inline__
     void run_loop(_Func function, const _Arg1& _s, const _Arg& _e,
                   unsigned long chunks,
-                  task_group* tg = 0)
+                  mad::task_group* tg = 0)
     {
         typedef task<void, _Arg, _Arg> task_type;
 
@@ -604,7 +606,7 @@ public:
     void
     run_loop(_Func function, const _Arg1& _s, const _Arg& _e,
              unsigned long chunks, _Join _operator, _Tp identity,
-             task_group* tg = 0)
+             mad::task_group* tg = 0)
     {
         typedef task<_Ret, _Arg, _Arg>                  task_type;
         typedef task_tree_node<_Ret, _Arg, _Arg, void>  task_tree_node_type;
@@ -799,11 +801,11 @@ public:
 
 protected:
     // Protected variables
-    static size_type    max_threads;
-    static task_group*  m_default_group;
-    data_type*          m_data;
-    task_group*         m_current_group;
-    bool                m_is_clone;
+    static size_type        max_threads;
+    static mad::task_group* m_default_group;
+    data_type*              m_data;
+    mad::task_group*        m_current_group;
+    bool                    m_is_clone;
 };
 
 //============================================================================//

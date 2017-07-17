@@ -43,7 +43,6 @@ if(Threads_FOUND)
     add_definitions(-DENABLE_THREADING)
 endif()
 list(APPEND EXTERNAL_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
-message(STATUS "THREAD LIBS: ${CMAKE_THREAD_LIBS_INIT}")
 
 
 ################################################################################
@@ -121,7 +120,6 @@ option(USE_TBB "Enable Intel Thread Building Blocks (TBB)" OFF)
 add_feature(USE_TBB "Intel Thread Building Blocks library")
 
 if(USE_TBB)
-    message(STATUS "Finding optional component : TBB")
     ConfigureRootSearchPath(TBB)
 
     find_package(TBB REQUIRED)
@@ -130,8 +128,6 @@ if(USE_TBB)
         list(APPEND EXTERNAL_LIBRARIES ${TBB_LIBRARIES})
         list(APPEND EXTERNAL_INCLUDE_DIRS ${TBB_INCLUDE_DIRS})
         add_package_definitions(TBB)
-    else()
-        message(FATAL_ERROR "\n\tNO TBB_ROOT FOUND -- ${TBB_ROOT} -- Please set TBB_ROOT\n")
     endif()
 
     add_feature(TBB_ROOT "Root directory of TBB install")

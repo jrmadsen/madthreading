@@ -89,16 +89,16 @@ macro(define_module)
     get_filename_component(${MODULE_NAME}_BASEDIR ${CMAKE_CURRENT_LIST_FILE} PATH)
 
     # Header directory
-    if(NOT "${HEADER_DIR}" STREQUAL "")
+    if("${DEFMOD_HEADER_DIR}" STREQUAL "")
         set(${MODULE_NAME}_INCDIR ${${MODULE_NAME}_BASEDIR})
     else()
-        set(${MODULE_NAME}_INCDIR ${${MODULE_NAME}_BASEDIR}${HEADER_DIR})
+        set(${MODULE_NAME}_INCDIR "${${MODULE_NAME}_BASEDIR}/${DEFMOD_HEADER_DIR}")
     endif()
     # Source directory
-    if(NOT "${SOURCE_DIR}" STREQUAL "")
+    if("${DEFMOD_SOURCE_DIR}" STREQUAL "")
         set(${MODULE_NAME}_SRCDIR ${${MODULE_NAME}_BASEDIR})
     else()
-        set(${MODULE_NAME}_SRCDIR ${${MODULE_NAME}_BASEDIR}${SOURCE_DIR})
+        set(${MODULE_NAME}_SRCDIR "${${MODULE_NAME}_BASEDIR}/${DEFMOD_SOURCE_DIR}")
     endif()
     # list of files
     set(${MODULE_NAME}_HEADERS ${DEFMOD_HEADERS})
@@ -145,7 +145,7 @@ macro(define_module)
         set_property(GLOBAL APPEND PROPERTY SWIG_MODULE_FILES
             ${CMAKE_CURRENT_LIST_DIR}/modules.cmake)
     endif()
-    
+
     if(NOT ${DEFMOD_NO_SOURCE_GROUP})
         set_property(GLOBAL APPEND PROPERTY SOURCE_GROUPS ${MODULE_NAME})
         STRING(REPLACE "." "\\\\" _mod_name ${MODULE_NAME})
