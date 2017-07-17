@@ -36,58 +36,158 @@
 #ifndef task_hh_
 #define task_hh_
 
-#if __cplusplus > 199711L   // C++11
-#define CXX11
-#endif
-
 #include "threading.hh"
 #include "auto_lock.hh"
 #include "allocator.hh"
 #include "task_group.hh"
 
-#ifdef CXX11
-    #include <functional>
-    namespace mad
-    {
-        using std::function;
-        using std::bind;
-    }
-#elif defined(USE_BOOST)
-    #include <boost/function.hpp>
-    #include <boost/bind.hpp>
-    namespace mad
-    {
-        using boost::function;
-        using boost::bind;
-    }
-#endif
+#include <functional>
+#include <utility>
+#include <tuple>
+#include <cstddef>
+#include <string>
+#include <array>
+
+namespace mad
+{
+using std::function;
+using std::bind;
+using std::tuple;
+}
+
+#define FUNCTION_TYPEDEF_0(alias, ret) \
+    typedef function<ret()> alias
+#define FUNCTION_TYPEDEF_1(alias, ret, arg) \
+    typedef function<ret(arg)> alias
+#define FUNCTION_TYPEDEF_2(alias, ret, arg1, arg2) \
+    typedef function<ret(arg1, arg2)> alias
+#define FUNCTION_TYPEDEF_3(alias, ret, arg1, arg2, arg3) \
+    typedef function<ret(arg1, arg2, arg3)> alias
+#define CALL_FUNCTION(ptr2fn) ptr2fn
 
 namespace mad
 {
 //----------------------------------------------------------------------------//
 
-#if defined(CXX11) || defined(USE_BOOST)
-    #define FUNCTION_TYPEDEF_0(alias, ret) \
-        typedef function<ret()> alias
-    #define FUNCTION_TYPEDEF_1(alias, ret, arg) \
-        typedef function<ret(arg)> alias
-    #define FUNCTION_TYPEDEF_2(alias, ret, arg1, arg2) \
-        typedef function<ret(arg1, arg2)> alias
-    #define FUNCTION_TYPEDEF_3(alias, ret, arg1, arg2, arg3) \
-        typedef function<ret(arg1, arg2, arg3)> alias
-    #define CALL_FUNCTION(ptr2fn) ptr2fn
-#else
-    #define FUNCTION_TYPEDEF_0(alias, ret) \
-        typedef ret(*alias)()
-    #define FUNCTION_TYPEDEF_1(alias, ret, arg) \
-        typedef ret(*alias)(arg)
-    #define FUNCTION_TYPEDEF_2(alias, ret, arg1, arg2) \
-        typedef ret(*alias)(arg1, arg2)
-    #define FUNCTION_TYPEDEF_3(alias, ret, arg1, arg2, arg3) \
-        typedef ret(*alias)(arg1, arg2, arg3)
-    #define CALL_FUNCTION(ptr2fn) (*ptr2fn)
-#endif
+namespace details
+{
 //----------------------------------------------------------------------------//
+template <typename _Tp, _Tp... _Ints>
+struct integer_sequence
+{ };
+//----------------------------------------------------------------------------//
+template <typename _Sp>
+struct next_integer_sequence;
+//----------------------------------------------------------------------------//
+template <typename _Tp, _Tp... _Ints>
+struct next_integer_sequence<integer_sequence<_Tp, _Ints...>>
+{
+    using type = integer_sequence<_Tp, _Ints..., sizeof...(_Ints)>;
+};
+//----------------------------------------------------------------------------//
+template <typename _Tp, _Tp _I, _Tp _N>
+struct make_int_seq_impl;
+//----------------------------------------------------------------------------//
+template <typename _Tp, _Tp _N>
+using make_integer_sequence = typename make_int_seq_impl<_Tp, 0, _N>::type;
+//----------------------------------------------------------------------------//
+template <typename _Tp, _Tp _I, _Tp _N>
+struct make_int_seq_impl
+{
+    using type = typename next_integer_sequence<
+        typename make_int_seq_impl<_Tp, _I+1, _N>::type>::type;
+};
+//----------------------------------------------------------------------------//
+template <typename _Tp, _Tp _N>
+struct make_int_seq_impl<_Tp, _N, _N>
+{
+    using type = integer_sequence<_Tp>;
+};
+//----------------------------------------------------------------------------//
+template <std::size_t... _Ints>
+using index_sequence = integer_sequence<std::size_t, _Ints...>;
+//----------------------------------------------------------------------------//
+template <std::size_t _N>
+using make_index_sequence = make_integer_sequence<std::size_t, _N>;
+//----------------------------------------------------------------------------//
+
+/*template<int... _Args>
+struct args_tuple
+{
+    // put args... into a constexpr array for indexing
+    static constexpr int _ArgsArray[] = {_Args...};
+
+    // undefined helper function that computes the desired type in the return type
+    // For Is... = 0, 1, ..., N-2, Filter<my_args[Is], my_args[Is+1]>...
+    // expands to Filter<my_args[0], my_args[1]>,
+    //            Filter<my_args[1], my_args[2]>, ...,
+    //            Filter<my_args[N-2], my_args[N-1]>
+
+    template<size_t... _I>
+    static std::tuple<_ArgsArray[_I]...> helper(index_sequence<_I...>);
+
+    // and the result
+    using tuple_type =
+    decltype(helper(make_index_sequence<sizeof...(_Args)>()));
+};*/
+
+//----------------------------------------------------------------------------//
+
+template <std::size_t... _Indices>
+struct indices
+{ };
+
+//----------------------------------------------------------------------------//
+
+template <std::size_t _N, std::size_t... _I>
+struct build_indices : build_indices<_N-1, _N-1, _I...>
+{ };
+
+//----------------------------------------------------------------------------//
+
+template <std::size_t... _I>
+struct build_indices<0, _I...> : indices<_I...>
+{ };
+
+//----------------------------------------------------------------------------//
+
+template <typename _Ret, typename _Func, typename _ArgTuple,
+          std::size_t... _Indices>
+_Ret _call_ret(const _Func& func, _ArgTuple&& args, const indices<_Indices...>&)
+{
+   return std::move(func(std::get<_Indices>(std::forward<_ArgTuple>(args))...));
+}
+
+//----------------------------------------------------------------------------//
+
+template <typename _Func, typename _ArgTuple, std::size_t... _Indices>
+void _call_void(const _Func& func, _ArgTuple&& args, const indices<_Indices...>&)
+{
+   func(std::get<_Indices>(std::forward<_ArgTuple>(args))...);
+}
+
+//----------------------------------------------------------------------------//
+
+template <typename _Ret, typename _Func, typename _ArgTuple>
+_Ret call_ret(const _Func& func, _ArgTuple&& args)
+{
+    typedef typename std::remove_reference<_ArgTuple>::type tuple_t;
+    const build_indices<std::tuple_size<tuple_t>::value> indices;
+    return std::move(_call_ret<_Ret>(func, std::move(args), indices));
+}
+
+//----------------------------------------------------------------------------//
+
+template <typename _Func, typename _ArgTuple>
+void call_void(const _Func& func, _ArgTuple&& args)
+{
+    typedef typename std::remove_reference<_ArgTuple>::type tuple_t;
+    const build_indices<std::tuple_size<tuple_t>::value> indices;
+    _call_void(func, std::move(args), indices);
+}
+
+//----------------------------------------------------------------------------//
+} // namespace details
 
 //============================================================================//
 /// \brief vtask is the abstract class stored in thread_pool
@@ -99,9 +199,7 @@ public:
     typedef size_t          size_type;
 
 public:
-    vtask(task_group* tg,
-          void* result = 0, void* arg1 = 0,
-          void* arg2 = 0, void* arg3 = 0);
+    vtask(task_group* tg, void* result = 0);
     virtual ~vtask() { }
 
 public:
@@ -116,18 +214,11 @@ public:
 
     inline void* get() const { return m_result; }
 
-    template <unsigned N, typename _Tp>
+    /*template <unsigned _N, typename _Tp>
     void set(_Tp val)
     {
-        if(N > 3)
-            throw std::out_of_range("vtask::set<N> argument array is only "
-                                    "of size 3 -- " + n2s(N) + " -- out "
-                                    "of bounds");
-        //_Tp* _ptr = new _Tp(val);
-        _Tp& _ref = *((_Tp*)(m_arg_array[N]));
-        _ref = val;
-        //*(m_arg_array)[N] = val;
-    }
+        std::get<_N>(m_args) = val;
+    }*/
 
     // don't save the task even if it has a return value
     bool is_stored_elsewhere() const { return m_is_stored_elsewhere; }
@@ -138,12 +229,6 @@ public:
 
 public:
     void set_result(void* val) { m_result = val; }
-    void set_arg_array(void* arg1 = 0, void* arg2 = 0, void* arg3 = 0)
-    {
-        m_arg_array[0] = arg1;
-        m_arg_array[1] = arg2;
-        m_arg_array[2] = arg3;
-    }
 
     // get the task group
     task_group* group() const { return m_group; }
@@ -156,327 +241,126 @@ protected:
     bool        m_force_delete;
     bool        m_is_stored_elsewhere;
     void*       m_result;
-    void*       m_arg_array[3];
-
-private:
-    template <typename _Tp>
-    std::string n2s(_Tp val)
-    {
-        std::stringstream ss;
-        ss << val; return ss.str();
-    }
-};
-
-//============================================================================//
-
-/// \brief The task class is supplied to thread_pool. This task type is used
-/// in conjunction with free functions and/or static member functions
-/// or, if Boost is enabled, can be used with member functions
-/// via boost::bind
-///
-/// \details For a given thread_pool (tp) and given function
-/// [void doSomething(int*) ], you create a new task, e.g.
-///     int* x = new int(5);
-///     task<void, int> t = new task<void, int>(&doSomething, x);
-///     tp.add_task(t);
-/// The thread_pool will push the task back into a deque and have a thread
-/// run it when available
-///
-/// There are two partial specializations for (1) when the function return type
-/// is void [ "task <void, _Arg>" and "void doSomething(_Arg*)" ] and for (2)
-/// when the function return type is void and the function takes no parameters
-/// [ "task <void, void>" and "void doSomething()" ]
-///
-template <typename _Ret, typename _Arg1, typename _Arg2 = void,
-          typename _Arg3 = void>
-class task : public vtask
-{
-public:
-    typedef _Arg1 argument_type_1;
-    typedef _Arg2 argument_type_2;
-    typedef _Arg3 argument_type_3;
-    typedef _Ret result_type;
-    FUNCTION_TYPEDEF_3(function_type,
-                       result_type,
-                       argument_type_1,
-                       argument_type_2,
-                       argument_type_3);
-
-public:
-    // pass a free function pointer
-    task(task_group* tg,
-         function_type fn_ptr, argument_type_1 arg_1,
-         argument_type_2 arg_2, argument_type_3 arg_3)
-    : vtask(tg, new _Ret),
-      m_fn_ptr(fn_ptr), m_arg_1(arg_1),
-      m_arg_2(arg_2), m_arg_3(arg_3)
-    {
-        _check_group();
-        set_arg_array(&m_arg_1, &m_arg_2, &m_arg_3);
-    }
-
-    virtual ~task() { delete m_result; }
-
-public:
-    virtual void operator()()
-    {
-        *(_Ret*)(m_result) = CALL_FUNCTION(m_fn_ptr)(m_arg_1, m_arg_2, m_arg_3);
-    }
-
-protected:
-    using vtask::m_group;
-
-private:
-    function_type   m_fn_ptr;
-    argument_type_1 m_arg_1;
-    argument_type_2 m_arg_2;
-    argument_type_3 m_arg_3;
-
-};
-
-//============================================================================//
-
-template <typename _Ret, typename _Arg1, typename _Arg2>
-class task<_Ret, _Arg1, _Arg2, void> : public vtask
-{
-public:
-    typedef _Arg1 argument_type_1;
-    typedef _Arg2 argument_type_2;
-    typedef _Ret result_type;
-    FUNCTION_TYPEDEF_2(function_type,
-                       result_type,
-                       argument_type_1,
-                       argument_type_2);
-
-public:
-    // pass a free function pointer
-    task(task_group* tg,
-         function_type fn_ptr, argument_type_1 arg_1, argument_type_2 arg_2)
-    : vtask(tg, new _Ret),
-      m_fn_ptr(fn_ptr), m_arg_1(arg_1), m_arg_2(arg_2)
-    {
-        _check_group();
-        set_arg_array(&m_arg_1, &m_arg_2, NULL);
-    }
-
-public:
-    virtual void operator()()
-    {
-        *(_Ret*)(m_result) = CALL_FUNCTION(m_fn_ptr)(m_arg_1, m_arg_2);
-    }
-
-protected:
-    using vtask::m_group;
-
-private:
-    function_type   m_fn_ptr;
-    argument_type_1 m_arg_1;
-    argument_type_2 m_arg_2;
-
 };
 
 //============================================================================//
 
 /// \brief The task class is supplied to thread_pool.
-///
-/// specialization RET<ARG>
-///
-
-template <typename _Ret, typename _Arg1>
-class task<_Ret, _Arg1, void, void> : public vtask
+template <typename _Ret, typename... _Args>
+class task : public vtask
 {
 public:
-    typedef _Arg1 argument_type_1;
     typedef _Ret result_type;
-    FUNCTION_TYPEDEF_1(function_type,
-                       result_type,
-                       argument_type_1);
+    typedef mad::function<_Ret(_Args...)> function_type;
 
 public:
     // pass a free function pointer
-    task(task_group* tg,
-         function_type fn_ptr, argument_type_1 arg1)
-    : vtask(tg, new _Ret),
-      m_fn_ptr(fn_ptr), m_arg_1(arg1)
+    task(task_group* tg, function_type fn_ptr, _Args... args)
+    : vtask(tg), m_fn_ptr(fn_ptr),
+      m_args(std::forward<_Args>(std::move(args))...)
     {
+        allocate();
         _check_group();
-        set_arg_array(&m_arg_1, NULL, NULL);
+    }
+
+    virtual ~task()
+    {
+        if(m_result)
+            destroy();
     }
 
 public:
+    #define is_same_t(_Tp, _Up) std::is_same<_Tp, _Up>::value
+    template <bool _Bp, typename _Tp = void>
+    using enable_if_t = typename std::enable_if<_Bp, _Tp>::type;
+
     virtual void operator()()
     {
-        *(_Ret*)(m_result) = CALL_FUNCTION(m_fn_ptr)(m_arg_1);
+        func();
     }
+
+protected:
+    template <typename U = _Ret, enable_if_t<!is_same_t(U, void), int> = 0>
+    void func()
+    {
+        *(_Ret*)(m_result) = details::call_ret<U>(m_fn_ptr, m_args);
+    }
+
+    template <typename U = _Ret, enable_if_t<is_same_t(U, void), int> = 0>
+    void func()
+    {
+        details::call_void(m_fn_ptr, m_args);
+    }
+
+    template <typename U = _Ret, enable_if_t<!is_same_t(U, void), int> = 0>
+    void allocate()
+    {
+        m_result = (void*) new _Ret();
+    }
+
+    template <typename U = _Ret, enable_if_t<is_same_t(U, void), int> = 0>
+    void allocate()
+    { }
+
+public:
+    template <typename U = _Ret, enable_if_t<!is_same_t(U, void), int> = 0>
+    void destroy()
+    {
+        if(m_result)
+        {
+            delete (_Ret*) m_result;
+            m_result = 0;
+        }
+    }
+
+    template <typename U = _Ret, enable_if_t<is_same_t(U, void), int> = 0>
+    void destroy()
+    { }
 
 protected:
     using vtask::m_group;
 
 private:
-    function_type m_fn_ptr;
-    argument_type_1 m_arg_1;
-
+    function_type           m_fn_ptr;
+    std::tuple<_Args...>   m_args;
 };
 
 //============================================================================//
 
-/// \brief Partial specialization of task for when the function return type
-/// is void [ "task <void, _Arg>" and function is "void doSomething(_Arg*)" ]
-template <typename _Arg1, typename _Arg2, typename _Arg3>
-class task<void, _Arg1, _Arg2, _Arg3> : public vtask
-{
-public:
-    typedef _Arg1 argument_type_1;
-    typedef _Arg2 argument_type_2;
-    typedef _Arg3 argument_type_3;
-    typedef void result_type;
-    FUNCTION_TYPEDEF_3(function_type,
-                       result_type,
-                       argument_type_1,
-                       argument_type_2,
-                       argument_type_3);
-
-public:
-    // pass a free function pointer
-    task(task_group* tg,
-         function_type fn_ptr, argument_type_1 arg1,
-         argument_type_2 arg2, argument_type_3 arg3)
-    : vtask(tg), m_fn_ptr(fn_ptr), m_arg_1(arg1), m_arg_2(arg2), m_arg_3(arg3)
-    {
-        _check_group();
-        set_arg_array(&m_arg_1, &m_arg_2, &m_arg_3);
-    }
-
-public:
-    virtual void operator()()
-    {
-        CALL_FUNCTION(m_fn_ptr)(m_arg_1, m_arg_2, m_arg_3);
-    }
-
-protected:
-    using vtask::m_group;
-
-private:
-    function_type   m_fn_ptr;
-    argument_type_1 m_arg_1;
-    argument_type_2 m_arg_2;
-    argument_type_3 m_arg_3;
-
-};
-
-//============================================================================//
-
-/// \brief Partial specialization of task for when the function return type
-/// is void [ "task <void, _Arg>" and function is "void doSomething(_Arg*)" ]
-template <typename _Arg1, typename _Arg2>
-class task<void, _Arg1, _Arg2, void> : public vtask
-{
-public:
-    typedef _Arg1 argument_type_1;
-    typedef _Arg2 argument_type_2;
-    typedef void result_type;
-    FUNCTION_TYPEDEF_2(function_type,
-                       result_type,
-                       argument_type_1,
-                       argument_type_2);
-
-public:
-    // pass a free function pointer
-    task(task_group* tg,
-         function_type fn_ptr, argument_type_1 arg1, argument_type_2 arg2)
-    : vtask(tg), m_fn_ptr(fn_ptr), m_arg_1(arg1), m_arg_2(arg2)
-    {
-        _check_group();
-        set_arg_array(&m_arg_1, &m_arg_2, NULL);
-    }
-
-public:
-    virtual void operator()()
-    {
-        CALL_FUNCTION(m_fn_ptr)(m_arg_1, m_arg_2);
-    }
-
-protected:
-    using vtask::m_group;
-
-private:
-    function_type   m_fn_ptr;
-    argument_type_1 m_arg_1;
-    argument_type_2 m_arg_2;
-
-};
-
-//============================================================================//
-
-/// \brief Partial specialization of task for when the function return type
-/// is void [ "task <void, _Arg>" and function is "void doSomething(_Arg*)" ]
-template <typename _Arg1>
-class task<void, _Arg1, void, void> : public vtask
-{
-public:
-    typedef _Arg1 argument_type_1;
-    typedef void result_type;
-    FUNCTION_TYPEDEF_1(function_type,
-                       result_type,
-                       argument_type_1);
-
-public:
-    // pass a free function pointer
-    task(task_group* tg,
-         function_type fn_ptr, argument_type_1 arg1)
-    : vtask(tg), m_fn_ptr(fn_ptr), m_arg_1(arg1)
-    {
-        _check_group();
-        set_arg_array(&m_arg_1, NULL, NULL);
-    }
-
-public:
-    virtual void operator()()
-    {
-        CALL_FUNCTION(m_fn_ptr)(m_arg_1);
-    }
-
-protected:
-    using vtask::m_group;
-
-private:
-    function_type   m_fn_ptr;
-    argument_type_1 m_arg_1;
-
-};
-
-//============================================================================//
-
-/// \brief Partial specialization of task for when the function return type is
-/// void and the function takes no parameters [ "task <void, void>" and the
-/// function is "void doSomething()" ]
+/// \brief The task class is supplied to thread_pool.
 template <>
-class task<void, void, void, void> : public vtask
+class task<void> : public vtask
 {
 public:
-    typedef void argument_type;
-    typedef void result_type;
-    FUNCTION_TYPEDEF_0(function_type,
-                       result_type);
+    typedef void _Ret;
+    typedef _Ret result_type;
+    typedef mad::function<_Ret()> function_type;
 
 public:
     // pass a free function pointer
     task(task_group* tg, function_type fn_ptr)
     : vtask(tg), m_fn_ptr(fn_ptr)
-    { _check_group(); }
+    {
+        _check_group();
+    }
+
+    virtual ~task() { }
 
 public:
+    #define is_same_t(_Tp, _Up) std::is_same<_Tp, _Up>::value
+    template <bool _Bp, typename _Tp = void>
+    using enable_if_t = typename std::enable_if<_Bp, _Tp>::type;
+
     virtual void operator()()
     {
-        CALL_FUNCTION(m_fn_ptr)();
+        m_fn_ptr();
     }
 
 protected:
     using vtask::m_group;
 
 private:
-    function_type m_fn_ptr;
-
+    function_type           m_fn_ptr;
 };
 
 //============================================================================//

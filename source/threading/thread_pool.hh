@@ -116,8 +116,8 @@ public:
     int add_tasks(std::stack<_Tp*>);
     // add tasks from task tree
     template <typename _Tp, typename _A1,
-              typename _A2, typename _A3, typename _TpJ>
-    int add_tasks(task_tree_node<_Tp, _A1, _A2, _A3, _TpJ>*);
+              typename _A2, typename _TpJ>
+    int add_tasks(task_tree_node<_Tp, _A1, _A2, _TpJ>*);
 
 public:
     // background tasks are task that you don't call join() on
@@ -231,9 +231,8 @@ int thread_pool::add_tasks(std::stack<_Tp*> c)
     return n;
 }
 //----------------------------------------------------------------------------//
-template <typename _Tp, typename _A1, typename _A2, typename _A3,
-          typename _TpJ>
-int thread_pool::add_tasks(task_tree_node<_Tp, _A1, _A2, _A3, _TpJ>* node)
+template <typename _Tp, typename _A1, typename _A2, typename _TpJ>
+int thread_pool::add_tasks(task_tree_node<_Tp, _A1, _A2, _TpJ>* node)
 {
     // if we haven't built thread-pool, just execute
     if(!is_alive_flag)
@@ -282,7 +281,7 @@ void thread_pool::signal_background(void* ptr, T _arg)
     // task-to-do, and then set task-to-do pointer to NULL
     m_back_lock.lock();
     m_back_task_to_do = m_back_tasks[ptr];
-    m_back_task_to_do->set(_arg);
+    //m_back_task_to_do->set(_arg);
     m_back_pointer = ptr;
     m_back_done[ptr] = false;
     m_back_cond.signal();

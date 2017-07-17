@@ -48,7 +48,6 @@
     #define SWIG_FILE_WITH_INIT
     #include "../allocator/allocator.hh"
     #include "thread_pool.hh"
-    #include "task/joining_task.hh"
     #include "task/task_tree.hh"
     #include "task/task_group.hh"
     #include "thread_manager.hh"
@@ -56,7 +55,6 @@
 
 %import "allocator/allocator.hh"
 %import "thread_pool.hh"
-%import "task/joining_task.hh"
 %import "task/task_tree.hh"
 %import "task/task_group.hh"
 %include "thread_manager.hh"
@@ -77,7 +75,6 @@ MACRO(_tid_)
 
 #include "thread_pool.hh"
 #include "task.hh"
-#include "joining_task.hh"
 #include "task_tree.hh"
 #include "allocator/allocator.hh"
 #include "task_group.hh"
@@ -342,7 +339,7 @@ public:
     void exec(_Func function,
               mad::task_group* tg = 0)
     {
-        typedef task<void, void> task_type;
+        typedef task<void> task_type;
 
         tg = set_task_group(tg);
         task_type* t = new task_type(tg, function);
@@ -455,7 +452,7 @@ public:
     void run(_Func function,
              mad::task_group* tg = 0)
     {
-        typedef task<void, void> task_type;
+        typedef task<void> task_type;
 
         tg = set_task_group(tg);
         for(size_type i = 0; i < size(); ++i)
@@ -609,7 +606,7 @@ public:
              mad::task_group* tg = 0)
     {
         typedef task<_Ret, _Arg, _Arg>                  task_type;
-        typedef task_tree_node<_Ret, _Arg, _Arg, void>  task_tree_node_type;
+        typedef task_tree_node<_Ret, _Arg, _Arg>        task_tree_node_type;
         typedef task_tree<task_tree_node_type>          task_tree_type;
 
         tg = set_task_group(tg);
@@ -619,6 +616,8 @@ public:
 
         task_tree_type* tree = new task_tree_type;
         task_tree_node_type* tree_node = 0;
+        std::deque<task_type*> _tasks;
+        std::deque<task_tree_node_type*> _nodes;
         for(size_type i = 0; i < _n; ++i)
         {
             _Arg _f = _diff*i; // first
@@ -626,10 +625,11 @@ public:
             if(i+1 == _n)
                 _l = _e;
 
+            _tasks.push_back(new task_type(tg, function, _f, _l));
             tree_node = new task_tree_node_type(tg, _operator,
-                                                new task_type(tg,
-                                                              function, _f, _l),
+                                                _tasks.back(),
                                                 identity, tree->root());
+            _nodes.push_back(tree_node);
             if(i == 0)
                 tree->set_root(tree_node);
 
@@ -637,6 +637,15 @@ public:
         }
         m_data->tp()->add_tasks(tree->root());
         m_current_group->join();
+        for(auto itr : _nodes)
+            delete itr;
+        for(auto titr : _tasks)
+        {
+            for(auto& itr : titr->group()->get_saved_tasks())
+                delete itr;
+            titr->group()->get_saved_tasks().clear();
+        }
+        delete tree;
     }
     //------------------------------------------------------------------------//
 
@@ -672,7 +681,7 @@ public:
     __inline__
     void add_background_task(void* _id, _Func function)
     {
-        typedef task<void, void> task_type;
+        typedef task<void> task_type;
 
         for(size_type i = 0; i < size(); ++i)
         {

@@ -54,16 +54,16 @@ class task_group;
 //============================================================================//
 //      base class for task_tree
 //============================================================================//
-template <typename _Tp, typename _Arg1, typename _Arg2, typename _Arg3,
+template <typename _Tp, typename _Arg1, typename _Arg2,
           typename _Tp_join = _Tp>
 class task_tree_node : public vtask
 {
 public:
-    typedef task_tree_node<_Tp, _Arg1, _Arg2, _Arg3>    this_type;
-    typedef task<_Tp, _Arg1, _Arg2, _Arg3>              task_type;
-    typedef _Tp                                         result_type;
+    typedef task_tree_node<_Tp, _Arg1, _Arg2>    this_type;
+    typedef task<_Tp, _Arg1, _Arg2>              task_type;
+    typedef _Tp                                  result_type;
     FUNCTION_TYPEDEF_1(join_function_type, void, _Tp_join);
-    friend class task<_Tp, _Arg1, _Arg2, _Arg3>;
+    friend class task<_Tp, _Arg1, _Arg2>;
 
 public:
     task_tree_node(task_group* tg,
@@ -71,19 +71,21 @@ public:
                    task_type* task = 0,
                    _Tp val = _Tp(),
                    this_type* _parent = 0)
-    : vtask(tg, new _Tp),
+    : vtask(tg),
       join_function(f),
       m_parent(_parent),
       m_left_child(0), m_right_child(0),
       m_task(task), m_value(val)
     {
         m_task->set_result(&m_value);
-        m_force_delete = true;
+        //m_force_delete = true;
+        m_is_stored_elsewhere = true;
     }
 
     virtual ~task_tree_node()
     {
-        delete m_task;
+        //m_task->destroy();
+        //m_task->set_result(nullptr);
     }
 
 public:
@@ -91,7 +93,7 @@ public:
     void operator()()
     {
         (*m_task)();
-        CALL_FUNCTION(join_function)(m_value);
+        join_function(m_value);
     }
 
 public:

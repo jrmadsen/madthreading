@@ -39,14 +39,13 @@ namespace mad
 
 //============================================================================//
 
-vtask::vtask(task_group* tg, void* result, void* arg1, void* arg2, void* arg3)
+vtask::vtask(task_group* tg, void* result)
 : m_group(tg),
   m_force_delete(false),
   m_is_stored_elsewhere(false),
   m_result(result)
 {
     _check_group();
-    set_arg_array(arg1, arg2, arg3);
 }
 
 //============================================================================//
