@@ -24,7 +24,7 @@
 #include <madthreading/vectorization/vectorization_typedefs.hh>
 #include <madthreading/allocator/allocator.hh>
 #include <madthreading/utility/constants.hh>
-#include <madthreading/threading/AutoLock.hh>
+#include <madthreading/threading/auto_lock.hh>
 
 using namespace std;
 using namespace mad;
@@ -46,14 +46,14 @@ int main(int argc, char** argv)
     //------------------------------------------------------------------------//
     auto block_a = [&sentence] ()
     {
-        AutoLock l(mtx);
+        auto_lock l(mtx);
         sentence += "|";
     };
     //------------------------------------------------------------------------//
     auto block_b = [&sentence] ()
     {
         this_thread::sleep_for(chrono::milliseconds(1));
-        AutoLock l(mtx);
+        auto_lock l(mtx);
         sentence += "_";
     };
     //------------------------------------------------------------------------//

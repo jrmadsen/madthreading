@@ -46,11 +46,11 @@ namespace mad
 
 // Cannot be shared among threads
 template <typename _Mutex, typename _Lock, typename _Unlock>
-class TemplateAutoLock
+class template_auto_lock
 {
 public:
     //------------------------------------------------------------------------//
-    TemplateAutoLock(_Mutex* _mtx, _Lock _lock, _Unlock _unlock)
+    template_auto_lock(_Mutex* _mtx, _Lock _lock, _Unlock _unlock)
     : is_locked(false),
       m_mtx(_mtx),
       m_lock(_lock),
@@ -59,7 +59,7 @@ public:
         lock();
     }
     //------------------------------------------------------------------------//
-    virtual ~TemplateAutoLock()
+    virtual ~template_auto_lock()
     {
         if(is_locked)
             unlock();
@@ -102,8 +102,8 @@ protected:
 
 private:
     // Disable copy and assignment
-    TemplateAutoLock(const TemplateAutoLock&) {}
-    TemplateAutoLock& operator=(const TemplateAutoLock&) { }
+    template_auto_lock(const template_auto_lock&) {}
+    template_auto_lock& operator=(const template_auto_lock&) { }
 
 };
 

@@ -49,10 +49,10 @@
 #include "threading.hh"
 #include "condition.hh"
 
-// utility mutex class. Cannot be used with AutoLock currently,
+// utility mutex class. Cannot be used with auto_lock currently,
 // but nice in some situations since it doesn't have to initialized
 // like CoreMutex
-// eventually need to make AutoLock accept it
+// eventually need to make auto_lock accept it
 namespace mad
 {
 

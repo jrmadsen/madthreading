@@ -32,7 +32,7 @@
 #include "atomic_array.hh"
 #include "atomic_deque.hh"
 #include "atomic_map.hh"
-#include "AutoLock.hh"
+#include "auto_lock.hh"
 #include "threading.hh"
 
 #include <vector>
@@ -50,7 +50,7 @@ SUITE( Atomic_Tests )
     using mad::atomic_array;
     using mad::atomic_deque;
     using mad::atomic_map;
-    using mad::AutoLock;
+    using mad::auto_lock;
     using mad::CoreThread;
     typedef mad::mutex  Mutex_t;
     //------------------------------------------------------------------------//
@@ -99,7 +99,7 @@ SUITE( Atomic_Tests )
         while(mydata->wait()) { }
 
         static Mutex_t mtx;
-        AutoLock lock(&mtx);
+        auto_lock lock(&mtx);
         mydata->value += 1;
         return (void*) mydata;
     }
@@ -166,7 +166,7 @@ SUITE( Atomic_Tests )
         while(mydata->wait()) { }
 
         static Mutex_t mtx;
-        AutoLock lock(&mtx);
+        auto_lock lock(&mtx);
         mydata->value += 1.0;
         return (void*) mydata;
     }

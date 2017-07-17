@@ -65,7 +65,7 @@
 #include "cache_line_size.hh"
 #include "allocator_pool.hh"
 #include "../threading/threading.hh"
-#include "../threading/AutoLock.hh"
+#include "../threading/auto_lock.hh"
 #include "../threading/mutex.hh"
 
 #ifdef USE_TBB
@@ -528,7 +528,7 @@ template <typename T, bool USE_TLP>
 T* allocator<T, USE_TLP>::malloc_single()
 {
     static mad::mutex mutex;
-    mad::AutoLock l(&mutex);
+    mad::auto_lock l(&mutex);
     return static_cast<T*>(m_mem.alloc());
 }
 

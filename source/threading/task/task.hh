@@ -51,7 +51,7 @@
 #endif
 
 #include "threading.hh"
-#include "AutoLock.hh"
+#include "auto_lock.hh"
 #include "allocator.hh"
 #include "task_group.hh"
 

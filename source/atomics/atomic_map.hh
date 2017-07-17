@@ -60,7 +60,7 @@
 
 #ifdef _HAS_ATOMICS_
 
-#include "AutoLock.hh"
+#include "auto_lock.hh"
 
 namespace mad
 {
@@ -84,7 +84,7 @@ public:
     typedef atomic_map<_Key, _Tp, _Compare> this_type;
 
     typedef mad::mutex  	Mutex_t;
-    typedef AutoLock        Lock_t;
+    typedef auto_lock        Lock_t;
 
 public:
     typedef typename Base_t::iterator               iterator;

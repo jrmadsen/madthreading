@@ -196,7 +196,7 @@ public:
     {
         long _id = -1;
         static CoreMutex _mtx;
-        AutoLock l(&_mtx);
+        auto_lock l(&_mtx);
         thread_manager* _tm = thread_manager::Instance();
         if(!_tm)
             return _id;

@@ -33,7 +33,7 @@
 //
 
 #include "threading.hh"
-#include "AutoLock.hh"
+#include "auto_lock.hh"
 
 #if defined (WIN32)
    #include <Windows.h>

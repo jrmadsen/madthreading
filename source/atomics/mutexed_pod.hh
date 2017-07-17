@@ -47,16 +47,16 @@
 %{
     #define SWIG_FILE_WITH_INIT
     #include "../threading.hh"
-    #include "../AutoLock.hh"
+    #include "../auto_lock.hh"
     #include "mutexed_pod.hh"
 %}
 
-%import "AutoLock.hh"
+%import "auto_lock.hh"
 %include "mutexed_pod.hh"
 #endif
 
 #include "../threading/threading.hh"
-#include "../threading/AutoLock.hh"
+#include "../threading/auto_lock.hh"
 
 #if defined(USE_BOOST_SERIALIZATION)
 #   include <boost/serialization/split_member.hpp>
@@ -71,7 +71,7 @@ namespace mad
 {
 
 
-template<typename _Tp, typename _Mutex = CoreMutex, typename _Lock = AutoLock>
+template<typename _Tp, typename _Mutex = CoreMutex, typename _Lock = auto_lock>
 class mutexed_pod
 {
 public:

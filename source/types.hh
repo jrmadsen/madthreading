@@ -43,7 +43,7 @@
 
 #include "allocator/allocator.hh"
 #include "threading/threading.hh"
-#include "threading/AutoLock.hh"
+#include "threading/auto_lock.hh"
 
 #ifdef ENABLE_THREADING
     #include "atomics/atomic.hh"
@@ -91,7 +91,7 @@ namespace mad
     #define type_conversion(type)   atomic<type>
     #define base_conversion(type)   typename type::value_type
 
-    typedef AutoLock                Lock_t;
+    typedef auto_lock                Lock_t;
 
 #else
 
@@ -120,7 +120,7 @@ namespace mad
     #define type_conversion(type)   type
     #define base_conversion(type)   type
 
-    typedef AutoLock                Lock_t;
+    typedef auto_lock                Lock_t;
 
 #endif
 

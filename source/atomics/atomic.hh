@@ -105,7 +105,7 @@ public:
     {
 #if defined(_MUTEXED_POD_ATOMICS_)
         static mad::mutex mutex;
-        AutoLock lock(&mutex);
+        auto_lock lock(&mutex);
         _value = rhs;
 #else
         atomics::set(&_value, rhs);

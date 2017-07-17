@@ -559,7 +559,7 @@ void thread_pool::run(vtask*& task)
 
     task->group()->task_count() -= 1;
     {
-        AutoLock l(task->group()->join_lock());
+        auto_lock l(task->group()->join_lock());
         task->group()->join_cond().signal();
     }
 

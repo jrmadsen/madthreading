@@ -38,30 +38,30 @@
 
 #ifdef SWIG
 
-%module AutoLock
+%module auto_lock
 %{
     #define SWIG_FILE_WITH_INIT
     #include "threading.hh"
-    #include "TemplateAutoLock.hh"
-    #include "AutoLock.hh"
+    #include "template_auto_lock.hh"
+    #include "auto_lock.hh"
 %}
 
 %import "threading.hh"
-%import "TemplateAutoLock.hh"
+%import "template_auto_lock.hh"
 
 #include "threading.hh"
 
-%template(PyAutoLock) mad::TemplateAutoLock<mad::CoreMutex, mad::thread_lock, mad::thread_unlock>;
-typedef mad::TemplateAutoLock<mad::CoreMutex,
+%template(Pyauto_lock) mad::template_auto_lock<mad::CoreMutex, mad::thread_lock, mad::thread_unlock>;
+typedef mad::template_auto_lock<mad::CoreMutex,
                               mad::thread_lock,
-                              mad::thread_unlock> PyAutoLock;
+                              mad::thread_unlock> Pyauto_lock;
 typedef mad::CoreMutex  CoreMutex;
 %import "mutex.hh"
-%include "AutoLock.hh"
+%include "auto_lock.hh"
 #endif
 
 #include "threading.hh"
-#include "TemplateAutoLock.hh"
+#include "template_auto_lock.hh"
 #include "mutex.hh"
 
 //----------------------------------------------------------------------------//
@@ -71,14 +71,14 @@ namespace mad
 
 //----------------------------------------------------------------------------//
 
-struct ImplAutoLock : public TemplateAutoLock<mad::CoreMutex,
+struct Implauto_lock : public template_auto_lock<mad::CoreMutex,
                                               mad::thread_lock,
                                               mad::thread_unlock>
 {
     //------------------------------------------------------------------------//
 
-    ImplAutoLock(mad::CoreMutex* mtx)
-    : TemplateAutoLock<mad::CoreMutex,
+    Implauto_lock(mad::CoreMutex* mtx)
+    : template_auto_lock<mad::CoreMutex,
                        mad::thread_lock,
                        mad::thread_unlock>(mtx,
                                            &COREMUTEXLOCK,
@@ -87,8 +87,8 @@ struct ImplAutoLock : public TemplateAutoLock<mad::CoreMutex,
 
     //------------------------------------------------------------------------//
 
-    ImplAutoLock(mad::mutex* mtx)
-    : TemplateAutoLock<mad::CoreMutex,
+    Implauto_lock(mad::mutex* mtx)
+    : template_auto_lock<mad::CoreMutex,
                        mad::thread_lock,
                        mad::thread_unlock>(mtx->base_mutex_ptr(),
                                            &COREMUTEXLOCK,
@@ -97,8 +97,8 @@ struct ImplAutoLock : public TemplateAutoLock<mad::CoreMutex,
 
     //------------------------------------------------------------------------//
 #ifndef SWIG
-    ImplAutoLock(mad::CoreMutex& mtx)
-    : TemplateAutoLock<mad::CoreMutex,
+    Implauto_lock(mad::CoreMutex& mtx)
+    : template_auto_lock<mad::CoreMutex,
                        mad::thread_lock,
                        mad::thread_unlock>(&mtx,
                                            &COREMUTEXLOCK,
@@ -107,8 +107,8 @@ struct ImplAutoLock : public TemplateAutoLock<mad::CoreMutex,
 
     //------------------------------------------------------------------------//
 
-    ImplAutoLock(mad::mutex& mtx)
-    : TemplateAutoLock<mad::CoreMutex,
+    Implauto_lock(mad::mutex& mtx)
+    : template_auto_lock<mad::CoreMutex,
                        mad::thread_lock,
                        mad::thread_unlock>(mtx.base_mutex_ptr(),
                                            &COREMUTEXLOCK,
@@ -121,7 +121,7 @@ struct ImplAutoLock : public TemplateAutoLock<mad::CoreMutex,
 
 //----------------------------------------------------------------------------//
 
-typedef ImplAutoLock AutoLock;
+typedef Implauto_lock auto_lock;
 
 //----------------------------------------------------------------------------//
 
