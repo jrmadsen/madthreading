@@ -18,12 +18,16 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
 
   # c++98 should be supported for all(?) versions we may encounter, and
   # make it the default as required for compilers that recognise standards
-  set(CMAKE_CXX_STANDARD_DEFAULT "98")
+  set(CMAKE_CXX_STANDARD_DEFAULT "11")
 
   set(CMAKE_CXX98_STANDARD_COMPILE_OPTION "-std=c++98")
   set(CMAKE_CXX98_EXTENSION_COMPILE_OPTION "-std=gnu++98")
 
+  set(CMAKE_CXX0X_STANDARD_COMPILE_OPTION "-std=c++0x")
+  set(CMAKE_CXX0X_EXTENSION_COMPILE_OPTION "-std=gnu++0x")
+
   if(NOT (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0))
+
     set(CMAKE_CXX11_STANDARD_COMPILE_OPTION "-std=c++11")
     set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION "-std=gnu++11")
 
@@ -116,6 +120,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
 
   set(CMAKE_CXX_COMPILE_FEATURES
     ${CMAKE_CXX98_COMPILE_FEATURES}
+    ${CMAKE_CXX0X_COMPILE_FEATURES}
     ${CMAKE_CXX11_COMPILE_FEATURES}
     ${CMAKE_CXX14_COMPILE_FEATURES}
     )
@@ -155,7 +160,7 @@ set(${PROJECT_NAME}_TARGET_COMPILE_FEATURES
 # Mark as advanced because most users will not need it
 enum_option(BUILD_CXXSTD
   DOC "C++ Standard to compile against"
-  VALUES 98 11 14 c++98 c++11 c++14
+  VALUES 98 0x 11 14 c++98 c++0x c++11 c++14
   CASE_INSENSITIVE
   )
 

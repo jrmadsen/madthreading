@@ -1,17 +1,17 @@
 // MIT License
-// 
+//
 // Copyright (c) 2017 Jonathan R. Madsen
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -19,10 +19,6 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-// 
-
-//
-//
 //
 //
 //
@@ -82,6 +78,8 @@ MACRO(_tid_)
 #include "joining_task.hh"
 #include "task_tree.hh"
 #include "../allocator/allocator.hh"
+#include "task_group.hh"
+#include "fpe_detection.hh"
 
 // task.hh defines mad::function and mad::bind if CXX11 or USE_BOOST
 
@@ -89,7 +87,11 @@ MACRO(_tid_)
 #include <numeric>
 #include <iomanip>
 #include <cmath>
+#include <cassert>
 
+#if defined(USE_OPENMP) && defined(__INTEL_COMPILER)
+#   include <omp.h>
+#endif
 namespace mad
 {
 
@@ -106,13 +108,11 @@ public:
 public:
     // Constructor and Destructors
     thread_manager_data()
-        : m_size(0),
-          m_tp(new mad::thread_pool)
+    : m_size(0), m_tp(new mad::thread_pool)
     { }
 
     thread_manager_data(size_type _n)
-        : m_size(0),
-          m_tp(new mad::thread_pool(_n))
+    : m_size(0), m_tp(new mad::thread_pool(_n))
     {
         allocate_threads(_n);
     }
@@ -176,29 +176,16 @@ public:
 
 public:
     // Constructor and Destructors
-    thread_manager()
-    : m_data(new data_type)
-    {
-        check_instance();
-        fgInstance = this;
-    }
+    thread_manager();
+    thread_manager(size_type _n, bool _use_affinity = false);
+    virtual ~thread_manager();
 
-    thread_manager(size_type _n, bool _use_affinity = false)
-    : m_data(new data_type(_n))
-    {
-        check_instance();
-        fgInstance = this;
-        this->use_affinity(_use_affinity);
-    }
+    thread_manager* clone(task_group* = 0) const;
 
-    // Virtual destructors are required by abstract classes
-    // so add it by default, just in case
-    virtual ~thread_manager()
-    {
-        finalize();
-        delete m_data; m_data = 0;
-        fgInstance = 0;
-    }
+private:
+    // disable external copying and assignment
+    thread_manager& operator=(const thread_manager&);
+    thread_manager(const thread_manager&);
 
 public:
     static thread_manager* Instance();
@@ -250,13 +237,7 @@ public:
 
 private:
     static thread_manager* fgInstance;
-    static void check_instance();
-
-    // disable copying and assignment
-#if !defined(SWIG) && defined(CXX11)
-    thread_manager& operator=(const thread_manager&) = delete;
-    thread_manager(const thread_manager&) = delete;
-#endif
+    static void check_instance(thread_manager*);
 
 public:
     // Public functions
@@ -273,6 +254,32 @@ public:
     void allocate_threads(size_type _n) { m_data->allocate_threads(_n); }
     //------------------------------------------------------------------------//
 
+private:
+    task_group* set_task_group(task_group* tg)
+    {
+        if(tg && tg != m_current_group && tg != m_default_group)
+        {
+            std::stringstream ss;
+            ss << "\n";
+            ss << mad::thread_manager::sid(CORETHREADSELFINT());
+            ss << "WARNING! ";
+            ss << "Leaked <task_group> object! If a new task group was "
+               << "explicitly created, use thread_manager::clone(task_group*) "
+               << "to get a new pointer to a thread_manager holding the "
+               << "task_group.\n";
+            std::cerr << ss.str() << std::endl;
+        }
+
+        if(tg && tg != m_default_group)
+            m_current_group = tg;
+        else
+            m_current_group = m_default_group;
+
+        assert(m_current_group != 0);
+
+        return m_current_group;
+    }
+
 public:
     //------------------------------------------------------------------------//
     // public run functions
@@ -280,48 +287,63 @@ public:
     template <typename _Ret, typename _Func,
               typename _Arg1, typename _Arg2, typename _Arg3>
     __inline__
-    void exec(_Func function, _Arg1 argument1, _Arg2 argument2, _Arg3 argument3)
+    void exec(_Func function, _Arg1 argument1, _Arg2 argument2, _Arg3 argument3,
+              task_group* tg = 0)
     {
         typedef task<_Ret, _Arg1, _Arg2, _Arg3> task_type;
-        task_type* t = new task_type(function, argument1, argument2, argument3);
+
+        tg = set_task_group(tg);
+        task_type* t = new task_type(tg, function, argument1, argument2, argument3);
         m_data->tp()->add_task(t);
     }
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func, typename _Arg1, typename _Arg2>
     __inline__
-    void exec(_Func function, _Arg1 argument1, _Arg2 argument2)
+    void exec(_Func function, _Arg1 argument1, _Arg2 argument2,
+              task_group* tg = 0)
     {
         typedef task<_Ret, _Arg1, _Arg2> task_type;
-        task_type* t = new task_type(function, argument1, argument2);
+
+        tg = set_task_group(tg);
+        task_type* t = new task_type(tg, function, argument1, argument2);
         m_data->tp()->add_task(t);
     }
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func, typename _Arg>
     __inline__
-    void exec(_Func function, _Arg argument)
+    void exec(_Func function, _Arg argument,
+              task_group* tg = 0)
     {
         typedef task<_Ret, _Arg> task_type;
-        task_type* t = new task_type(function, argument);
+
+        tg = set_task_group(tg);
+        task_type* t = new task_type(tg, function, argument);
         m_data->tp()->add_task(t);
     }
     //------------------------------------------------------------------------//
 #ifndef SWIG
     template <typename _Func, typename _Arg>
     __inline__
-    void exec(_Func function, _Arg argument)
+    void exec(_Func function, _Arg argument,
+              task_group* tg = 0)
     {
         typedef task<void, _Arg> task_type;
-        task_type* t = new task_type(function, argument);
+
+        tg = set_task_group(tg);
+        task_type* t = new task_type(tg, function, argument);
         m_data->tp()->add_task(t);
     }
 #endif
     //------------------------------------------------------------------------//
     template <typename _Func>
     __inline__
-    void exec(_Func function)
+    void exec(_Func function,
+              task_group* tg = 0)
     {
         typedef task<void, void> task_type;
-        task_type* t = new task_type(function);
+
+        tg = set_task_group(tg);
+        task_type* t = new task_type(tg, function);
         m_data->tp()->add_task(t);
     }
     //------------------------------------------------------------------------//
@@ -333,13 +355,15 @@ public:
     template <typename _Ret, typename _Func, typename _Arg1, typename _Arg2,
               typename _Arg3>
     __inline__
-    void run(_Func function, _Arg1 arg1, _Arg2 arg2, _Arg3 arg3)
+    void run(_Func function, _Arg1 arg1, _Arg2 arg2, _Arg3 arg3,
+             task_group* tg = 0)
     {
         typedef task<_Ret, _Arg1, _Arg2, _Arg3> task_type;
 
+        tg = set_task_group(tg);
         for(size_type i = 0; i < size(); ++i)
         {
-            task_type* t = new task_type(function, arg1, arg2, arg3);
+            task_type* t = new task_type(tg, function, arg1, arg2, arg3);
             m_data->tp()->add_task(t);
         }
     }
@@ -347,13 +371,15 @@ public:
 #ifndef SWIG
     template <typename _Func, typename _Arg1, typename _Arg2, typename _Arg3>
     __inline__
-    void run(_Func function, _Arg1 arg1, _Arg2 arg2, _Arg3 arg3)
+    void run(_Func function, _Arg1 arg1, _Arg2 arg2, _Arg3 arg3,
+             task_group* tg = 0)
     {
         typedef task<void, _Arg1, _Arg2, _Arg3> task_type;
 
+        tg = set_task_group(tg);
         for(size_type i = 0; i < size(); ++i)
         {
-            task_type* t = new task_type(function, arg1, arg2, arg3);
+            task_type* t = new task_type(tg, function, arg1, arg2, arg3);
             m_data->tp()->add_task(t);
         }
     }
@@ -361,13 +387,15 @@ public:
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func, typename _Arg1, typename _Arg2>
     __inline__
-    void run(_Func function, _Arg1 arg1, _Arg2 arg2)
+    void run(_Func function, _Arg1 arg1, _Arg2 arg2,
+             task_group* tg = 0)
     {
         typedef task<_Ret, _Arg1, _Arg2> task_type;
 
+        tg = set_task_group(tg);
         for(size_type i = 0; i < size(); ++i)
         {
-            task_type* t = new task_type(function, arg1, arg2);
+            task_type* t = new task_type(tg, function, arg1, arg2);
             m_data->tp()->add_task(t);
         }
     }
@@ -375,13 +403,14 @@ public:
 #ifndef SWIG
     template <typename _Func, typename _Arg1, typename _Arg2>
     __inline__
-    void run(_Func function, _Arg1 arg1, _Arg2 arg2)
+    void run(_Func function, _Arg1 arg1, _Arg2 arg2,
+             task_group* tg = 0)
     {
         typedef task<void, _Arg1, _Arg2> task_type;
 
         for(size_type i = 0; i < size(); ++i)
         {
-            task_type* t = new task_type(function, arg1, arg2);
+            task_type* t = new task_type(tg, function, arg1, arg2);
             m_data->tp()->add_task(t);
         }
     }
@@ -389,13 +418,15 @@ public:
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func, typename _Arg>
     __inline__
-    void run(_Func function, _Arg argument)
+    void run(_Func function, _Arg argument,
+             task_group* tg = 0)
     {
         typedef task<_Ret, _Arg> task_type;
 
+        tg = set_task_group(tg);
         for(size_type i = 0; i < size(); ++i)
         {
-            task_type* t = new task_type(function, argument);
+            task_type* t = new task_type(tg, function, argument);
             m_data->tp()->add_task(t);
         }
     }
@@ -403,13 +434,15 @@ public:
 #ifndef SWIG
     template <typename _Func, typename _Arg>
     __inline__
-    void run(_Func function, _Arg argument)
+    void run(_Func function, _Arg argument,
+             task_group* tg = 0)
     {
         typedef task<void, _Arg> task_type;
 
+        tg = set_task_group(tg);
         for(size_type i = 0; i < size(); ++i)
         {
-            task_type* t = new task_type(function, argument);
+            task_type* t = new task_type(tg, function, argument);
             m_data->tp()->add_task(t);
         }
     }
@@ -417,13 +450,15 @@ public:
     //------------------------------------------------------------------------//
     template <typename _Func>
     __inline__
-    void run(_Func function)
+    void run(_Func function,
+             task_group* tg = 0)
     {
         typedef task<void, void> task_type;
 
+        tg = set_task_group(tg);
         for(size_type i = 0; i < size(); ++i)
         {
-            task_type* t = new task_type(function);
+            task_type* t = new task_type(tg, function);
             m_data->tp()->add_task(t);
         }
     }
@@ -435,13 +470,15 @@ public:
     //------------------------------------------------------------------------//
     template <typename _Func, typename InputIterator>
     __inline__
-    void run_loop(_Func function, InputIterator _s, InputIterator _e)
+    void run_loop(_Func function, InputIterator _s, InputIterator _e,
+                  task_group* tg = 0)
     {
         typedef task<void, InputIterator> task_type;
 
+        tg = set_task_group(tg);
         for(InputIterator itr = _s; itr != _e; ++itr)
         {
-            task_type* t = new task_type(function, itr);
+            task_type* t = new task_type(tg, function, itr);
             m_data->tp()->add_task(t);
         }
     }
@@ -452,13 +489,15 @@ public:
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func, typename _Arg1, typename _Arg>
     __inline__
-    void run_loop(_Func function, const _Arg1& _s, const _Arg& _e)
+    void run_loop(_Func function, const _Arg1& _s, const _Arg& _e,
+                  task_group* tg = 0)
     {
         typedef task<_Ret, _Arg> task_type;
 
+        tg = set_task_group(tg);
         for(size_type i = _s; i < _e; ++i)
         {
-            task_type* t = new task_type(function, i);
+            task_type* t = new task_type(tg, function, i);
             m_data->tp()->add_task(t);
         }
     }
@@ -466,13 +505,15 @@ public:
 #ifndef SWIG
     template <typename _Ret, typename _Func, typename InputIterator>
     __inline__
-    void run_loop(_Func function, InputIterator _s, InputIterator _e)
+    void run_loop(_Func function, InputIterator _s, InputIterator _e,
+                  task_group* tg = 0)
     {
         typedef task<_Ret, InputIterator> task_type;
 
+        tg = set_task_group(tg);
         for(InputIterator itr = _s; itr != _e; ++itr)
         {
-            task_type* t = new task_type(function, itr);
+            task_type* t = new task_type(tg, function, itr);
             m_data->tp()->add_task(t);
         }
     }
@@ -485,13 +526,15 @@ public:
 #ifndef SWIG
     template <typename _Func, typename _Arg1, typename _Arg>
     __inline__
-    void run_loop(_Func function, const _Arg1& _s, const _Arg& _e)
+    void run_loop(_Func function, const _Arg1& _s, const _Arg& _e,
+                  task_group* tg = 0)
     {
         typedef task<void, _Arg> task_type;
 
+        tg = set_task_group(tg);
         for(size_type i = _s; i < _e; ++i)
         {
-            task_type* t = new task_type(function, i);
+            task_type* t = new task_type(tg, function, i);
             m_data->tp()->add_task(t);
         }
     }
@@ -507,10 +550,12 @@ public:
     void run_loop(_Func function,
                   const _Arg1& _s,
                   const _Arg& _e,
-                  unsigned long chunks)
+                  unsigned long chunks,
+                  task_group* tg = 0)
     {
         typedef task<_Ret, _Arg, _Arg> task_type;
 
+        tg = set_task_group(tg);
         _Arg _grainsize = (chunks == 0) ? size() : chunks;
         _Arg _diff = (_e - _s)/_grainsize;
         size_type _n = _grainsize;
@@ -520,7 +565,7 @@ public:
             _Arg _l = _f + _diff; // last
             if(i+1 == _n)
                 _l = _e;
-            task_type* t = new task_type(function, _f, _l);
+            task_type* t = new task_type(tg, function, _f, _l);
             m_data->tp()->add_task(t);
         }
     }
@@ -529,10 +574,12 @@ public:
     template <typename _Func, typename _Arg1, typename _Arg>
     __inline__
     void run_loop(_Func function, const _Arg1& _s, const _Arg& _e,
-                  unsigned long chunks)
+                  unsigned long chunks,
+                  task_group* tg = 0)
     {
         typedef task<void, _Arg, _Arg> task_type;
 
+        tg = set_task_group(tg);
         _Arg _grainsize = (chunks == 0) ? size() : chunks;
         _Arg _diff = (_e - _s)/_grainsize;
         size_type _n = _grainsize;
@@ -542,7 +589,8 @@ public:
             _Arg _l = _f + _diff; // last
             if(i+1 == _n)
                 _l = _e;
-            task_type* t = new task_type(function, _f, _l);
+            task_type* t = new task_type(tg,
+                                         function, _f, _l);
             m_data->tp()->add_task(t);
         }
     }
@@ -555,12 +603,14 @@ public:
     __inline__
     void
     run_loop(_Func function, const _Arg1& _s, const _Arg& _e,
-             unsigned long chunks, _Join _operator, _Tp identity)
+             unsigned long chunks, _Join _operator, _Tp identity,
+             task_group* tg = 0)
     {
         typedef task<_Ret, _Arg, _Arg>                  task_type;
         typedef task_tree_node<_Ret, _Arg, _Arg, void>  task_tree_node_type;
         typedef task_tree<task_tree_node_type>          task_tree_type;
 
+        tg = set_task_group(tg);
         _Arg _grainsize = (chunks == 0) ? size() : chunks;
         _Arg _diff = (_e - _s)/_grainsize;
         size_type _n = _grainsize;
@@ -574,15 +624,17 @@ public:
             if(i+1 == _n)
                 _l = _e;
 
-            tree_node = new task_tree_node_type(_operator,
-                                                new task_type(function, _f, _l),
+            tree_node = new task_tree_node_type(tg, _operator,
+                                                new task_type(tg,
+                                                              function, _f, _l),
                                                 identity, tree->root());
             if(i == 0)
                 tree->set_root(tree_node);
+
             tree->insert(tree->root(), tree_node);
         }
         m_data->tp()->add_tasks(tree->root());
-        m_data->tp()->join();
+        m_current_group->join();
     }
     //------------------------------------------------------------------------//
 
@@ -596,7 +648,8 @@ public:
     {
         typedef task<_Ret, _Arg> task_type;
 
-        task_type* t = new task_type(function, argument);
+        task_type* t = new task_type(m_current_group,
+                                     function, argument);
         m_data->tp()->add_background_task(_id, t);
     }
     //------------------------------------------------------------------------//
@@ -607,7 +660,8 @@ public:
     {
         typedef task<void, _Arg> task_type;
 
-        task_type* t = new task_type(function, argument);
+        task_type* t = new task_type(m_current_group,
+                                     function, argument);
         m_data->tp()->add_background_task(_id, t);
     }
 #endif
@@ -620,7 +674,8 @@ public:
 
         for(size_type i = 0; i < size(); ++i)
         {
-            task_type* t = new task_type(function);
+            task_type* t = new task_type(m_current_group,
+                                         function);
             m_data->tp()->add_background_task(_id, t);
         }
     }
@@ -669,30 +724,30 @@ public:
     __inline__
     void join()
     {
-        m_data->tp()->join();
+        m_current_group->join();
     }
     //------------------------------------------------------------------------//
     // for tasks that return values
     // there is probably a more flexible way to do this but it will do for now
     //------------------------------------------------------------------------//
-    template <typename _Ret>
+    template <typename _Ret, typename _List>
     __inline__
     _Ret join(_Ret _def,
-              //std::function<_Ret(std::vector<_Ret>&, _Ret)> _operator
-              _Ret(*_operator)(std::vector<_Ret>&, _Ret))
+              _Ret(*_operator)(_List&, _Ret))
     {
-        typedef std::vector<_Ret> return_container;
+        typedef _List return_container;
 
-        m_data->tp()->join();
+        m_current_group->join();
 
         return_container ret_data;
-        for(mad::thread_pool::iterator itr = m_data->tp()->begin();
-            itr != m_data->tp()->end(); ++itr)
+        for(mad::task_group::iterator itr = m_current_group->begin();
+            itr != m_current_group->end(); ++itr)
         {
-            ret_data.push_back(*(static_cast<_Ret*>((*itr)->get())));
+            ret_data.insert(ret_data.end(),
+                            *(static_cast<_Ret*>((*itr)->get())));
             delete *itr;
         }
-        m_data->tp()->get_saved_tasks().clear();
+        m_current_group->get_saved_tasks().clear();
         return _operator(ret_data, _def);
     }
     //------------------------------------------------------------------------//
@@ -700,15 +755,15 @@ public:
     __inline__
     void join(_Func _operator)
     {
-        m_data->tp()->join();
+        m_current_group->join();
 
-        for(mad::thread_pool::iterator itr = m_data->tp()->begin();
-            itr != m_data->tp()->end(); ++itr)
+        for(mad::task_group::iterator itr = m_current_group->begin();
+            itr != m_current_group->end(); ++itr)
         {
             _operator(*(static_cast<_Ret*>((*itr)->get())));
             delete *itr;
         }
-        m_data->tp()->get_saved_tasks().clear();
+        m_current_group->get_saved_tasks().clear();
     }
 
     //------------------------------------------------------------------------//
@@ -744,9 +799,11 @@ public:
 
 protected:
     // Protected variables
-    static size_type max_threads;
-    data_type* m_data;
-
+    static size_type    max_threads;
+    static task_group*  m_default_group;
+    data_type*          m_data;
+    task_group*         m_current_group;
+    bool                m_is_clone;
 };
 
 //============================================================================//

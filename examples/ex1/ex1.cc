@@ -35,7 +35,7 @@ _Tp& fill(_Tp& _array, typename _Tp::value_type _b, typename _Tp::value_type _e)
 template <typename _Tp>
 void _run_itr(_Tp itr)
 {
-    static mad::CoreMutex mutex = CORE_MUTEX_INITIALIZER;
+    static mad::mutex mutex;
     mad::AutoLock l(&mutex);
     tmcout << "Hello World! - iteration #" << *itr << std::endl;
 }
@@ -66,7 +66,7 @@ int main(int argc, char** argv)
     static mad::mutex mutex;
     // NOTE: This also works:
     // static mad::CoreMutex mutex = CORE_MUTEX_INITIALIZER;
-        
+
     //------------------------------------------------------------------------//
 
     auto _run1 = [] (int n)

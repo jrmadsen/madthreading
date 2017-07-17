@@ -21,13 +21,13 @@ inline void report(_Step_t num_steps, _Pi_t pi, timer::timer& t,
 {
     os.precision(8);
     os.setf(std::ios::fixed);
-    os << "\n " << std::setw(25)
+    os << " " << std::setw(40)
        << prefix << ((prefix.length() > 0) ? ": " : "")
        << " pi with "
        << num_steps << " steps is "
        << pi << " in ";
     t.report();
-    os << "\n" << std::endl;
+    os << std::endl;
     os.unsetf(std::ios::fixed);
 }
 

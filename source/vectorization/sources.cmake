@@ -7,6 +7,6 @@ include_directories(${PROJECT_SOURCE_DIR}/source/vectorization)
 
 include(MacroDefineModule)
 
-DEFINE_MODULE(NAME mad.threading
+DEFINE_MODULE(NAME mad.vectorization
               HEADER_EXT ".h;.hh"
               SOURCE_EXT ".cc;.cpp")

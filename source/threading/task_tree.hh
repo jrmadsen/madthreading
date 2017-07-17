@@ -1,17 +1,17 @@
 // MIT License
-// 
+//
 // Copyright (c) 2017 Jonathan R. Madsen
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -19,7 +19,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-// 
+//
 
 //
 //
@@ -55,8 +55,8 @@
 //----------------------------------------------------------------------------//
 
 #include "../types.hh"
-#include "task.hh"
 #include "mutex.hh"
+#include "task.hh"
 
 #include <queue>
 #include <stack>
@@ -65,7 +65,7 @@
 namespace mad
 {
 
-class vtask;
+class task_group;
 
 //============================================================================//
 //      base class for task_tree
@@ -82,11 +82,12 @@ public:
     friend class task<_Tp, _Arg1, _Arg2, _Arg3>;
 
 public:
-    task_tree_node(join_function_type f,
+    task_tree_node(task_group* tg,
+                   join_function_type f,
                    task_type* task = 0,
                    _Tp val = _Tp(),
                    this_type* _parent = 0)
-    : vtask(new _Tp),
+    : vtask(tg, new _Tp),
       join_function(f),
       m_parent(_parent),
       m_left_child(0), m_right_child(0),
@@ -134,8 +135,6 @@ protected:
     task_tree_node*     m_right_child;
     task_type*          m_task;
     _Tp                 m_value;
-    //ulong_type      m_level;
-
 };
 
 
@@ -169,8 +168,8 @@ public:
     { }
 
 public:
-    inline tree_node_type* root() const { return m_root; }
-    inline tree_node_type*& root() { return m_root; }
+    inline const tree_node_type*& root() const  { return m_root; }
+    inline       tree_node_type*& root()        { return m_root; }
 
     inline void set_root(tree_node_type* val) { m_root = val; }
     inline void insert(tree_node_type*&, tree_node_type*, tree_node_type* = 0);

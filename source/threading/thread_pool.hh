@@ -1,17 +1,17 @@
 // MIT License
-// 
+//
 // Copyright (c) 2017 Jonathan R. Madsen
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -19,7 +19,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-// 
+//
 
 //
 //
@@ -50,11 +50,10 @@
 
 #include "threading.hh"
 #include "mutex.hh"
-#include "task.hh"
 #include "condition.hh"
 #include "allocator.hh"
-#include "AutoLock.hh"
 #include "atomics/atomic.hh"
+#include "task.hh"
 #include "task_tree.hh"
 
 #include <iostream>
@@ -83,8 +82,6 @@ public:
     typedef ulong_ts                                        task_count_type;
     typedef volatile int                                    pool_state_type;
     typedef mad::condition                                  Condition_t;
-    typedef TaskContainer_t::iterator                       iterator;
-    typedef TaskContainer_t::const_iterator                 const_iterator;
     typedef std::map<void*, task_type*>                     TaskMap_t;
     typedef std::map<void*, volatile bool>                  JoinMap_t;
     typedef std::map<ulong_type, ulong_type>                tid_type;
@@ -121,16 +118,6 @@ public:
     template <typename _Tp, typename _A1,
               typename _A2, typename _A3, typename _TpJ>
     int add_tasks(task_tree_node<_Tp, _A1, _A2, _A3, _TpJ>*);
-    // wait for threads to finish tasks
-    void join();
-    // Get tasks with non-void return types
-    TaskContainer_t& get_saved_tasks() { return m_save_tasks; }
-    const TaskContainer_t& get_saved_tasks() const { return m_save_tasks; }
-    // iterate over tasks with return type
-    iterator begin() { return m_save_tasks.begin(); }
-    iterator end()   { return m_save_tasks.end(); }
-    const_iterator begin() const { return m_save_tasks.begin(); }
-    const_iterator end()   const { return m_save_tasks.end(); }
 
 public:
     // background tasks are task that you don't call join() on
@@ -146,6 +133,8 @@ public:
     void signal_background(void*, T);
     // check is a background task is finished computing
     volatile bool& is_done(void* ptr) { return m_back_done.find(ptr)->second; }
+    // get the pool state
+    const pool_state_type& state() const { return m_pool_state; }
 
 public:
     // see how many main task threads there are
@@ -164,13 +153,9 @@ public:
 
 protected:
     void* execute_thread(); // function thread sits in
-    void background_thread(); // function background threads sit in
-    // save a task with a return type
-    int save_task(task_type* task);
-    // check if any tasks are still pending
-    int pending() { return m_task_count; }
-    void run(task_type*&);
-    bool is_initialized() const;
+    void  background_thread(); // function background threads sit in
+    void  run(task_type*&);
+    bool  is_initialized() const;
 
 protected:
     // called in THREAD INIT
@@ -179,29 +164,23 @@ protected:
 
 private:
     // Private variables
-
     // random
     bool m_use_affinity;
     size_type m_pool_size;
     pool_state_type m_pool_state;
-    task_count_type m_task_count;
 
     // locks
     Lock_t m_task_lock;
-    Lock_t m_save_lock;
-    Lock_t m_join_lock;
     Lock_t m_back_lock;
 
     // conditions
     Condition_t m_task_cond;
-    Condition_t m_join_cond;
     Condition_t m_back_cond;
 
     // containers
-    ThreadContainer_t m_main_threads; // storage for threads
+    ThreadContainer_t m_main_threads;   // storage for threads
     ThreadContainer_t m_back_threads;
-    TaskContainer_t   m_main_tasks; // storage for tasks
-    TaskContainer_t   m_save_tasks;
+    TaskContainer_t   m_main_tasks;     // storage for tasks
     JoinContainer_t   m_is_joined;
     JoinMap_t         m_back_done;
 
@@ -214,7 +193,8 @@ private:
     static volatile bool is_alive_flag;
 };
 
-
+//----------------------------------------------------------------------------//
+#include "task_group.hh"
 //----------------------------------------------------------------------------//
 template <typename Container_t>
 int thread_pool::add_tasks(const Container_t& c)
@@ -255,10 +235,26 @@ template <typename _Tp, typename _A1, typename _A2, typename _A3,
           typename _TpJ>
 int thread_pool::add_tasks(task_tree_node<_Tp, _A1, _A2, _A3, _TpJ>* node)
 {
+    // if we haven't built thread-pool, just execute
+    if(!is_alive_flag)
+    {
+        if(node->left())
+            add_tasks(node->left());
+        vtask* vnode = node;
+        run(vnode);
+        if(node->right())
+            add_tasks(node->right());
+        return 1;
+    }
+
+    // thread-pool has been built
     if(node->left())
         add_tasks(node->left());
 
-    m_task_count += 1;
+    // do outside of lock because is thread-safe and needs to be updated as
+    // soon as possible
+    node->group()->task_count() += 1;
+
     m_task_lock.lock();
     // if the thread pool hasn't been initialize, initialize it
     if(!is_initialized())

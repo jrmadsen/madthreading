@@ -4,9 +4,6 @@
 
 #ifdef USE_OPENMP
     #include <omp.h>
-    #define SIMD omp simd
-#else
-    #define SIMD
 #endif
 
 #include <iostream>
@@ -36,10 +33,9 @@ int main(int argc, char** argv)
     auto compute_block = [x] (const ulong_type& s, const ulong_type& e)
     {
         double_type tl_sum = 0.0;
-        #pragma SIMD
+        #pragma omp simd
         for(ulong_type i = s; i < e; ++i)
             tl_sum += 4.0/(1.0 + x(i)*x(i));
-        //sum += tl_sum;
         return tl_sum;
     };
     //------------------------------------------------------------------------//
@@ -50,14 +46,13 @@ int main(int argc, char** argv)
     //------------------------------------------------------------------------//
 
     //========================================================================//
-
     timer::timer t;
 
-    tm->run_loop<double_type>(compute_block, 0, num_steps, num_threads);
-    tm->join<double_type>(join);
+    tm->run_loop<double_type>(compute_block, 0, num_steps, num_threads,
+                              join, 0.0);
 
-    report(num_steps, step*sum, t.stop_and_return(), std::string(argv[0]));
-
+    report(num_steps, step*sum, t.stop_and_return(), "pthread_pool_joiner_a");
     //========================================================================//
 }
+
 

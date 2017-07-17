@@ -35,6 +35,11 @@
 
 
 
+#-----------------------------------------------------------------------
+# macro for adding flags to variable
+macro(add_flag _VAR _FLAG)
+    set(${_VAR} "${${_VAR}} ${_FLAG}")
+endmacro()
 
 
 #-----------------------------------------------------------------------
@@ -150,8 +155,10 @@ function(__configure_cxxstd_intel)
 
     if(_icpc_dumpedversion VERSION_LESS 11.0)
         set(_CXXSTDS "c++98")
+    elseif(_icpc_dumpedversion VERSION_LESS 11.0)
+        set(_CXXSTDS "c++14 c++11 c++0x gnu++98")
     else()
-        set(_CXXSTDS "c++0x")
+        set(_CXXSTDS "c++0x gnu++98")
     endif()
 
     set(CXXSTD_IS_AVAILABLE ${_CXXSTDS} PARENT_SCOPE)
@@ -185,8 +192,8 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(_extra_cxx_flags "-pedantic -Wno-non-virtual-dtor -Wno-long-long -Wno-variadic-macros")
 
     set(CMAKE_CXX_FLAGS_INIT "-Wall ${_default_cxx_flags}")
-    set(CMAKE_CXX_FLAGS_DEBUG_INIT "-g")
-    set(CMAKE_CXX_FLAGS_VERBOSEDEBUG_INIT "-g ${_verbose_cxx_flags}")
+    set(CMAKE_CXX_FLAGS_DEBUG_INIT "-g -DDEBUG")
+    set(CMAKE_CXX_FLAGS_VERBOSEDEBUG_INIT "-g ${_verbose_cxx_flags} -DDEBUG")
     set(CMAKE_CXX_FLAGS_RELEASE_INIT "-O2 -DNDEBUG")
     set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT "-Os -DNDEBUG")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
@@ -242,12 +249,26 @@ endif()
 # Sufficient id on all platforms?
 if(CMAKE_CXX_COMPILER MATCHES "icpc.*|icc.*")
 
-    set(_default_cxx_flags "-Wno-unknown-pragmas -Wno-deprecated")
+    set(_default_cxx_flags "-Wno-unknown-pragmas -Wno-deprecated -simd")
     set(_extra_cxx_flags "-Wno-non-virtual-dtor -Wpointer-arith -Wwrite-strings -fp-model precise")
+
+    #add_flag(_default_cxx_flags "-msse2")
+    add_flag(_default_cxx_flags "-m64")
+    #add_flag(_default_cxx_flags "-march=core-avx-i")
+    add_flag(_default_cxx_flags "-xHOST")
+    add_flag(_default_cxx_flags "-cxxlib-nostd")
+    #add_flag(_default_cxx_flags "-vecabi=gcc")
+    #add_flag(_default_cxx_flags "-ipo")
+    #add_flag(_default_cxx_flags "-no-gcc-include-dir")
+    #add_flag(_default_cxx_flags "-gcc-sys")
+    #add_flag(_default_cxx_flags "-no-icc")
+    add_flag(_default_cxx_flags "-no-gcc")
+    #add_flag(_default_cxx_flags "-nostdinc++")
+    #add_flag(_default_cxx_flags "-X")
 
     set(CMAKE_CXX_FLAGS_INIT "-w1 ${_default_cxx_flags}")
     set(CMAKE_CXX_FLAGS_DEBUG_INIT "-g")
-    set(CMAKE_CXX_FLAGS_RELEASE_INIT "-O2 -DNDEBUG")
+    set(CMAKE_CXX_FLAGS_RELEASE_INIT "-Ofast -DNDEBUG")
     set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT "-Os -DNDEBUG")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
 
@@ -256,7 +277,7 @@ if(CMAKE_CXX_COMPILER MATCHES "icpc.*|icc.*")
     set(CMAKE_CXX_FLAGS_MAINTAINER_INIT "-g")
 
     # C++ Standard Settings
-    __configure_cxxstd_intel()
+    #__configure_cxxstd_intel()
 
     # Linker flags
     set(CMAKE_EXE_LINKER_FLAGS "-i-dynamic -limf")

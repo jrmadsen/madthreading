@@ -1,17 +1,17 @@
 // MIT License
-// 
+//
 // Copyright (c) 2017 Jonathan R. Madsen
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -19,7 +19,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-// 
+//
 
 //
 //
@@ -53,6 +53,7 @@
 #include "threading.hh"
 #include "AutoLock.hh"
 #include "allocator.hh"
+#include "task_group.hh"
 
 #ifdef CXX11
     #include <functional>
@@ -108,7 +109,9 @@ public:
     typedef size_t          size_type;
 
 public:
-    vtask(void* result = 0, void* arg1 = 0, void* arg2 = 0, void* arg3 = 0);
+    vtask(task_group* tg,
+          void* result = 0, void* arg1 = 0,
+          void* arg2 = 0, void* arg3 = 0);
     virtual ~vtask() { }
 
 public:
@@ -152,11 +155,18 @@ public:
         m_arg_array[2] = arg3;
     }
 
+    // get the task group
+    task_group* group() const { return m_group; }
+
 protected:
-    bool  m_force_delete;
-    bool  m_is_stored_elsewhere;
-    void* m_result;
-    void* m_arg_array[3];
+    void _check_group();
+
+protected:
+    task_group* m_group;
+    bool        m_force_delete;
+    bool        m_is_stored_elsewhere;
+    void*       m_result;
+    void*       m_arg_array[3];
 
 private:
     template <typename _Tp>
@@ -204,12 +214,14 @@ public:
 
 public:
     // pass a free function pointer
-    task(function_type fn_ptr, argument_type_1 arg_1,
+    task(task_group* tg,
+         function_type fn_ptr, argument_type_1 arg_1,
          argument_type_2 arg_2, argument_type_3 arg_3)
-    : vtask(new _Ret),
+    : vtask(tg, new _Ret),
       m_fn_ptr(fn_ptr), m_arg_1(arg_1),
       m_arg_2(arg_2), m_arg_3(arg_3)
     {
+        _check_group();
         set_arg_array(&m_arg_1, &m_arg_2, &m_arg_3);
     }
 
@@ -221,8 +233,11 @@ public:
         *(_Ret*)(m_result) = CALL_FUNCTION(m_fn_ptr)(m_arg_1, m_arg_2, m_arg_3);
     }
 
+protected:
+    using vtask::m_group;
+
 private:
-    function_type m_fn_ptr;
+    function_type   m_fn_ptr;
     argument_type_1 m_arg_1;
     argument_type_2 m_arg_2;
     argument_type_3 m_arg_3;
@@ -245,10 +260,12 @@ public:
 
 public:
     // pass a free function pointer
-    task(function_type fn_ptr, argument_type_1 arg_1, argument_type_2 arg_2)
-    : vtask(new _Ret),
+    task(task_group* tg,
+         function_type fn_ptr, argument_type_1 arg_1, argument_type_2 arg_2)
+    : vtask(tg, new _Ret),
       m_fn_ptr(fn_ptr), m_arg_1(arg_1), m_arg_2(arg_2)
     {
+        _check_group();
         set_arg_array(&m_arg_1, &m_arg_2, NULL);
     }
 
@@ -258,8 +275,11 @@ public:
         *(_Ret*)(m_result) = CALL_FUNCTION(m_fn_ptr)(m_arg_1, m_arg_2);
     }
 
+protected:
+    using vtask::m_group;
+
 private:
-    function_type m_fn_ptr;
+    function_type   m_fn_ptr;
     argument_type_1 m_arg_1;
     argument_type_2 m_arg_2;
 
@@ -284,10 +304,12 @@ public:
 
 public:
     // pass a free function pointer
-    task(function_type fn_ptr, argument_type_1 arg1)
-    : vtask(new _Ret),
+    task(task_group* tg,
+         function_type fn_ptr, argument_type_1 arg1)
+    : vtask(tg, new _Ret),
       m_fn_ptr(fn_ptr), m_arg_1(arg1)
     {
+        _check_group();
         set_arg_array(&m_arg_1, NULL, NULL);
     }
 
@@ -296,6 +318,9 @@ public:
     {
         *(_Ret*)(m_result) = CALL_FUNCTION(m_fn_ptr)(m_arg_1);
     }
+
+protected:
+    using vtask::m_group;
 
 private:
     function_type m_fn_ptr;
@@ -323,10 +348,12 @@ public:
 
 public:
     // pass a free function pointer
-    task(function_type fn_ptr, argument_type_1 arg1,
+    task(task_group* tg,
+         function_type fn_ptr, argument_type_1 arg1,
          argument_type_2 arg2, argument_type_3 arg3)
-    : m_fn_ptr(fn_ptr), m_arg_1(arg1), m_arg_2(arg2), m_arg_3(arg3)
+    : vtask(tg), m_fn_ptr(fn_ptr), m_arg_1(arg1), m_arg_2(arg2), m_arg_3(arg3)
     {
+        _check_group();
         set_arg_array(&m_arg_1, &m_arg_2, &m_arg_3);
     }
 
@@ -336,8 +363,11 @@ public:
         CALL_FUNCTION(m_fn_ptr)(m_arg_1, m_arg_2, m_arg_3);
     }
 
+protected:
+    using vtask::m_group;
+
 private:
-    function_type m_fn_ptr;
+    function_type   m_fn_ptr;
     argument_type_1 m_arg_1;
     argument_type_2 m_arg_2;
     argument_type_3 m_arg_3;
@@ -362,9 +392,11 @@ public:
 
 public:
     // pass a free function pointer
-    task(function_type fn_ptr, argument_type_1 arg1, argument_type_2 arg2)
-    : m_fn_ptr(fn_ptr), m_arg_1(arg1), m_arg_2(arg2)
+    task(task_group* tg,
+         function_type fn_ptr, argument_type_1 arg1, argument_type_2 arg2)
+    : vtask(tg), m_fn_ptr(fn_ptr), m_arg_1(arg1), m_arg_2(arg2)
     {
+        _check_group();
         set_arg_array(&m_arg_1, &m_arg_2, NULL);
     }
 
@@ -374,8 +406,11 @@ public:
         CALL_FUNCTION(m_fn_ptr)(m_arg_1, m_arg_2);
     }
 
+protected:
+    using vtask::m_group;
+
 private:
-    function_type m_fn_ptr;
+    function_type   m_fn_ptr;
     argument_type_1 m_arg_1;
     argument_type_2 m_arg_2;
 
@@ -397,9 +432,11 @@ public:
 
 public:
     // pass a free function pointer
-    task(function_type fn_ptr, argument_type_1 arg1)
-    : m_fn_ptr(fn_ptr), m_arg_1(arg1)
+    task(task_group* tg,
+         function_type fn_ptr, argument_type_1 arg1)
+    : vtask(tg), m_fn_ptr(fn_ptr), m_arg_1(arg1)
     {
+        _check_group();
         set_arg_array(&m_arg_1, NULL, NULL);
     }
 
@@ -408,6 +445,9 @@ public:
     {
         CALL_FUNCTION(m_fn_ptr)(m_arg_1);
     }
+
+protected:
+    using vtask::m_group;
 
 private:
     function_type   m_fn_ptr;
@@ -431,15 +471,18 @@ public:
 
 public:
     // pass a free function pointer
-    task(function_type fn_ptr)
-    : m_fn_ptr(fn_ptr)
-    {}
+    task(task_group* tg, function_type fn_ptr)
+    : vtask(tg), m_fn_ptr(fn_ptr)
+    { _check_group(); }
 
 public:
     virtual void operator()()
     {
         CALL_FUNCTION(m_fn_ptr)();
     }
+
+protected:
+    using vtask::m_group;
 
 private:
     function_type m_fn_ptr;

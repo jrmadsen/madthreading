@@ -1,17 +1,17 @@
 // MIT License
-// 
+//
 // Copyright (c) 2017 Jonathan R. Madsen
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -19,7 +19,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-// 
+//
 
 //
 //
@@ -59,7 +59,7 @@ inline int ncores()
 
 //============================================================================//
 
-static mad::CoreMutex tid_mutex = CORE_MUTEX_INITIALIZER;
+static mad::mutex tid_mutex;
 
 //============================================================================//
 
@@ -81,22 +81,25 @@ thread_pool::thread_pool(bool _use_affinity)
 : m_use_affinity(_use_affinity),
   m_pool_size(Threading::GetNumberOfCores()),
   m_pool_state(state::NONINIT),
-  m_task_count(0),
   m_task_lock(true), // recursive
-  m_save_lock(true),
-  m_join_lock(true),
   m_back_lock(true),
   m_back_task_to_do(NULL)
 {
     m_task_lock.unlock();
-    m_save_lock.unlock();
-    m_join_lock.unlock();
     m_back_lock.unlock();
 
 #ifdef VERBOSE_THREAD_POOL
     std::cout << "Constructing ThreadPool of size "
               << m_pool_size << std::endl;
 #endif
+
+#ifdef DEBUG
+        fpe_settings::fpe_set ops;
+        ops.insert(fpe::underflow);
+        ops.insert(fpe::overflow);
+        EnableInvalidOperationDetection(ops);
+#endif
+
 }
 
 //============================================================================//
@@ -105,22 +108,23 @@ thread_pool::thread_pool(size_type pool_size, bool _use_affinity)
 : m_use_affinity(_use_affinity),
   m_pool_size(pool_size),
   m_pool_state(state::NONINIT),
-  m_task_count(0),
   m_task_lock(true), // recursive
-  m_save_lock(true),
-  m_join_lock(true),
   m_back_lock(true),
   m_back_task_to_do(NULL)
 {
     m_task_lock.unlock();
-    m_save_lock.unlock();
-    m_join_lock.unlock();
     m_back_lock.unlock();
 
 #ifdef VERBOSE_THREAD_POOL
     std::cout << "Constructing ThreadPool of size " << m_pool_size << std::endl;
 #endif
-    //CORESEMAPHOREINIT(task_count, 0);
+
+#ifdef DEBUG
+        fpe_settings::fpe_set ops;
+        ops.insert(fpe::underflow);
+        ops.insert(fpe::overflow);
+        EnableInvalidOperationDetection(ops);
+#endif
 
 }
 
@@ -132,11 +136,14 @@ thread_pool::~thread_pool()
     if (m_pool_state != state::STOPPED)
         destroy_threadpool();
 
+    // delete all background tasks
     for(TaskMap_t::iterator itr = m_back_tasks.begin();
         itr != m_back_tasks.end(); ++itr)
         delete itr->second;
 
+    // wait until thread pool is fully destroyed
     while(mad::thread_pool::is_alive());
+    // delete thread-local allocator and erase thread IDS
     if(mad::details::allocator_list_tl::get_allocator_list_if_exists())
     {
         ulong_type _self = CORETHREADSELFINT();
@@ -146,18 +153,7 @@ thread_pool::~thread_pool()
         mad::details::allocator_list_tl::get_allocator_list()->Destroy(_id, 1);
     }
 
-    /*if(m_task_lock.is_locked())
-        std::cout << "Task lock is still locked" << std::endl;
-    if(m_join_lock.is_locked())
-        std::cout << "Join lock is still locked" << std::endl;
-    if(m_save_lock.is_locked())
-        std::cout << "Save lock is still locked" << std::endl;
-    if(m_back_lock.is_locked())
-        std::cout << "Back lock is still locked" << std::endl;*/
-
     m_task_lock.unlock();
-    m_save_lock.unlock();
-    m_join_lock.unlock();
     m_back_lock.unlock();
 }
 
@@ -192,7 +188,7 @@ void* thread_pool::start_thread(void* arg)
 
 void* thread_pool::start_background(void* arg)
 {
-    {
+    { // a background thread is not in thread pool
         mad::Lock_t lock(&tid_mutex);
         tids[CORETHREADSELFINT()] = tids.size();
 #ifdef VERBOSE_THREAD_POOL
@@ -225,6 +221,7 @@ int thread_pool::initialize_threadpool()
 #endif
 
     //--------------------------------------------------------------------//
+    // destroy any existing thread pool
     if(m_pool_state == state::STARTED)
         destroy_threadpool();
 
@@ -233,10 +230,12 @@ int thread_pool::initialize_threadpool()
 
     for (size_type i = 0; i < m_pool_size; i++)
     {
+        // add the threads
         CoreThread tid;
         bool _add_thread = true;
         try
         {
+            // assign to core is affinity is set
             if(m_use_affinity)
             {
                 CORETHREADCREATEID(&tid,
@@ -251,7 +250,7 @@ int thread_pool::initialize_threadpool()
             }
         } catch(std::runtime_error& e)
         {
-            std::cerr << e.what() << std::endl;
+            std::cerr << e.what() << std::endl; // issue creating thread
             _add_thread = false;
         } catch(std::bad_alloc& e)
         {
@@ -259,9 +258,11 @@ int thread_pool::initialize_threadpool()
             _add_thread = false;
         }
 
+        // successful creation of thread
         if(_add_thread)
         {
             m_main_threads.push_back(tid);
+            // TODO: FIGURE THIS OUT
             m_is_joined.push_back(false);
         }
     }
@@ -274,13 +275,15 @@ int thread_pool::initialize_threadpool()
               << " threads created by the thread pool" << std::endl;
 #endif
 
+    // thread pool size doesn't match with join vector
+    // this will screw up joining later
     if(m_is_joined.size() != m_main_threads.size())
     {
         std::stringstream ss;
         ss << "thread_pool::initialize_threadpool - boolean is_joined vector "
            << "is a different size than threads vector: " << m_is_joined.size()
            << " vs. " << m_main_threads.size() << " (tid: "
-           << CORETHREADSELF() << ")";
+           << CORETHREADSELFINT() << ")";
 
         throw std::runtime_error(ss.str());
     }
@@ -320,7 +323,7 @@ int thread_pool::destroy_threadpool()
         ss << "   thread_pool::destroy_thread_pool - boolean is_joined vector "
            << "is a different size than threads vector: " << m_is_joined.size()
            << " vs. " << m_main_threads.size() << " (tid: "
-           << CORETHREADSELF() << ")";
+           << CORETHREADSELFINT() << ")";
 
         throw std::runtime_error(ss.str());
     }
@@ -328,18 +331,21 @@ int thread_pool::destroy_threadpool()
     for (size_type i = 0; i < m_is_joined.size(); i++)
     {
         //--------------------------------------------------------------------//
+        // if its joined already, nothing else needs to be done
         if(m_is_joined.at(i))
             continue;
 
         //--------------------------------------------------------------------//
+        // erase thread from thread ID list
         if(tids.find(CTCAST(m_main_threads[i])) != tids.end())
             tids.erase(tids.find(CTCAST(m_main_threads[i])));
 
         //--------------------------------------------------------------------//
-        if(!CORETHREADEQUAL(CORETHREADSELF(), m_main_threads[i]))
-             CORETHREADJOIN(m_main_threads[i]);
+        // set cancellation state
+        CORETHREADCANCEL(m_main_threads[i]);
 
         //--------------------------------------------------------------------//
+        // it's joined
         m_is_joined.at(i) = true;
 
         //--------------------------------------------------------------------//
@@ -351,12 +357,13 @@ int thread_pool::destroy_threadpool()
     for (size_type i = 0; i < m_back_threads.size(); i++)
     {
         //--------------------------------------------------------------------//
+        // erase background threads
         if(tids.find(CTCAST(m_back_threads[i])) != tids.end())
             tids.erase(tids.find(CTCAST(m_back_threads[i])));
 
         //--------------------------------------------------------------------//
-        if(!CORETHREADEQUAL(CORETHREADSELF(), m_back_threads[i]))
-             CORETHREADJOIN(m_back_threads[i]);
+        // set cancellation state
+        CORETHREADCANCEL(m_back_threads[i]);
 
         //--------------------------------------------------------------------//
         // try waking up a bunch of threads that are still waiting
@@ -369,13 +376,12 @@ int thread_pool::destroy_threadpool()
               << " threads exited from the thread pool" << std::endl;
 #endif
 
+    // clean up
     m_main_threads.clear();
     m_back_threads.clear();
     m_is_joined.clear();
 
     m_task_lock.unlock();
-    m_save_lock.unlock();
-    m_join_lock.unlock();
     m_back_lock.unlock();
 
     is_alive_flag = false;
@@ -426,18 +432,13 @@ void* thread_pool::execute_thread()
         task = m_main_tasks.front();
         m_main_tasks.pop_front();
         //--------------------------------------------------------------------//
-        //run(task);
+
         // Unlock
         m_task_lock.unlock();
         //--------------------------------------------------------------------//
 
         // execute the task
         run(task);
-
-        m_task_count -= 1;
-        m_join_lock.lock();
-        m_join_cond.signal();
-        m_join_lock.unlock();
 
         //--------------------------------------------------------------------//
     }
@@ -458,7 +459,6 @@ void thread_pool::signal_background(void* ptr)
 
     if(m_back_tasks.find(ptr) == m_back_tasks.end())
         return;
-        //throw std::runtime_error("invalid signal to background task");
 
     m_back_lock.lock();
     m_back_task_to_do = m_back_tasks[ptr];
@@ -552,58 +552,26 @@ void thread_pool::background_thread()
 
 //============================================================================//
 
-void thread_pool::join()
-{
-#ifdef VERBOSE_THREAD_POOL
-    std::cout << "Joining " << pending() << " tasks..." << std::endl;
-#endif
-
-#ifndef ENABLE_THREADING
-    return;
-#endif
-
-#ifdef VERBOSE_THREAD_POOL
-    std::cout << std::boolalpha << "is alive: " << is_alive_flag << std::endl;
-#endif
-
-    if(!is_alive_flag)
-        return;
-
-    //while(pending() > 0);
-
-    while (m_pool_state != state::STOPPED)
-    {
-        m_join_lock.lock();
-
-        while(pending() > 0 && m_pool_state != state::STOPPED)
-        {
-            // Wait until signaled that a task has been competed
-            // Unlock mutex while wait, then lock it back when signaled
-            m_join_cond.wait(m_join_lock.base_mutex_ptr());
-        }
-
-        //m_join_lock.unlock();
-
-        if(!(0 < pending()))
-            break;
-    }
-
-    m_join_lock.unlock();
-}
-
-//============================================================================//
-
 void thread_pool::run(vtask*& task)
 {
+    // execute task
     (*task)();
 
-    if(task->force_delete())
+    task->group()->task_count() -= 1;
+    {
+        AutoLock l(task->group()->join_lock());
+        task->group()->join_cond().signal();
+    }
+
+    if(task->force_delete()) // should we delete
     {
         delete task;
         task = 0;
-    } else {
+    } else
+    {
+        // does the task store anything?
         if(task->get() && !task->is_stored_elsewhere())
-            save_task(task);
+            task->group()->save_task(task);
         else if(!task->is_stored_elsewhere())
         {
             delete task;
@@ -625,7 +593,7 @@ int thread_pool::add_task(vtask* task)
     return 0;
 #endif
 
-    if(!is_alive_flag)
+    if(!is_alive_flag) // if we haven't built thread-pool, just execute
     {
         run(task);
         return 0;
@@ -633,7 +601,7 @@ int thread_pool::add_task(vtask* task)
 
     // do outside of lock because is thread-safe and needs to be updated as
     // soon as possible
-    m_task_count += 1;
+    task->group()->task_count() += 1;
 
     m_task_lock.lock();
 
@@ -666,6 +634,7 @@ int thread_pool::add_background_task(void* ptr, vtask* task)
     bool _add_thread = true;
     try
     {
+        // assign to core if affinity is set to on
         if(m_use_affinity)
         {
             CORETHREADCREATEID(&tid,
@@ -689,6 +658,7 @@ int thread_pool::add_background_task(void* ptr, vtask* task)
         _add_thread = false;
     }
 
+    // successful creation, identifiable via pointer
     if(_add_thread)
     {
         m_back_threads.push_back(tid);
@@ -701,24 +671,14 @@ int thread_pool::add_background_task(void* ptr, vtask* task)
 
 //============================================================================//
 
-int thread_pool::save_task(vtask* task)
-{
-    m_save_lock.lock();
-
-    // TODO: put a limit on how many tasks can be added at most
-    m_save_tasks.push_back(task);
-
-    m_save_lock.unlock();
-
-    return 0;
-}
-
-//============================================================================//
-
 long_type thread_pool::GetEnvNumThreads(long_type _default)
 {
     char* env_nthreads;
-    env_nthreads = getenv("FORCE_NUM_THREADS");
+    env_nthreads = getenv("MAD_NUM_THREADS");
+
+    if(!env_nthreads) // this is legacy
+        env_nthreads = getenv("FORCE_NUM_THREADS");
+
     if(env_nthreads)
     {
         std::string str_nthreads = std::string(env_nthreads);

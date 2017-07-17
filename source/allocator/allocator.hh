@@ -1,17 +1,17 @@
 // MIT License
-// 
+//
 // Copyright (c) 2017 Jonathan R. Madsen
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -19,7 +19,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-// 
+//
 
 //
 //
@@ -66,6 +66,7 @@
 #include "allocator_pool.hh"
 #include "../threading/threading.hh"
 #include "../threading/AutoLock.hh"
+#include "../threading/mutex.hh"
 
 #ifdef USE_TBB
 #include <tbb/tbb.h>
@@ -78,10 +79,6 @@ namespace mad
 {
 namespace details
 {
-
-#ifdef USE_TBB
-static size_t cache_size = cache::cache_line_size();
-#endif
 
 //============================================================================//
 
@@ -314,7 +311,7 @@ public:
     {
         //static size_t cache_size = cache::cache_line_size();
         if(size == 0) size = 1;
-        if(void* ptr = scalable_aligned_malloc(size, cache_size))
+        if(void* ptr = scalable_aligned_malloc(size, mad::cache::cache_line_size()))
             return ptr;
         throw std::bad_alloc();
     }
@@ -329,7 +326,7 @@ public:
     {
         //static size_t cache_size = cache::cache_line_size();
         if(size == 0) size = 1;
-        if(void* ptr = scalable_aligned_malloc(size, cache_size))
+        if(void* ptr = scalable_aligned_malloc(size, mad::cache::cache_line_size()))
             return ptr;
         return NULL;
     }
@@ -530,7 +527,7 @@ allocator<T, USE_TLP>::~allocator() throw()
 template <typename T, bool USE_TLP>
 T* allocator<T, USE_TLP>::malloc_single()
 {
-    static mad::CoreMutex mutex = CORE_MUTEX_INITIALIZER;
+    static mad::mutex mutex;
     mad::AutoLock l(&mutex);
     return static_cast<T*>(m_mem.alloc());
 }

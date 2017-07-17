@@ -5,8 +5,9 @@ include_directories(${PROJECT_SOURCE_DIR}/source/threading)
 include_directories(${PROJECT_SOURCE_DIR}/source/threading/atomics)
 include_directories(${PROJECT_SOURCE_DIR}/source/vectorization)
 
-include(MacroDefineModule)
+include(CMakeMacroParseArguments)
+include(MacroDefineSWIGModule)
 
-DEFINE_MODULE(NAME mad.threading
-              HEADER_EXT ".h;.hh"
-              SOURCE_EXT ".cc;.cpp")
+#DEFINE_PYTHON_SWIG_MODULE(NAME AutoLock
+#              FILE AutoLock.hh
+#              LINK_LIBRARIES ${PROJECT_LIBRARIES})

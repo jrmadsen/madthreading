@@ -13,7 +13,8 @@ GLOBAL_OBJECT_TARGET(NAME ${PROJECT_NAME}-OBJECT
                         allocator/sources.cmake
                         threading/sources.cmake
                         threading/atomics/sources.cmake
-                        threading/atomics/details/sources.cmake)
+                        threading/atomics/details/sources.cmake
+                        vectorization/sources.cmake)
 
 get_property(GLOBAL_OBJECT_TARGETS GLOBAL PROPERTY GLOBAL_OBJECT_TARGETS)
 

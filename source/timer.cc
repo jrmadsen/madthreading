@@ -1,17 +1,17 @@
 // MIT License
-// 
+//
 // Copyright (c) 2017 Jonathan R. Madsen
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -19,7 +19,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-// 
+//
 
 //
 //
@@ -140,7 +140,8 @@ void base_timer::report(std::ostream& os) const
                 break;
             case PERCENT:
                 ss.precision(1);
-                ss << ((user_elapsed()+system_elapsed())/(real_elapsed())*100.0);
+                ss << std::setw(5)
+                   << ((user_elapsed()+system_elapsed())/(real_elapsed())*100.0);
                 break;
         }
         // skip over %{w,u,s,t,p} field
@@ -170,17 +171,13 @@ unsigned long timer::default_precision = 6;
 
 timer::timer(unsigned long prec, std::string _begin, std::string _close)
 : base_type(prec, _begin + default_format + _close)
-{
-
-}
+{ }
 
 //============================================================================//
 
 timer::timer(std::string _begin, std::string _close)
 : base_type(default_precision, _begin + default_format + _close)
-{
-
-}
+{ }
 
 //============================================================================//
 

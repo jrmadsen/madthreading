@@ -1,17 +1,17 @@
 // MIT License
-// 
+//
 // Copyright (c) 2017 Jonathan R. Madsen
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -19,7 +19,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-// 
+//
 
 //
 //
@@ -83,6 +83,7 @@ namespace mad
 #   define CORE_MUTEX_INITIALIZER PTHREAD_MUTEX_INITIALIZER
 
 #   define COREMUTEXLOCK pthread_mutex_lock
+#   define COREMUTEXTRYLOCK pthread_mutex_trylock
 #   define COREMUTEXUNLOCK pthread_mutex_unlock
 
 #   define COREMUTEXINIT(mutex) pthread_mutex_init(&mutex, NULL)
@@ -141,6 +142,7 @@ namespace mad
 #   endif
 
 #   define CORETHREADJOIN(worker) pthread_join(worker, NULL)
+#   define CORETHREADCANCEL(worker) pthread_cancel(worker)
 #   define CORETHREADJOINVALUE(worker, value) pthread_join(worker, value)
 #   define CORETHREADEXIT pthread_exit
 #   define CORETHREADEQUAL pthread_equal
@@ -163,6 +165,7 @@ namespace mad
 #   define CORECONDITIONINIT(cond) pthread_cond_init(cond, NULL)
 #   define CORECONDITIONDESTROY(cond) pthread_cond_destroy(cond)
 #   define CORECONDITIONWAIT(cond, mutex) pthread_cond_wait(cond, mutex)
+#   define CORECONDITIONTIMEWAIT(cond, mutex, atime) pthread_cond_timedwait(cond, mutex, atime)
 #   define CORECONDITIONSIGNAL(cond) pthread_cond_signal(cond)
 #   define CORECONDITIONBROADCAST(cond) pthread_cond_broadcast(cond)
 
@@ -248,10 +251,12 @@ namespace mad
 #   define COREMUTEXDESTROY(mutex) ;;
 #   define CORERECURSIVEMUTEXINIT(mutex) ;;
 #   define COREMUTEXLOCK fake_mutex_lock_unlock
+#   define COREMUTEXTRYLOCK fake_mutex_lock_unlock
 #   define COREMUTEXUNLOCK fake_mutex_lock_unlock
 #   define CORETHREADCREATE( worker , func , arg ) ;;
 #   define CORETHREADCREATEID( worker , func , arg, id ) ;;
 #   define CORETHREADJOIN( worker ) {;};
+#   define CORETHREADCANCEL ( worker ) {;} ;
 #   define CORETHREADSELF() 0
 #   define CORETHREADSELFINT() 0UL
 #   define CORETHREADEXIT(nothing) ;;
@@ -265,6 +270,7 @@ namespace mad
 #   define CORECONDITIONINIT(cond) ;;
 #   define CORECONDITIONDESTROY(cond) ;;
 #   define CORECONDITIONWAIT( cond, mutex ) ;;
+#   define CORECONDITIONTIMEWAIT( cond, mutex, atime ) ;;
 #   define CORECONDITIONSIGNAL(cond) ;;
 #   define CORECONDITIONBROADCAST(cond) ;;
 #   define CORESEMAPHOREINIT(sema, inital) ;;
@@ -280,31 +286,39 @@ namespace mad
 
 #include "tls.hh"
 
+//============================================================================//
 // Some functions that help with threading
-
 namespace mad
 {
+
 namespace Threading
 {
-  enum {
-        SEQUENTIAL_ID = -2,
-        MASTER_ID = -1,
-        WORKER_ID = 0,
-        GENERICTHREAD_ID = -1000
-    };
-  mad::Pid_t GetPidId();
-  int GetNumberOfCores();
-  int GetThreadId();
-  bool IsWorkerThread();
-  bool IsMasterThread();
-  void SetThreadId( int aNewValue );
-  void SetMultithreadedApplication(bool value);
-  bool IsMultithreadedApplication();
+
+//----------------------------------------------------------------------------//
+
+enum
+{
+    SEQUENTIAL_ID = -2,
+    MASTER_ID = -1,
+    WORKER_ID = 0,
+    GENERICTHREAD_ID = -1000
+};
+
+mad::Pid_t GetPidId();
+int GetNumberOfCores();
+int GetThreadId();
+bool IsWorkerThread();
+bool IsMasterThread();
+void SetThreadId( int aNewValue );
+void SetMultithreadedApplication(bool value);
+bool IsMultithreadedApplication();
+
+//----------------------------------------------------------------------------//
 
 } // namespace Threading
 
 } // namespace mad
 
-//----------------------------------------------------------------------------//
+//============================================================================//
 
 #endif
