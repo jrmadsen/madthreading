@@ -25,16 +25,6 @@ if(NOT WIN32)
   include(BuildModes)
 endif()
 
-
-#-----------------------------------------------------------------------
-# Optional compiler flags
-#
-# - BUILD_CXXSTD
-# Choose C++ Standard to build against, if supported.
-# Mark as advanced because most users will not need it.
-Include(ConfigureCXXSTD)
-set(CMAKE_CXX_FLAGS "-std=${BUILD_CXXSTD} ${CMAKE_CXX_FLAGS}")
-
 #-----------------------------------------------------------------------
 # Setup Shared and/or Static Library builds
 # We name these options without a '${PROJECT_NAME}_' prefix because they are

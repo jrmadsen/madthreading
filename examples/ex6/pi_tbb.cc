@@ -14,16 +14,15 @@
 #include <iostream>
 #include <iomanip>
 
-#include "types.hh"
-#include "timer.hh"
+#include <madthreading/types.hh>
+#include <madthreading/utility/timer.hh>
+#include <madthreading/threading/thread_manager.hh>
+#include "../Common.hh"
 
 #include <tbb/task_scheduler_init.h>
 #include <tbb/parallel_reduce.h>
 #include <tbb/blocked_range.h>
 #include <tbb/partitioner.h>
-
-#include "thread_manager.hh"
-#include "../Common.hh"
 
 using namespace mad;
 

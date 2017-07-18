@@ -24,8 +24,8 @@ if(DOXYGEN_DOCS)
     # if BUILD_DOXYGEN_DOCS = ON, we want to build docs quietly
     # else, don't build quietly
     CMAKE_DEPENDENT_OPTION(DOXYGEN_DOCS_QUIET "Suppress standard output when making the docs" ON
-                           "BUILD_DOXYGEN_DOCS" OFF)
-    add_subfeature(DOXYGEN_DOCS DOXYGEN_DOCS_QUIET "Suppress standard output when making the docs")
+        "BUILD_DOXYGEN_DOCS" OFF)
+    mark_as_advanced(DOXYGEN_DOCS_QUIET)
 
     if(DOXYGEN_DOCS_QUIET)
         set(DOXYGEN_QUIET YES)
@@ -63,9 +63,9 @@ if(DOXYGEN_DOCS)
             set(_default "ON")
         endif()
         # add option
-        option(ENABLE_DOXYGEN_${_doc_format}_DOCS "Build documentation with ${_doc_format} format" ${_default})
-        # add to features
-        add_subfeature(DOXYGEN_DOCS ENABLE_DOXYGEN_${_doc_format}_DOCS "Build documentation with ${_doc_format} format")
+        option(ENABLE_DOXYGEN_${_doc_format}_DOCS "Build documentation with ${_doc_format} format"
+            ${_default})
+        mark_as_advanced(ENABLE_DOXYGEN_${_doc_format}_DOCS)
     endforeach()
 
     # loop over doc formats and set GENERATE_DOXYGEN_${_doc_format}_DOC to YES/NO
@@ -86,11 +86,9 @@ if(DOXYGEN_DOCS)
         foreach(_graph_type ${DOXYGEN_DOT_GRAPH_TYPES})
             # create CMake doc string
             string(TOLOWER _graph_type_desc ${_graph_type})
-            set(_message "Enable building ${_graph_type_desc} graphs for viewing with GraphViz tool \"dot\"")
             # add option
             option(ENABLE_DOXYGEN_${_graph_type}_GRAPH "${_message}" ON)
-            # add to features
-            add_subfeature(DOXYGEN_DOCS ENABLE_DOXYGEN_${_graph_type}_GRAPH "${_message}")
+            mark_as_advanced(ENABLE_DOXYGEN_${_graph_type}_GRAPH)
             # set GENERATE_DOXYGEN_${_graph_type}_GRAPH to YES/NO
             # GENERATE_DOXYGEN_${_graph_type}_GRAPH is used in configure_file @ONLY
             if(ENABLE_DOXYGEN_${_graph_type}_GRAPH)

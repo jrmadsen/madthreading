@@ -73,11 +73,11 @@ MACRO(_tid_)
 #endif
 //----------------------------------------------------------------------------//
 
-#include "thread_pool.hh"
-#include "task.hh"
-#include "task_tree.hh"
+#include "threading/thread_pool.hh"
+#include "threading/task/task.hh"
+#include "threading/task/task_tree.hh"
+#include "threading/task/task_group.hh"
 #include "allocator/allocator.hh"
-#include "task_group.hh"
 #include "utility/fpe_detection.hh"
 
 // task.hh defines mad::function and mad::bind if CXX11 or USE_BOOST

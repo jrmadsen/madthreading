@@ -10,14 +10,14 @@
 
 #include <iostream>
 #include <iomanip>
-
-#include "types.hh"
-#include "timer.hh"
-#include "omp_atomic.hh"
-
 #include <thread>
-#include "thread_manager.hh"
+
+#include <madthreading/types.hh>
+#include <madthreading/utility/timer.hh>
+#include <madthreading/threading/thread_manager.hh>
 #include "../Common.hh"
+
+#include <madthreading/atomics/omp_atomic.hh>
 
 using namespace mad;
 

@@ -8,26 +8,6 @@
 # initialization of the compiler flags on a platform and compiler
 # dependent basis
 #
-#
-#-----------------------------------------------------------------------
-# C++ ISO Standard Setup
-#-----------------------------------------------------------------------
-# If the compiler supports setting a particular C++ Standard to use
-# when compiling, configure the following global variables that can
-# be used later on to select the standard
-#
-#  CXXSTD_IS_AVAILABLE    List of C++ Standards supported by the
-#                         compiler. It is empty if the compiler
-#                         does not support setting the standard,
-#                         e.g. MSVC.
-#
-#  <CXXSTD>_FLAGS         List of flags needed to compile with
-#                         CXXSTD under the detected compiler.
-#
-# We don't add these flags to CMAKE_CXX_FLAGS_INIT as the choice
-# of standard is a configure time choice, and may be changed in
-# the cache.
-#
 # Settings for each compiler are handled in a dedicated function.
 # Whilst we only handle GNU, Clang and Intel, these are sufficiently
 # different in the required flags that individual handling is needed.
@@ -41,147 +21,12 @@ macro(add_flag _VAR _FLAG)
     set(${_VAR} "${${_VAR}} ${_FLAG}")
 endmacro()
 
-
-#-----------------------------------------------------------------------
-# function __add_definitions()
-#              Add the  definitions needed for #ifdef/#ifndef
-#            preprocessor macros
-#
-function(__add_definitions)
-
-    # MSVC Definitions use slashes instead of dashes
-    if(MSVC)
-        set(_FLAG "/D")
-    else()
-        set(_FLAG "-D")
-    endif()
-
-    # Standard Preprocessor flags
-    set(PREPROCESSOR_FLAGS
-
-                )
-    # Additional Preprocessor flags specified by user
-    list(APPEND PREPROCESSOR_FLAGS ${ADDITIONAL_PREPROCESSOR_FLAGS})
-
-    # Preprocessor flags removed by user
-    if(NOT "${REMOVED_PREPROCESSOR_FLAGS}" STREQUAL "")
-        string(REPLACE " " ";" ${REMOVED_PREPROCESSOR_FLAGS})
-        list(REMOVE_ITEMS PREPROCESSOR_FLAGS ${REMOVED_PREPROCESSOR_FLAGS})
-    endif()
-
-    foreach(_preprocdef ${PREPROCESSOR_FLAGS})
-        add_definitions(${_FLAG}${_preprocdef})
-    endforeach()
-
-
-endfunction()
-
-#-----------------------------------------------------------------------
-# function __configure_cxxstd_gnu()
-#          Determine version of GNU compiler and set available C++
-#          Standards and flags as appropriate in the function's
-#          parent scope.
-#
-#          Note that this function is safe in CMake < 2.8.2 where
-#          the Clang compiler is identified as the GNU compiler.
-#          Clang allows the -dumpversion argument and provides
-#          a value such that we will use the sensible default
-#          standard of 'c++98'
-#
-function(__configure_cxxstd_gnu)
-  execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
-    OUTPUT_VARIABLE _gnucxx_version
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-
-    if(_gnucxx_version VERSION_LESS 4.3)
-        set(_CXXSTDS "c++98")
-    elseif(_gnucxx_version VERSION_LESS 4.7)
-        set(_CXXSTDS "c++0x" "c++98")
-    else()
-        set(_CXXSTDS "c++11" "c++0x" "c++98")
-    endif()
-
-    set(CXXSTD_IS_AVAILABLE ${_CXXSTDS} PARENT_SCOPE)
-    foreach(_s ${_CXXSTDS})
-        set(${_s}_FLAGS "-std=${_s}" PARENT_SCOPE)
-    endforeach()
-
-endfunction()
-
-#-----------------------------------------------------------------------
-# function __configure_cxxstd_clang()
-#          Determine version of Clang compiler and set available C++
-#          Standards and flags as appropriate in the function's
-#          parent scope.
-#
-function(__configure_cxxstd_clang)
-  # Hmm, Clang seems to dump -v to stderr...
-  execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
-    OUTPUT_VARIABLE _clangcxx_version
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-  #string(REGEX REPLACE ".*clang version ([0-9]\\.[0-9]+).*" "\\1" _clangcxx_version ${_clangcxx_dumpedversion})
-
-  message(STATUS "Clang version : ${_clangcxx_version}")
-
-  if(_clangcxx_version VERSION_LESS 2.9)
-      set(_CXXSTDS "c++98")
-  else()
-    set(_CXXSTDS "c++11" "c++0x" "c++98")
-  endif()
-
-  set(CXXSTD_IS_AVAILABLE ${_CXXSTDS} PARENT_SCOPE)
-  foreach(_s ${_CXXSTDS})
-      if(NOT "${_s}" STREQUAL "c++98")
-        set(${_s}_FLAGS "-std=${_s} -stdlib=libc++" PARENT_SCOPE)
-    else()
-        set(${_s}_FLAGS "-std=${_s}" PARENT_SCOPE)
-    endif()
-  endforeach()
-endfunction()
-
-#-----------------------------------------------------------------------
-# function __configure_cxxstd_intel()
-#          Determine version of Intel compiler and set available C++
-#          Standards and flags as appropriate in the function's
-#          parent scope.
-#
-function(__configure_cxxstd_intel)
-  execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
-    OUTPUT_VARIABLE _icpc_dumpedversion
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-
-    if(_icpc_dumpedversion VERSION_LESS 11.0)
-        set(_CXXSTDS "c++98")
-    elseif(_icpc_dumpedversion VERSION_LESS 11.0)
-        set(_CXXSTDS "c++14 c++11 c++0x gnu++98")
-    else()
-        set(_CXXSTDS "c++0x gnu++98")
-    endif()
-
-    set(CXXSTD_IS_AVAILABLE ${_CXXSTDS} PARENT_SCOPE)
-    foreach(_s ${_CXXSTDS})
-        # - Intel does not support '-std=c++98'
-        if(${_s} MATCHES "c\\+\\+98")
-            set(${_s}_FLAGS "-ansi" PARENT_SCOPE)
-        else()
-            set(${_s}_FLAGS "-std=${_s}" PARENT_SCOPE)
-        endif()
-    endforeach()
-endfunction()
-
-
 #-----------------------------------------------------------------------
 # DEFAULT FLAG SETTING
 #-----------------------------------------------------------------------
 # GNU C++ or LLVM/Clang Compiler on all(?) platforms
 # NB: At present, only identifies clang correctly on CMake > 2.8.1
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-
-    # Add the  definitions (not sure about adding definitions for MSVC compilers
-    __add_definitions()
 
     set(_default_cxx_flags  "-Wno-deprecated -Wno-unused-function")
     set(_verbose_cxx_flags  "-Wwrite-strings -Wpointer-arith -Woverloaded-virtual -Wshadow -pipe")
@@ -206,13 +51,6 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CMAKE_CXX_FLAGS_TESTRELEASE_INIT    "-g -DDEBUG_VERBOSE -DFPE_DEBUG")
     set(CMAKE_CXX_FLAGS_MAINTAINER_INIT     "-g ${_verbose_cxx_flags} ${_extra_cxx_flags}")
 
-    # - C++ Standard Settings
-    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        __configure_cxxstd_clang()
-    else()
-        __configure_cxxstd_gnu()
-    endif()
-
 endif()
 
 
@@ -222,7 +60,6 @@ endif()
 # and see what happens!
 if(MSVC)
 
-    __add_definitions()
     # Hmm, WIN32-VC.gmk uses dashes, but cmake uses slashes, latter probably
     # best for native build.
     set(CMAKE_CXX_FLAGS_INIT "/GR /EHsc /Zm200 /nologo /D_CONSOLE /D_WIN32 /DWIN32 /DOS /DXPNET /D_CRT_SECURE_NO_DEPRECATE")
@@ -272,9 +109,6 @@ if(CMAKE_CXX_COMPILER MATCHES "icpc.*|icc.*")
     set(CMAKE_CXX_FLAGS_TESTRELEASE_INIT "-g -DEBUG_VERBOSE")
     set(CMAKE_CXX_FLAGS_MAINTAINER_INIT "-g")
 
-    # C++ Standard Settings
-    #__configure_cxxstd_intel()
-
     # Linker flags
     set(CMAKE_EXE_LINKER_FLAGS "-i-dynamic -limf")
 endif()
@@ -288,8 +122,6 @@ endif()
 # CMake defaults on these platforms are good enough...
 #
 if(UNIX AND NOT CMAKE_COMPILER_IS_GNUCXX)
-
-    __add_definitions()
 
     #---------------------------------------------------------------------
     # IBM xlC compiler
@@ -329,3 +161,9 @@ if(UNIX AND NOT CMAKE_COMPILER_IS_GNUCXX)
     # - CMake may do a reasonable job on its own here...
 endif()
 
+#-----------------------------------------------------------------------
+# BUILD_CXXSTD
+# Choose C++ Standard to build against, if supported.
+# Mark as advanced because most users will not need it.
+include(ConfigureCXXSTD)
+set(CMAKE_CXX_FLAGS "-std=${BUILD_CXXSTD} ${CMAKE_CXX_FLAGS}")

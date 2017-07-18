@@ -42,7 +42,7 @@
 %include "condition.hh"
 #endif
 
-#include "threading.hh"
+#include "threading/threading.hh"
 
 namespace mad
 {

@@ -6,7 +6,7 @@
 # Compute paths
 get_filename_component(@_PROJECT_NAME@_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 if(NOT @PROJECT_NAME@_BINARY_DIR)
-    set(@_PROJECT_NAME@_INCLUDE_DIRS "@CONF_INCLUDE_DIRS@/madthreading")
+    set(@_PROJECT_NAME@_INCLUDE_DIRS "@CONF_INCLUDE_DIRS@")
 else()
     set(@_PROJECT_NAME@_INCLUDE_DIRS "@PROJECT_SOURCE_DIR@/source")
 endif()

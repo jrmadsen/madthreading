@@ -30,7 +30,7 @@
 #define tools_hh_
 
 #include "macros.hh"
-#include "exception.hh"
+#include "utility/exception.hh"
 
 //============================================================================//
 

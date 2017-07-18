@@ -40,8 +40,8 @@
 #ifdef SWIG
 %module allocator
 %{
-    #include "tls.hh"
-    #include "allocator.hh"
+    #include "threading/tls.hh"
+    #include "allocator/allocator.hh"
 %}
 
 #ifdef ThreadLocal
@@ -62,11 +62,11 @@
 #include <cstddef>
 #include <typeinfo>
 
-#include "cache_line_size.hh"
-#include "allocator_pool.hh"
-#include "../threading/threading.hh"
-#include "../threading/auto_lock.hh"
-#include "../threading/mutex.hh"
+#include "allocator/cache_line_size.hh"
+#include "allocator/allocator_pool.hh"
+#include "threading/threading.hh"
+#include "threading/auto_lock.hh"
+#include "threading/mutex.hh"
 
 #ifdef USE_TBB
 #include <tbb/tbb.h>

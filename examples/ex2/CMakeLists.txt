@@ -1,7 +1,9 @@
 
 cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
-
 project(example_2)
+
+include(${PROJECT_SOURCE_DIR}/../ExternalBuild.cmake)
+configure_example()
 
 find_package(Madthreading REQUIRED)
 

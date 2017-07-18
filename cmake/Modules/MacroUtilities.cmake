@@ -581,37 +581,6 @@ function(print_features)
 endfunction()
 
 #------------------------------------------------------------------------------#
-# function __configure_cxxstd_gnu()
-#          Determine version of GNU compiler
-#
-#          Note that this function is safe in CMake < 2.8.2 where
-#          the Clang compiler is identified as the GNU compiler.
-#          Clang allows the -dumpversion argument and provides
-#          a value such that we will use the sensible default
-#          standard of 'c++98'
-#
-function(__configure_cxxstd_gnu)
-  execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
-    OUTPUT_VARIABLE _gnucxx_version
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-  set(COMPILER_VERSION ${_gnucxx_version} PARENT_SCOPE)
-endfunction()
-
-#------------------------------------------------------------------------------#
-# function __configure_cxxstd_clang_and_intel()
-#          Determine version of Clang/Intel compiler
-#
-function(__configure_cxxstd_clang_and_intel)
-  execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
-    OUTPUT_VARIABLE _cxx_version
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-  set(COMPILER_VERSION ${_cxx_version} PARENT_SCOPE)
-  if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
-    message(STATUS "Clang version : ${_cxx_version}")
-  endif()
-endfunction()
-
-#------------------------------------------------------------------------------#
 macro(DETERMINE_LIBDIR_DEFAULT)
   set(LIBDIR_DEFAULT "lib")
   # Override this default 'lib' with 'lib64' if:

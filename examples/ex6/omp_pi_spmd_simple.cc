@@ -42,10 +42,9 @@
 #include <iostream>
 #include <iomanip>
 
-#include "types.hh"
-#include "timer.hh"
-
-#include "thread_manager.hh"
+#include <madthreading/types.hh>
+#include <madthreading/utility/timer.hh>
+#include <madthreading/threading/thread_manager.hh>
 #include "../Common.hh"
 
 using namespace mad;

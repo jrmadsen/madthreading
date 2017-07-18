@@ -1,16 +1,16 @@
 cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
 
-set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX
-   ${CMAKE_SOURCE_DIR}/cmake/Modules/MakeRules_cxx.cmake)
-
 project(madthreading CXX)
 
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules
-                      ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules ${CMAKE_MODULE_PATH})
+
+set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX
+    ${CMAKE_SOURCE_DIR}/cmake/Modules/MakeRules_cxx.cmake)
+
 
 include(MakeRules_cxx)
 include(GenericCMakeFunctions)
-SET_PROJECT_VERSION("0" "1" "0" "Multithreading API using pthreads")
+SET_PROJECT_VERSION("1" "0" "0" "Multithreading API using pthreads")
 SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 include(VersionUpdate)
@@ -24,6 +24,7 @@ OPTION_RETURN_TYPE_COMPILER_WARNINGS(OFF)
 OPTION_EXTRA_COMPILER_WARNINGS(OFF)
 OPTION_GPROF(OFF)
 OPTION_ENABLE_PIC(ON)
+option(BUILD_EXAMPLES "Build the examples" ON)
 
 string(TOUPPER ${CMAKE_BUILD_TYPE} UPPER_BUILD_TYPE)
 add_feature(USE_OPENMP "Enable OpenMP multithreading")
@@ -35,6 +36,7 @@ add_feature(CMAKE_INSTALL_PREFIX "Installation prefix")
 add_feature(CMAKE_CXX_FLAGS "CXX flags")
 add_feature(CMAKE_BUILD_TYPE "Build type")
 add_feature(CMAKE_CXX_FLAGS_${UPPER_BUILD_TYPE} "CXX flags for ${CMAKE_BUILD_TYPE}")
+add_feature(BUILD_EXAMPLES "Build the examples")
 
 foreach(_INCLUDE_DIR ${EXTERNAL_INCLUDE_DIRS})
     include_directories(SYSTEM ${_INCLUDE_DIR})
@@ -89,5 +91,8 @@ if(NOT EXISTS ${PROJECT_SOURCE_DIR}/madthreading)
     ${PROJECT_SOURCE_DIR}/source
     ${PROJECT_BINARY_DIR}/madthreading)
 endif()
-add_subdirectory(examples)
 
+
+if(BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()

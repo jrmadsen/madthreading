@@ -12,12 +12,12 @@
 #ifndef task_group_hh_
 #define task_group_hh_
 
-#include "threading.hh"
-#include "mutex.hh"
-#include "condition.hh"
-#include "allocator.hh"
-#include "atomics/atomic.hh"
+#include "threading/threading.hh"
+#include "threading/mutex.hh"
+#include "threading/condition.hh"
 #include "allocator/allocator.hh"
+#include "atomics/atomic.hh"
+#include "types.hh"
 
 #include <iostream>
 #include <deque>
@@ -25,8 +25,6 @@
 #include <map>
 #include <queue>
 #include <stack>
-
-#include "../types.hh"
 
 //----------------------------------------------------------------------------//
 

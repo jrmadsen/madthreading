@@ -34,7 +34,7 @@
 %module task_tree
 %{
     #define SWIG_FILE_WITH_INIT
-    #include "task_tree.hh"
+    #include "threading/task/task_tree.hh"
 %}
 
 #   ifndef __always_inline__

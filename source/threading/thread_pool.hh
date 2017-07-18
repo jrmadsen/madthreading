@@ -48,13 +48,13 @@
 #endif
 //----------------------------------------------------------------------------//
 
-#include "threading.hh"
-#include "mutex.hh"
-#include "condition.hh"
-#include "allocator.hh"
+#include "threading/threading.hh"
+#include "threading/mutex.hh"
+#include "threading/condition.hh"
+#include "allocator/allocator.hh"
 #include "atomics/atomic.hh"
-#include "task.hh"
-#include "task_tree.hh"
+#include "threading/task/task.hh"
+#include "threading/task/task_tree.hh"
 
 #include <iostream>
 #include <deque>
@@ -194,7 +194,7 @@ private:
 };
 
 //----------------------------------------------------------------------------//
-#include "task_group.hh"
+#include "task/task_group.hh"
 //----------------------------------------------------------------------------//
 template <typename Container_t>
 int thread_pool::add_tasks(const Container_t& c)

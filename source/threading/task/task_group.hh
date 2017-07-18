@@ -37,7 +37,7 @@
 %module task_group
 %{
     #define SWIG_FILE_WITH_INIT
-    #include "task_group.hh"
+    #include "threading/task/task_group.hh"
 %}
 
 %include "task_group.hh"

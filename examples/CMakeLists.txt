@@ -1,4 +1,8 @@
 
+cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
+
+project(Madthreading_Examples)
+
 add_subdirectory(ex1)
 add_subdirectory(ex2)
 add_subdirectory(ex3)

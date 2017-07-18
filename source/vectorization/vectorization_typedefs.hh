@@ -46,7 +46,7 @@ namespace vec
 /** 128-bit data structure */
 union W128_T
 {
-#ifdef HAS_AVX2
+#ifdef HAS_AVX
     __m128i  si;
     __m128d  sd;
 #else
@@ -69,7 +69,7 @@ typedef union W128_T w128_t;
 /** 256-bit data structure */
 union W256_T
 {
-#ifdef HAS_AVX2
+#ifdef HAS_AVX
     __m256i  si;
     __m256d  sd;
 #else
@@ -93,7 +93,7 @@ typedef union W256_T w256_t;
 /** 512-bit data structure */
 union W512_T
 {
-#ifndef __INTEL_COMPILER
+#ifdef HAS_AVX2
     __m512i  si;
     __m512d  sd;
 #else
@@ -112,9 +112,12 @@ typedef union W512_T w512_t;
 //----------------------------------------------------------------------------//
 
 
-#ifndef __INTEL_COMPILER
+#ifdef HAS_AVX
 typedef __mmask8    mask8_t;
 typedef __mmask16   mask16_t;
+#endif
+
+#ifdef HAS_AVX2
 typedef __mmask32   mask32_t;
 typedef __mmask64   mask64_t;
 #endif

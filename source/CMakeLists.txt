@@ -84,7 +84,7 @@ if(BUILD_STATIC_LIBS)
                           ${EXTRA_LIBS} ${EXTERNAL_LIBRARIES})
 
     install(TARGETS ${PROJECT_NAME}-STATIC
-            EXPORT ${CPROJECT_NAME}Targets
+            EXPORT ${CPROJECT_NAME}LibraryDepends
             RUNTIME DESTINATION ${CMAKE_INSTALL_FULL_BINDIR} COMPONENT bin
             LIBRARY DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR} COMPONENT lib
             ARCHIVE DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR} COMPONENT lib
@@ -105,14 +105,16 @@ set(_PROJECT_NAME "${_cproject_name}")
 set(PACKAGE_VERSION "${${PROJECT_NAME}_VERSION}")
 
 set(_TARGETS )
+set(PROJECT_LIBRARY_NAMES )
+
 if(BUILD_SHARED_LIBS)
     list(APPEND _TARGETS ${PROJECT_NAME}-SHARED)
 endif()
-if(BUILD_STATIC_LIBS)
+if(BUILD_STATIC_LIBS )
     list(APPEND _TARGETS ${PROJECT_NAME}-STATIC)
 endif()
 
-set(PROJECT_LIBRARY_NAMES ${_TARGETS})
+list(GET _TARGETS 0 PROJECT_LIBRARY_NAMES)
 
 # ===============================
 # Add all targets to the build-tree export set
@@ -132,7 +134,7 @@ configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/Config.cmake.in
     "${PROJECT_BINARY_DIR}/${_prefix}Config.cmake" @ONLY)
 
 # ... for the install tree
-set(CONF_INCLUDE_DIRS "\${${_PROJECT_NAME}_CMAKE_DIR}/${REL_INCLUDE_DIR}")
+set(CONF_INCLUDE_DIRS "\${${_PROJECT_NAME}_CMAKE_DIR}/${REL_INCLUDE_DIR};\${${_PROJECT_NAME}_CMAKE_DIR}/${REL_INCLUDE_DIR}/madthreading")
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/Config.cmake.in
     "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${_prefix}Config.cmake" @ONLY)
 

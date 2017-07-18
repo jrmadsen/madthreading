@@ -36,10 +36,10 @@
 #ifndef task_hh_
 #define task_hh_
 
-#include "threading.hh"
-#include "auto_lock.hh"
-#include "allocator.hh"
-#include "task_group.hh"
+#include "threading/threading.hh"
+#include "threading/auto_lock.hh"
+#include "allocator/allocator.hh"
+#include "threading/task/task_group.hh"
 
 #include <functional>
 #include <utility>
