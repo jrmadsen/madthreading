@@ -1,4 +1,11 @@
 
+#-----------------------------------------------------------------------
+# BUILD_CXXSTD
+# Choose C++ Standard to build against, if supported.
+# Mark as advanced because most users will not need it.
+include(ConfigureCXXSTD)
+set(CMAKE_CXX_FLAGS "-std=${BUILD_CXXSTD} ${CMAKE_CXX_FLAGS}")
+
 include(MacroLibraryTargets)
 
 if(NOT CMAKE_VERSION VERSION_LESS 3.0)

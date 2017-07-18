@@ -161,9 +161,3 @@ if(UNIX AND NOT CMAKE_COMPILER_IS_GNUCXX)
     # - CMake may do a reasonable job on its own here...
 endif()
 
-#-----------------------------------------------------------------------
-# BUILD_CXXSTD
-# Choose C++ Standard to build against, if supported.
-# Mark as advanced because most users will not need it.
-include(ConfigureCXXSTD)
-set(CMAKE_CXX_FLAGS "-std=${BUILD_CXXSTD} ${CMAKE_CXX_FLAGS}")

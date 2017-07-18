@@ -144,7 +144,7 @@ set(${PROJECT_NAME}_TARGET_COMPILE_FEATURES
   cxx_range_for
   cxx_strong_enums
   cxx_uniform_initialization
-  # Features that MSVC 18.0 cannot support but in list of Geant4 coding
+  # Features that MSVC 18.0 cannot support but in list of Madthreading coding
   # guidelines - to be required once support for that compiler is dropped.
   # Version 10.2 is coded without these being required.
   #cxx_deleted_functions
@@ -175,7 +175,7 @@ if(BUILD_CXXSTD GREATER 11)
   if(CMAKE_CXX${BUILD_CXXSTD}_COMPILE_FEATURES)
     list(APPEND ${PROJECT_NAME}_TARGET_COMPILE_FEATURES ${CMAKE_CXX${BUILD_CXXSTD}_COMPILE_FEATURES})
   else()
-    message(FATAL_ERROR "Geant4 requested to be compiled against C++ standard '${BUILD_CXXSTD}'\nbut detected compiler '${CMAKE_CXX_COMPILER_ID}', version '${CMAKE_CXX_COMPILER_VERSION}'\ndoes not support any features of that standard")
+    message(FATAL_ERROR "${PROJECT_NAME} requested to be compiled against C++ standard '${BUILD_CXXSTD}'\nbut detected compiler '${CMAKE_CXX_COMPILER_ID}', version '${CMAKE_CXX_COMPILER_VERSION}'\ndoes not support any features of that standard")
   endif()
 endif()
 
