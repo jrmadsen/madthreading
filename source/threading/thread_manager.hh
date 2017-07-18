@@ -73,6 +73,7 @@ MACRO(_tid_)
 #endif
 //----------------------------------------------------------------------------//
 
+#include "macros.hh"
 #include "threading/thread_pool.hh"
 #include "threading/task/task.hh"
 #include "threading/task/task_tree.hh"
@@ -339,7 +340,11 @@ public:
     void exec(_Func function,
               mad::task_group* tg = 0)
     {
+#ifdef MAD_USE_CXX98
+        typedef task<void, void> task_type;
+#else
         typedef task<void> task_type;
+#endif
 
         tg = set_task_group(tg);
         task_type* t = new task_type(tg, function);
@@ -452,7 +457,11 @@ public:
     void run(_Func function,
              mad::task_group* tg = 0)
     {
+#ifdef MAD_USE_CXX98
+        typedef task<void, void> task_type;
+#else
         typedef task<void> task_type;
+#endif
 
         tg = set_task_group(tg);
         for(size_type i = 0; i < size(); ++i)
@@ -605,8 +614,12 @@ public:
              unsigned long chunks, _Join _operator, _Tp identity,
              mad::task_group* tg = 0)
     {
-        typedef task<_Ret, _Arg, _Arg>                  task_type;
+#ifdef MAD_USE_CXX98
+        typedef task_tree_node<_Ret, _Arg, _Arg, void>  task_tree_node_type;
+#else
         typedef task_tree_node<_Ret, _Arg, _Arg>        task_tree_node_type;
+#endif
+        typedef task<_Ret, _Arg, _Arg>                  task_type;
         typedef task_tree<task_tree_node_type>          task_tree_type;
 
         tg = set_task_group(tg);
@@ -637,13 +650,18 @@ public:
         }
         m_data->tp()->add_tasks(tree->root());
         m_current_group->join();
-        for(auto itr : _nodes)
-            delete itr;
-        for(auto titr : _tasks)
+
+        typedef typename std::deque<task_type*>::iterator            task_deque_itr;
+        typedef typename std::deque<task_tree_node_type*>::iterator  node_deque_itr;
+        typedef typename mad::task_group::iterator          tgrp_saved_itr;
+        for(node_deque_itr itr = _nodes.begin(); itr != _nodes.end(); ++itr)
+            delete *itr;
+        for(task_deque_itr titr = _tasks.begin(); titr != _tasks.end(); ++titr)
         {
-            for(auto& itr : titr->group()->get_saved_tasks())
-                delete itr;
-            titr->group()->get_saved_tasks().clear();
+            tgrp_saved_itr itr = (*titr)->group()->get_saved_tasks().begin();
+            for(; itr != (*titr)->group()->get_saved_tasks().end(); ++itr)
+                delete *itr;
+            (*titr)->group()->get_saved_tasks().clear();
         }
         delete tree;
     }
@@ -681,7 +699,11 @@ public:
     __inline__
     void add_background_task(void* _id, _Func function)
     {
+#ifdef MAD_USE_CXX98
+        typedef task<void, void> task_type;
+#else
         typedef task<void> task_type;
+#endif
 
         for(size_type i = 0; i < size(); ++i)
         {

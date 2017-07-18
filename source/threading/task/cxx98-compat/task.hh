@@ -32,14 +32,11 @@
 #ifndef task_hh_
 #define task_hh_
 
-#if __cplusplus > 199711L   // C++11
-#define CXX11
-#endif
-
-#include "threading.hh"
-#include "auto_lock.hh"
-#include "allocator.hh"
-#include "task_group.hh"
+#include "macros.hh"
+#include "threading/threading.hh"
+#include "threading/auto_lock.hh"
+#include "allocator/allocator.hh"
+#include "threading/task/task_group.hh"
 
 #ifdef CXX11
     #include <functional>
