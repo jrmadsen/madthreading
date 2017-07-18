@@ -76,6 +76,25 @@ _Size_t GetEnvNumSteps(_Size_t _default = 500000000)
 
 //----------------------------------------------------------------------------//
 
+namespace details
+{
+
+void fmt(std::ofstream& of, double d[3])
+{
+    std::stringstream oss;
+    oss.precision(6);
+    size_t w = 20;
+    oss << std::fixed
+        << std::setw(w) << d[0] << "  "
+        << std::setw(w) << d[1] << "  "
+        << std::setw(w) << d[2] << std::endl;
+    of << oss.str();
+}
+
+}
+
+//----------------------------------------------------------------------------//
+
 template <typename _Step_t>
 inline void report(_Step_t num_steps,
                    const double& pi, timer::timer& t,
@@ -134,24 +153,13 @@ inline void report(_Step_t num_steps,
 
     std::ofstream of(iss.str().c_str());
 
-    auto _fmt = [&] (double d[3])
-    {
-        std::stringstream oss;
-        oss.precision(6);
-        size_t w = 20;
-        oss << std::fixed
-            << std::setw(w) << d[0] << "  "
-            << std::setw(w) << d[1] << "  "
-            << std::setw(w) << d[2] << std::endl;
-        of << oss.str();
-    };
 
     if(of)
     {
-        _fmt(m_wall);
-        _fmt(m_user);
-        _fmt(m_cput);
-        _fmt(m_perc);
+        ::details::fmt(of, m_wall);
+        ::details::fmt(of, m_user);
+        ::details::fmt(of, m_cput);
+        ::details::fmt(of, m_perc);
     }
     of.close();
 }

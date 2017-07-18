@@ -44,17 +44,12 @@
 #endif
 //----------------------------------------------------------------------------//
 
-// Define C++11
-#ifndef CXX11
-#   if __cplusplus > 199711L   // C++11
-#       define CXX11
-#   endif
-#endif
+#include "macros.hh"
 
-#if defined(CXX11)
-#	include "cxx11-compat/task_group.hh"
-#else
+#if defined(MAD_USE_CXX98)
 #	include "cxx98-compat/task_group.hh"
+#else
+#	include "cxx11-compat/task_group.hh"
 #endif
 
 #endif

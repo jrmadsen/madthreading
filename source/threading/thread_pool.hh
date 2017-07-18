@@ -41,7 +41,14 @@
 %module thread_pool
 %{
     #define SWIG_FILE_WITH_INIT
-    #include "thread_pool.hh"
+    #include "threading/threading.hh"
+    #include "threading/mutex.hh"
+    #include "threading/condition.hh"
+    #include "allocator/allocator.hh"
+    #include "atomics/atomic.hh"
+    #include "threading/task/task.hh"
+    #include "threading/task/task_tree.hh"
+    #include "threading/thread_pool.hh"
 %}
 
 %include "thread_pool.hh"

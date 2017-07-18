@@ -179,6 +179,7 @@ if(BUILD_CXXSTD GREATER 11)
   endif()
 endif()
 
+add_definitions(-DMAD_USE_CXX${BUILD_CXXSTD})
 set(BUILD_CXXSTD "c++${BUILD_CXXSTD}")
-
+message(STATUS "CXX: ${BUILD_CXXSTD}")
 

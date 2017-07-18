@@ -20,9 +20,8 @@ find_package(OpenMP)
 
 if(OpenMP_FOUND)
     # Add the OpenMP-specific compiler and linker flags
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+    set(TARGET_CXX_FLAGS "${OpenMP_CXX_FLAGS}")
+    set(TARGET_EXE_LINKER_FLAGS "${OpenMP_EXE_LINKER_FLAGS}")
     add_definitions(-DUSE_OPENMP)
 endif()
 
@@ -53,6 +52,9 @@ foreach(executable ${executables})
         ${PROJECT_SOURCE_DIR}/../Common.hh)
     target_link_libraries(${executable} ${Madthreading_LIBRARIES}
         ${TBB_LIBRARY} ${TBB_MALLOC_LIBRARY})
+    set_target_properties(${executable} PROPERTIES
+        COMPILE_FLAGS "-std=c++11 ${TARGET_CXX_FLAGS}"
+        LINK_FLAGS "${TARGET_EXE_LINKER_FLAGS}")
 endforeach()
 #------------------------------------------------------------------------------#
 

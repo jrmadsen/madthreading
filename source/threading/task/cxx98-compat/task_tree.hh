@@ -29,9 +29,9 @@
 #ifndef task_tree_hh_
 #define task_tree_hh_
 
-#include "../types.hh"
-#include "mutex.hh"
-#include "task.hh"
+#include "types.hh"
+#include "threading/mutex.hh"
+#include "threading/task/task.hh"
 
 #include <queue>
 #include <stack>

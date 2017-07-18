@@ -29,6 +29,10 @@
 #ifndef task_tree_version_hh_
 #define task_tree_version_hh_
 
+#ifndef __always_inline__
+#   define __always_inline__ inline
+#endif
+
 //----------------------------------------------------------------------------//
 #ifdef SWIG
 %module task_tree
@@ -44,17 +48,12 @@
 %include "task_tree.hh"
 #endif
 
-// Define C++11
-#ifndef CXX11
-#   if __cplusplus > 199711L   // C++11
-#       define CXX11
-#   endif
-#endif
+#include "macros.hh"
 
-#if defined(CXX11)
-#	include "cxx11-compat/task_tree.hh"
-#else
+#if defined(MAD_USE_CXX98)
 #	include "cxx98-compat/task_tree.hh"
+#else
+#	include "cxx11-compat/task_tree.hh"
 #endif
 
 #endif

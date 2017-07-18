@@ -33,9 +33,6 @@
 #ifndef task_tree_hh_
 #define task_tree_hh_
 
-#ifndef __always_inline__
-#   define __always_inline__ inline
-#endif
 //----------------------------------------------------------------------------//
 
 #include "types.hh"

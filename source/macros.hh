@@ -29,6 +29,13 @@
 #ifndef macros_hh_
 #define macros_hh_
 
+// Define C++0x
+#ifndef CXX11
+#   if defined(__GXX_EXPERIMENTAL_CXX0X)    // C++0x
+#       define CXX0X
+#   endif
+#endif
+
 // Define C++11
 #ifndef CXX11
 #   if __cplusplus > 199711L   // C++11
@@ -43,5 +50,59 @@
 #   endif
 #endif
 
+// Define C++14
+#ifndef CXX17
+#   if __cplusplus > 201402L    // C++17
+#       define CXX17
+#   endif
+#endif
+
+#if defined(MAD_USE_CXX98)
+#   if defined(MAD_USE_CXX0X)
+#       undef MAD_USE_CXX0X
+#   endif
+
+#   if defined(MAD_USE_CXX11)
+#       undef MAD_USE_CXX11
+#   endif
+
+#   if defined(MAD_USE_CXX14)
+#       undef MAD_USE_CXX14
+#   endif
+
+#   if defined(MAD_USE_CXX17)
+#       undef MAD_USE_CXX17
+#   endif
+#endif
+
+#if defined(MAD_USE_CXX0X)
+#   if defined(MAD_USE_CXX11)
+#       undef MAD_USE_CXX11
+#   endif
+
+#   if defined(MAD_USE_CXX14)
+#       undef MAD_USE_CXX14
+#   endif
+
+#   if defined(MAD_USE_CXX17)
+#       undef MAD_USE_CXX17
+#   endif
+#endif
+
+#if defined(MAD_USE_CXX11)
+#   if defined(MAD_USE_CXX14)
+#       undef MAD_USE_CXX14
+#   endif
+
+#   if defined(MAD_USE_CXX17)
+#       undef MAD_USE_CXX17
+#   endif
+#endif
+
+#if defined(MAD_USE_CXX14)
+#   if defined(MAD_USE_CXX17)
+#       undef MAD_USE_CXX17
+#   endif
+#endif
 
 #endif
