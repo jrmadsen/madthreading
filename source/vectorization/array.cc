@@ -45,6 +45,7 @@
 #include "constants.hh"
 #include "func.hh"
 #include "thread_manager.hh"
+#include "aligned_allocator.hh"
 
 using std::size_t;
 
@@ -113,14 +114,14 @@ void mad::array::inv(size_t n, double* q)
 void mad::array::amplitude(size_t n, size_t m, size_t d,
                            const double* v, double* norm)
 {
-    double* temp = static_cast<double*>(mad::memory::aligned_alloc(
-        n * sizeof(double), mad::memory::SIMD_ALIGN));
+    double* temp = static_cast<double*>(mad::aligned_alloc(
+        n * sizeof(double), mad::SIMD_ALIGN));
 
     mad::array::list_dot(n, m, d, v, v, temp);
 
     mad::func::sqrt(n, temp, norm);
 
-    mad::memory::aligned_free(temp);
+    mad::aligned_free(temp);
 
     return;
 }
@@ -130,8 +131,8 @@ void mad::array::amplitude(size_t n, size_t m, size_t d,
 void mad::array::normalize(size_t n, size_t m, size_t d,
                            const double* q_in, double* q_out)
 {
-    double* norm = static_cast<double*>(mad::memory::aligned_alloc(
-                                            n * sizeof(double), mad::memory::SIMD_ALIGN));
+    double* norm = static_cast<double*>(mad::aligned_alloc(
+                                            n * sizeof(double), mad::SIMD_ALIGN));
 
     mad::array::amplitude(n, m, d, q_in, norm);
 
@@ -157,7 +158,7 @@ void mad::array::normalize(size_t n, size_t m, size_t d,
         }
     }
 
-    mad::memory::aligned_free(norm);
+    mad::aligned_free(norm);
 
     return;
 }
@@ -167,8 +168,8 @@ void mad::array::normalize(size_t n, size_t m, size_t d,
 void mad::array::normalize_inplace(size_t n, size_t m, size_t d, double* q)
 {
 
-    double* norm = static_cast<double*>(mad::memory::aligned_alloc(
-                                            n * sizeof(double), mad::memory::SIMD_ALIGN));
+    double* norm = static_cast<double*>(mad::aligned_alloc(
+                                            n * sizeof(double), mad::SIMD_ALIGN));
 
     mad::array::amplitude(n, m, d, q, norm);
 
@@ -194,7 +195,7 @@ void mad::array::normalize_inplace(size_t n, size_t m, size_t d, double* q)
         }
     }
 
-    mad::memory::aligned_free(norm);
+    mad::aligned_free(norm);
 
     return;
 }
@@ -211,8 +212,8 @@ void mad::array::rotate(size_t nq, const double* q, size_t nv,
         n = nv;
     }
 
-    double* q_unit = static_cast<double*>(mad::memory::aligned_alloc(
-                                              4 * nq * sizeof(double), mad::memory::SIMD_ALIGN));
+    double* q_unit = static_cast<double*>(mad::aligned_alloc(
+                                              4 * nq * sizeof(double), mad::SIMD_ALIGN));
 
     mad::array::normalize(nq, 4, 4, q, q_unit);
 
@@ -354,7 +355,7 @@ void mad::array::rotate(size_t nq, const double* q, size_t nv,
             }
         }
 
-        mad::memory::aligned_free(q_unit);
+        mad::aligned_free(q_unit);
 
         return;
     }
@@ -503,8 +504,8 @@ void mad::array::slerp(size_t n_time, size_t n_targettime,
 void mad::array::exp(size_t n, const double* q_in, double* q_out)
 {
 
-    double* normv = static_cast<double*>(mad::memory::aligned_alloc(
-                                             n * sizeof(double), mad::memory::SIMD_ALIGN));
+    double* normv = static_cast<double*>(mad::aligned_alloc(
+                                             n * sizeof(double), mad::SIMD_ALIGN));
 
     mad::array::amplitude(n, 4, 3, q_in, normv);
 
@@ -523,7 +524,7 @@ void mad::array::exp(size_t n, const double* q_in, double* q_out)
         }
     }
 
-    mad::memory::aligned_free(normv);
+    mad::aligned_free(normv);
 
     return;
 }
@@ -533,8 +534,8 @@ void mad::array::exp(size_t n, const double* q_in, double* q_out)
 void mad::array::ln(size_t n, const double* q_in, double* q_out)
 {
 
-    double* normq = static_cast<double*>(mad::memory::aligned_alloc(
-                                             n * sizeof(double), mad::memory::SIMD_ALIGN));
+    double* normq = static_cast<double*>(mad::aligned_alloc(
+                                             n * sizeof(double), mad::SIMD_ALIGN));
 
     mad::array::amplitude(n, 4, 4, q_in, normq);
 
@@ -553,7 +554,7 @@ void mad::array::ln(size_t n, const double* q_in, double* q_out)
         }
     }
 
-    mad::memory::aligned_free(normq);
+    mad::aligned_free(normq);
 
     return;
 }
@@ -564,8 +565,8 @@ void mad::array::pow(size_t n, const double* p, const double* q_in,
                      double* q_out)
 {
 
-    double* q_tmp = static_cast<double*>(mad::memory::aligned_alloc(
-                                             4 * n * sizeof(double), mad::memory::SIMD_ALIGN));
+    double* q_tmp = static_cast<double*>(mad::aligned_alloc(
+                                             4 * n * sizeof(double), mad::SIMD_ALIGN));
 
     mad::array::ln(n, q_in, q_tmp);
 
@@ -579,7 +580,7 @@ void mad::array::pow(size_t n, const double* p, const double* q_in,
 
     mad::array::exp(n, q_tmp, q_out);
 
-    mad::memory::aligned_free(q_tmp);
+    mad::aligned_free(q_tmp);
 
     return;
 }
@@ -605,19 +606,19 @@ void mad::array::from_axisangle(size_t n, const double* axis,
     }
     else
     {
-        double* a = static_cast<double*>(mad::memory::aligned_alloc(
-                                             n * sizeof(double), mad::memory::SIMD_ALIGN));
+        double* a = static_cast<double*>(mad::aligned_alloc(
+                                             n * sizeof(double), mad::SIMD_ALIGN));
 
         for(size_t i = 0; i < n; ++i)
         {
             a[i] = 0.5 * angle[i];
         }
 
-        double* sin_a = static_cast<double*>(mad::memory::aligned_alloc(
-                                                 n * sizeof(double), mad::memory::SIMD_ALIGN));
+        double* sin_a = static_cast<double*>(mad::aligned_alloc(
+                                                 n * sizeof(double), mad::SIMD_ALIGN));
 
-        double* cos_a = static_cast<double*>(mad::memory::aligned_alloc(
-                                                 n * sizeof(double), mad::memory::SIMD_ALIGN));
+        double* cos_a = static_cast<double*>(mad::aligned_alloc(
+                                                 n * sizeof(double), mad::SIMD_ALIGN));
 
         mad::func::sincos(n, a, sin_a, cos_a);
 
@@ -630,9 +631,9 @@ void mad::array::from_axisangle(size_t n, const double* axis,
             q_out[4*i + 3] = cos_a[i];
         }
 
-        mad::memory::aligned_free(a);
-        mad::memory::aligned_free(sin_a);
-        mad::memory::aligned_free(cos_a);
+        mad::aligned_free(a);
+        mad::aligned_free(sin_a);
+        mad::aligned_free(cos_a);
     }
 
     return;

@@ -20,19 +20,19 @@
 // SOFTWARE.
 //
 //
-// created by jmadsen on Sat Jul 15 16:17:20 2017
+// created by jmadsen on Tue Jul 18 00:30:59 2017
 //
 //
 //
 //
 
 
-#include "memory.hh"
+#include "aligned_allocator.hh"
 #include "exception.hh"
 
 //============================================================================//
 
-void* mad::memory::aligned_alloc(size_t size, size_t align)
+void* mad::aligned_alloc(size_t size, size_t align)
 {
     void* mem = NULL;
     int ret = posix_memalign(&mem, align, size);
@@ -49,12 +49,13 @@ void* mad::memory::aligned_alloc(size_t size, size_t align)
 
 //============================================================================//
 
-void mad::memory::aligned_free(void* ptr)
+void mad::aligned_free(void* ptr)
 {
     free (ptr);
     return;
 }
 
 //============================================================================//
+
 
 

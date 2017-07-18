@@ -43,6 +43,7 @@
 #include "memory.hh"
 #include "constants.hh"
 #include "thread_manager.hh"
+#include "aligned_allocator.hh"
 
 using std::size_t;
 using namespace mad::dat;
@@ -699,11 +700,11 @@ void mad::func::fast_erfinv(int n, const double* in, double* out)
     nt = omp_get_num_threads();
 #endif
 
-    double* arg = static_cast<double*>(mad::memory::aligned_alloc(n * sizeof(double),
-                                                                  mad::memory::SIMD_ALIGN));
+    double* arg = static_cast<double*>(mad::aligned_alloc(n * sizeof(double),
+                                                          mad::SIMD_ALIGN));
 
-    double* lg = static_cast<double*>(mad::memory::aligned_alloc(n * sizeof(double),
-                                                                 mad::memory::SIMD_ALIGN));
+    double* lg = static_cast<double*>(mad::aligned_alloc(n * sizeof(double),
+                                                         mad::SIMD_ALIGN));
 
     int i;
     double ab;
@@ -876,8 +877,8 @@ void mad::func::fast_erfinv(int n, const double* in, double* out)
         out[i] = p * in[i];
     }
 
-    mad::memory::aligned_free(arg);
-    mad::memory::aligned_free(lg);
+    mad::aligned_free(arg);
+    mad::aligned_free(lg);
 
     return;
 }

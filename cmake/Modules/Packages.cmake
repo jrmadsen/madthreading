@@ -137,6 +137,35 @@ endif()
 
 ################################################################################
 #
+#        SSE
+#
+################################################################################
+include(FindSSE)
+set(SSE OFF CACHE BOOL "SSE support")
+add_feature(SSE "SSE Support")
+foreach(type SSE2 SSE3 SSSE3 SSE4_1 AVX AVX2)
+    if(${type}_FOUND)
+        set(SSE ON CACHE BOOL "SSE support" FORCE)
+    endif()
+    add_subfeature(SSE ${type}_FOUND "Hardware support for ${type}")
+endforeach()
+
+if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+    foreach(type SSE2 SSE3 SSSE3 SSE4_1 AVX AVX2)
+        string(TOLOWER "${type}" _flag)
+        string(REPLACE "_" "." _flag "${_flag}")
+        set(${type}_FLAGS "-m${_flag}")
+        if(${type}_FOUND)
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${${type}_FLAGS}")
+            add_definitions(-DHAS_${type})
+        endif()
+    endforeach()
+endif()
+
+
+
+################################################################################
+#
 #        clean up...
 #
 ################################################################################

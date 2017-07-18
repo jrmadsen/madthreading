@@ -183,32 +183,28 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # Add the  definitions (not sure about adding definitions for MSVC compilers
     __add_definitions()
 
+    set(_default_cxx_flags  "-Wno-deprecated -Wno-unused-function")
+    set(_verbose_cxx_flags  "-Wwrite-strings -Wpointer-arith -Woverloaded-virtual -Wshadow -pipe")
+    set(_extra_cxx_flags    "-pedantic -Wno-non-virtual-dtor -Wno-long-long -Wno-variadic-macros")
+    set(_fast_flags         "")
+    set(_fast_verb_flags    "")
     if(CMAKE_COMPILER_IS_GNUCXX)
-        set(_default_cxx_flags "-fPIC -Wno-unknown-pragmas -Wno-deprecated -Wno-unused-function -Wno-unused-local-typedefs")
+        add_flag(_default_cxx_flags "-Wno-unused-local-typedefs")
+        add_flag(_rwdi_flags    "-fno-expensive-optimizations")
+        add_flag(_fast_flags    "-ftree-vectorize -ftree-loop-vectorize")
+        #add_flag(_fast_flags    "-fopt-info-vec-optimized")
     else()
-        set(_default_cxx_flags "-fPIC -Wno-unknown-pragmas -Wno-deprecated -Wno-unused-function")
-    endif()
-    set(_verbose_cxx_flags "-Wwrite-strings -Wpointer-arith -Woverloaded-virtual -Wshadow -pipe")
-    set(_extra_cxx_flags "-pedantic -Wno-non-virtual-dtor -Wno-long-long -Wno-variadic-macros")
-
-    set(CMAKE_CXX_FLAGS_INIT "-Wall ${_default_cxx_flags}")
-    set(CMAKE_CXX_FLAGS_DEBUG_INIT "-g -DDEBUG")
-    set(CMAKE_CXX_FLAGS_VERBOSEDEBUG_INIT "-g ${_verbose_cxx_flags} -DDEBUG")
-    set(CMAKE_CXX_FLAGS_RELEASE_INIT "-O2 -DNDEBUG")
-    set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT "-Os -DNDEBUG")
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
-
-    # Remove superfluous "unused argument" "warnings" from Clang
-    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        set(CMAKE_CXX_FLAGS_INIT "${CMAKE_CXX_FLAGS_INIT} -Qunused-arguments")
+        add_flag(_default_cxx_flags "-Qunused-arguments")
     endif()
 
-    # Extra  modes
-    # - TestRelease
-    set(CMAKE_CXX_FLAGS_TESTRELEASE_INIT "-g -DDEBUG_VERBOSE -DFPE_DEBUG")
-
-    # - Maintainer
-    set(CMAKE_CXX_FLAGS_MAINTAINER_INIT "-g ${_verbose_cxx_flags} ${_extra_cxx_flags}")
+    set(CMAKE_CXX_FLAGS_INIT                "-Wall ${_default_cxx_flags}")
+    set(CMAKE_CXX_FLAGS_DEBUG_INIT          "-g -DDEBUG")
+    set(CMAKE_CXX_FLAGS_VERBOSEDEBUG_INIT   "-g -DDEBUG ${_verbose_cxx_flags}")
+    set(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG ${_fast_flags}")
+    set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "-Os -DNDEBUG")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g ${_fast_flags} ${_fwdi_flags}")
+    set(CMAKE_CXX_FLAGS_TESTRELEASE_INIT    "-g -DDEBUG_VERBOSE -DFPE_DEBUG")
+    set(CMAKE_CXX_FLAGS_MAINTAINER_INIT     "-g ${_verbose_cxx_flags} ${_extra_cxx_flags}")
 
     # - C++ Standard Settings
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")

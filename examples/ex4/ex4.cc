@@ -7,175 +7,270 @@
 
 #ifdef USE_OPENMP
     #include <omp.h>
-    #define SIMD omp simd
-#else
-    #define SIMD
 #endif
 
 #include <iostream>
 #include <iomanip>
-
-#include <madthreading/types.hh>
-#include <madthreading/utility/timer.hh>
-#include <madthreading/threading/thread_manager.hh>
-#include <madthreading/vectorization/vectorization_typedefs.hh>
-#include <madthreading/allocator/allocator.hh>
+#include <immintrin.h>
+#include <inttypes.h>
+#include <cstdint>
+#include <cpuid.h>
+#include <string.h>
+#include <stdio.h>
 #include <chrono>
-#include <thread>
+
+#include <madthreading/utility/timer.hh>
+#include <madthreading/allocator/aligned_allocator.hh>
 
 using namespace std;
-using namespace mad;
 
 #include "../Common.hh"
 
-#define nsize 3
+typedef uint32_t uint32;
+typedef uint64_t uint64;
+
+#define nsize 8
+#define lsize 2
 #define SLEEP_TIME 1
 
-class tv : public mad::Allocator
+#define _wid  8
+#define _prec 2
+
+//----------------------------------------------------------------------------//
+/** 256-bit data structure */
+union W256_T
+{
+    __m256i  si;
+    __m256d  sd;
+    uint64  u64[4];
+    uint32  u32[8];
+    double    d[4];
+
+    W256_T() { memset(this, 0, sizeof(*this)); }
+};// __attribute__ ((aligned(64)));
+
+//----------------------------------------------------------------------------//
+/** 256-bit data structure */
+union W256_FAKE_T
+{
+    uint64  si;
+    double  sd;
+    uint64 u64;
+    uint32 u32;
+    double   d;
+
+    W256_FAKE_T() { memset(this, 0, sizeof(*this)); }
+};// __attribute__ ((aligned(64)));
+
+/** 256-bit data type */
+typedef union W256_T        w256_t;
+typedef union W256_FAKE_T   f256_t;
+//----------------------------------------------------------------------------//
+
+
+class tv_vec
 {
 public:
-    tv()
+    typedef uint64  size_type;
+    typedef w256_t  array_type;
+
+    size_type   m_size;
+    array_type* m_data;
+
+    tv_vec(uint64 n)
+    : m_size(n/4), m_data(nullptr)
     {
-        m_mask = 0xFF;
-        for(int i = 0; i < nsize; ++i)
-            m_data.d[i] = double(0.0);
+        m_data = static_cast<array_type*>(
+                     mad::aligned_alloc(m_size * sizeof(array_type),
+                                        mad::SIMD_ALIGN));
+        for(uint32 i = 0; i < m_size; ++i)
+            m_data[i].sd = _mm256_set1_pd(0.0);
     }
 
-    tv(const double& val)
+    tv_vec(uint64 n, const double& val)
+    : m_size(n/4), m_data(nullptr)
     {
-        m_mask = 0xFF;
-        m_data.sd = _mm256_set1_pd(val);
+        m_data = static_cast<array_type*>(
+                     mad::aligned_alloc(m_size * sizeof(array_type),
+                                        mad::SIMD_ALIGN));
+        for(uint32 i = 0; i < m_size; ++i)
+            m_data[i].sd = _mm256_set1_pd(val);
     }
 
-    tv(const double& val1, const double& val2, const double& val3)
+    ~tv_vec()
     {
-        m_mask = 0xFF;
-        double rhs_array[nsize] = { val1, val2, val3 };
-        for(int i = 0; i < nsize; ++i)
-            m_data.d[i] = rhs_array[i];
+        mad::aligned_free((void*) m_data);
     }
 
-    tv(const tv& rhs)
+    tv_vec& operator=(const double& val)
     {
-        m_mask = 0xFF;
-        for(int i = 0; i < nsize; ++i)
-            m_data.d[i] = rhs.m_data.d[i];
-    }
-
-    ~tv() {}
-
-    tv& operator=(const tv& rhs)
-    {
-        if(this != &rhs)
-        {
-            m_mask = 0xFF;
-            for(int i = 0; i < nsize; ++i)
-                m_data.d[i] = rhs.m_data.d[i];
-        }
-        return *this;
-    }
-
-    double&       operator[](const int& i)       { return m_data.d[i%3]; }
-    const double& operator[](const int& i) const { return m_data.d[i%3]; }
-
-    inline
-    tv& loop(const double& val)
-    {
-        //std::this_thread::sleep_for(std::chrono::microseconds(SLEEP_TIME));
-        m_data.sd = _mm256_add_pd(m_data.sd, _mm256_set1_pd(val));
+        for(uint32 i = 0; i < m_size; ++i)
+            m_data[i].sd = _mm256_set1_pd(val);
         return *this;
     }
 
     inline
-    tv& indiv(const double& val)
+    tv_vec& loop(const double& val)
     {
-        //std::this_thread::sleep_for(std::chrono::microseconds(SLEEP_TIME));
-        (*this)[0] += val;
-        (*this)[1] += val;
-        (*this)[2] += val;
+        for(uint32 i = 0; i < m_size; ++i)
+            m_data[i].sd = _mm256_add_pd(m_data[i].sd, _mm256_set1_pd(val));
         return *this;
     }
 
     inline
-    tv& loop(const tv& val)
+    tv_vec& loop(const tv_vec& val)
     {
-        //std::this_thread::sleep_for(std::chrono::microseconds(SLEEP_TIME));
-        m_data.sd = _mm256_add_pd(m_data.sd, val.m_data.sd);
-        return *this;
-    }
-
-    inline
-    tv& indiv(const tv& val)
-    {
-        //std::this_thread::sleep_for(std::chrono::microseconds(SLEEP_TIME));
-        (*this)[0] += val[0];
-        (*this)[1] += val[1];
-        (*this)[2] += val[2];
+        for(uint32 i = 0; i < m_size; ++i)
+            m_data[i].sd = _mm256_add_pd(m_data[i].sd, val.m_data[i].sd);
         return *this;
     }
 
     std::string str() const
     {
         std::stringstream ss;
-        ss.precision(4);
+        ss.precision(_prec);
         ss << std::scientific;
-        //ss << std::fixed;
-        ss << "("
-           << std::setw(10) << m_data.d[0] << ", "
-           << std::setw(10) << m_data.d[1] << ", "
-           << std::setw(10) << m_data.d[2] << ")";
+        ss << "(";
+        for(uint32 j = 0; j < m_size; ++j)
+        {
+            uint32 nstop = (j == m_size - 1) ? 3 : 4;
+            for(uint32 i = 0; i < nstop; ++i)
+            {
+                ss << std::setw(_wid) << m_data[j].d[i] << ", ";
+            }
+            if(nstop == 3)
+                ss << std::setw(_wid) << m_data[j].d[3] << ")";
+        }
         return ss.str();
     }
 
-private:
-    vec::mask8_t    m_mask;
-    vec::w256_t     m_data;
+};
 
+//============================================================================//
+
+class tv_array
+{
+public:
+    typedef uint64  size_type;
+    typedef f256_t  array_type;
+
+    size_type   m_size;
+    array_type* m_data;
+
+    tv_array(uint64 n)
+    : m_size(n), m_data(new array_type[m_size])
+    {
+        for(uint32 i = 0; i < m_size; ++i)
+            m_data[i].sd = 0.0;
+    }
+
+    tv_array(uint64 n, const double& val)
+    : m_size(n), m_data(new array_type[m_size])
+    {
+        for(uint32 i = 0; i < m_size; ++i)
+            m_data[i].sd = val;
+    }
+
+    ~tv_array()
+    {
+        delete [] m_data;
+    }
+
+    tv_array& operator=(const double& val)
+    {
+        for(uint32 i = 0; i < m_size; ++i)
+            m_data[i].sd = val;
+        return *this;
+    }
+
+    inline
+    tv_array& loop(const double& val)
+    {
+        for(uint32 i = 0; i < m_size; ++i)
+            m_data[i].sd += val;
+        return *this;
+    }
+
+    inline
+    tv_array& loop(const tv_array& val)
+    {
+        for(uint32 i = 0; i < m_size; ++i)
+            m_data[i].sd += val.m_data[i].sd;
+        return *this;
+    }
+
+    std::string str() const
+    {
+        std::stringstream ss;
+        ss.precision(_prec);
+        ss << std::scientific;
+        ss << "(";
+        for(uint32 j = 0; j < m_size; ++j)
+        {
+            if(j < m_size - 1)
+                ss << std::setw(_wid) << m_data[j].d << ", ";
+            else
+                ss << std::setw(_wid) << m_data[j].d << ")";
+        }
+        return ss.str();
+    }
 };
 
 //============================================================================//
 
 int main(int argc, char** argv)
 {
-    ulong_type num_steps = GetEnvNumSteps(5000000000UL);
-    double_type step = 1.0/static_cast<double_type>(num_steps);
+    uint64_t num_steps = GetEnvNumSteps(1000000000UL);
+    double step = 1.0/static_cast<double>(num_steps);
+    uint32 size = 24;
+    if(argc > 1)
+        size = atoi(argv[1]);
 
-    tmcout << "Number of steps: " << num_steps << "..." << std::endl;
+    std::cout << "Number of steps: " << num_steps << "..." << std::endl;
     //========================================================================//
     {
         timer::timer t;
-        tv sum(0.0);
-        for(ulong_type i = 0; i < num_steps; ++i)
-            sum.indiv((static_cast<double>(i)-0.5)*step);
-        report(num_steps, sum.str(), t.stop_and_return(),
-               string(argv[0]) + " - double");
-    }
-    //========================================================================//
-    {
-        timer::timer t;
-        tv sum(0.0);
-        for(ulong_type i = 0; i < num_steps; ++i)
+        tv_vec sum(size, 0.0);
+        for(uint64_t i = 0; i < num_steps; ++i)
             sum.loop((static_cast<double>(i)-0.5)*step);
         report(num_steps, sum.str(), t.stop_and_return(),
-               string(argv[0]) + " - SIMD (double)");
+               string(argv[0]) + " - intrin (double)");
     }
     //========================================================================//
     {
         timer::timer t;
-        tv sum(0.0);
-        for(ulong_type i = 0; i < num_steps; ++i)
-            sum.indiv(tv(static_cast<double>(i-0.5)*(step/3.0)));
+        tv_array sum(size, 0.0);
+        for(uint64_t i = 0; i < num_steps; ++i)
+            sum.loop((static_cast<double>(i)-0.5)*step);
         report(num_steps, sum.str(), t.stop_and_return(),
-               string(argv[0]) + " - tv");
+               string(argv[0]) + " - array (double)");
+    }
+    //========================================================================//
+    tv_vec   vincr = tv_vec(size, 0.0);
+    tv_array aincr = tv_array(size, 0.0);
+    //========================================================================//
+    {
+        timer::timer t;
+        tv_vec sum(size, 0.0);
+        for(uint64_t i = 0; i < num_steps; ++i)
+        {
+            vincr = static_cast<double>(i-0.5)*(step/3.0);
+            sum.loop(vincr);
+        }
+        report(num_steps, sum.str(), t.stop_and_return(),
+               string(argv[0]) + " - intrin (tv)");
     }
     //========================================================================//
     {
         timer::timer t;
-        tv sum(0.0);
-        for(ulong_type i = 0; i < num_steps; ++i)
-            sum.loop(tv(static_cast<double>(i-0.5)*(step/3.0)));
+        tv_array sum(size, 0.0);
+        for(uint64_t i = 0; i < num_steps; ++i)
+        {
+            aincr = static_cast<double>(i-0.5)*(step/3.0);
+            sum.loop(aincr);
+        }
         report(num_steps, sum.str(), t.stop_and_return(),
-               string(argv[0]) + " - SIMD (tv)");
+               string(argv[0]) + " - array (tv)");
     }
     //========================================================================//
 

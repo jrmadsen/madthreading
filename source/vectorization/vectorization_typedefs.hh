@@ -29,12 +29,6 @@
 #ifndef vectorization_typedefs_hh_
 #define vectorization_typedefs_hh_
 
-//----------------------------------------------------------------------------//
-namespace mad
-{
-namespace vec
-{
-
 #include <immintrin.h>
 #include <inttypes.h>
 #include <cstdint>
@@ -42,31 +36,17 @@ namespace vec
 #include <string.h>
 #include <stdio.h>
 
-#if defined(bit_AVX)
-#   define HAS_AVX
-#endif
-
-#if defined(bit_AVX2)
-#   define HAS_AVX2
-#endif
-
-#if defined(bit_AVX512F) && defined(bit_AVX512VL)
-#   define HAS_AVX512
-#endif
-
-#if defined(bit_SSE2)
-#   define HAS_SSE2
-#endif
-
-#if defined(bit_SSE3)
-#   define HAS_SSE3
-#endif
+//----------------------------------------------------------------------------//
+namespace mad
+{
+namespace vec
+{
 
 //----------------------------------------------------------------------------//
 /** 128-bit data structure */
 union W128_T
 {
-#ifndef __INTEL_COMPILER
+#ifdef HAS_AVX2
     __m128i  si;
     __m128d  sd;
 #else
@@ -89,7 +69,7 @@ typedef union W128_T w128_t;
 /** 256-bit data structure */
 union W256_T
 {
-#ifndef __INTEL_COMPILER
+#ifdef HAS_AVX2
     __m256i  si;
     __m256d  sd;
 #else
