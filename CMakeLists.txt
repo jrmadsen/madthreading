@@ -53,7 +53,7 @@ add_subdirectory(source)
 
 #------------------------------------------------------------------------------#
 
-option(GENERATE_PYTHON_INTERFACES "Generate Python interfaces via SWIG" ON)
+option(GENERATE_PYTHON_INTERFACES "Generate Python interfaces via SWIG" OFF)
 add_feature(GENERATE_PYTHON_INTERFACES "Generate Python interfaces via SWIG")
 
 #------------------------------------------------------------------------------#
