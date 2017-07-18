@@ -51,7 +51,7 @@ list(APPEND EXTERNAL_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
 #
 ################################################################################
 
-option(ENABLE_UNIT_TEST "Enable unit testing" ON)
+option(ENABLE_UNIT_TEST "Enable unit testing" OFF)
 add_feature(ENABLE_UNIT_TEST "Enable unit testing")
 
 if(ENABLE_UNIT_TEST)
