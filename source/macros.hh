@@ -30,7 +30,7 @@
 #define macros_hh_
 
 // Define C++0x
-#ifndef CXX11
+#ifndef CXX0X
 #   if defined(__GXX_EXPERIMENTAL_CXX0X)    // C++0x
 #       define CXX0X
 #   endif
@@ -50,7 +50,7 @@
 #   endif
 #endif
 
-// Define C++14
+// Define C++17
 #ifndef CXX17
 #   if __cplusplus > 201402L    // C++17
 #       define CXX17
