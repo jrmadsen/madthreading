@@ -53,7 +53,6 @@
     #include "thread_manager.hh"
 %}
 
-%import "allocator/allocator.hh"
 %import "thread_pool.hh"
 %import "task/task_tree.hh"
 %import "task/task_group.hh"

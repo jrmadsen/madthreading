@@ -59,6 +59,7 @@ add_feature(GENERATE_PYTHON_INTERFACES "Generate Python interfaces via SWIG")
 #------------------------------------------------------------------------------#
 
 if(GENERATE_PYTHON_INTERFACES)
+
     # used by SWIG Modules
     set(PROJECT_LIBRARIES ${PROJECT_NAME}-SHARED ${EXTRA_LIBS})
 

@@ -47,14 +47,14 @@ macro(DEFINE_PYTHON_SWIG_MODULE)
         set(MODULE_PYTHON_VERSION 2.7)
     endif()
     #
-    FIND_PACKAGE(SWIG)
+    FIND_PACKAGE(SWIG REQUIRED)
     if(NOT SWIG_FOUND)
         return()
     endif()
     #
     INCLUDE(${SWIG_USE_FILE})
     #
-    FIND_PACKAGE(PythonLibs ${MODULE_PYTHON_VERSION})
+    FIND_PACKAGE(PythonLibs ${MODULE_PYTHON_VERSION} REQUIRED)
     #
     if(NOT PythonLibs_FOUND)
         return()

@@ -253,7 +253,9 @@ class PoolAllocator_tl
 {
 private:
     typedef details::allocator<T, true>  alloc_type;
+#ifndef SWIG
     ThreadLocalStatic alloc_type* this_alloc;
+#endif
 
 public:
 #ifndef SWIG
@@ -288,10 +290,10 @@ public:
 };
 
 //============================================================================//
-
+#ifndef SWIG
 template <typename T> ThreadLocal
 typename PoolAllocator_tl<T>::alloc_type* PoolAllocator_tl<T>::this_alloc = 0;
-
+#endif
 //============================================================================//
 
 #ifdef USE_TBB
