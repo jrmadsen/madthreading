@@ -19,7 +19,7 @@
 #   For development of the toolkit. It adds debugging, and enables the use
 #   of library specific debugging via standardized definitions.
 #
-# Compiler flags specific to these build types are set in the cache, and 
+# Compiler flags specific to these build types are set in the cache, and
 # the  types are added to the CMAKE_BUILD_TYPE cache string and to
 # CMAKE_CONFIGURATION_TYPES if appropriate to the build tool being used.
 #
@@ -47,7 +47,7 @@ set(CMAKE_CXX_FLAGS_VERBOSEDEBUG "${CMAKE_CXX_FLAGS_VERBOSEDEBUG_INIT}"
 
 
 #-----------------------------------------------------------------------
-# Mark all the additional mode flags as advanced because most users will 
+# Mark all the additional mode flags as advanced because most users will
 # never need to see them
 mark_as_advanced(
   CMAKE_CXX_FLAGS_TESTRELEASE
@@ -64,7 +64,7 @@ if(CMAKE_CONFIGURATION_TYPES)
   list(APPEND CMAKE_CONFIGURATION_TYPES Maintainer)
   list(APPEND CMAKE_CONFIGURATION_TYPES VerboseDebug)
   list(REMOVE_DUPLICATES CMAKE_CONFIGURATION_TYPES)
-  set(CMAKE_CONFIGURATION_TYPES "${CMAKE_CONFIGURATION_TYPES}" 
+  set(CMAKE_CONFIGURATION_TYPES "${CMAKE_CONFIGURATION_TYPES}"
     CACHE STRING "${CMAKE_PROJECT_NAME} configurations for multimode build tools"
     FORCE
     )
@@ -92,3 +92,17 @@ if(NOT CMAKE_CONFIGURATION_TYPES)
       )
   endif()
 endif()
+
+#-----------------------------------------------------------------------
+# Update build flags for each build type
+#
+set(CONFIG_TYPES Debug Release RelWithDebInfo MinSizeRel TestRelease Maintainer VerboseDebug
+    CACHE STRING "Configuration types")
+foreach(type ${CONFIG_TYPES})
+    string(TOUPPER "${type}" UTYPE)
+    unset(CMAKE_CXX_FLAGS_${UTYPE} CACHE)
+    set(CMAKE_CXX_FLAGS_${UTYPE} "${CMAKE_CXX_FLAGS_${UTYPE}_INIT}")
+endforeach()
+
+unset(CMAKE_CXX_FLAGS CACHE)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_INIT}")

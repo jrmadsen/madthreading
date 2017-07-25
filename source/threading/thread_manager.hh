@@ -89,7 +89,7 @@ MACRO(_tid_)
 #include <cmath>
 #include <cassert>
 
-#if defined(USE_OPENMP) && defined(__INTEL_COMPILER)
+#if defined(USE_OPENMP)
 #   include <omp.h>
 #endif
 namespace mad
@@ -654,8 +654,8 @@ public:
         typedef typename std::deque<task_type*>::iterator            task_deque_itr;
         typedef typename std::deque<task_tree_node_type*>::iterator  node_deque_itr;
         typedef typename mad::task_group::iterator          tgrp_saved_itr;
-        for(node_deque_itr itr = _nodes.begin(); itr != _nodes.end(); ++itr)
-            delete *itr;
+        //for(node_deque_itr itr = _nodes.begin(); itr != _nodes.end(); ++itr)
+        //    delete *itr;
         for(task_deque_itr titr = _tasks.begin(); titr != _tasks.end(); ++titr)
         {
             tgrp_saved_itr itr = (*titr)->group()->get_saved_tasks().begin();

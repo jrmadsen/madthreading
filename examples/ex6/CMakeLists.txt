@@ -7,24 +7,29 @@ configure_example()
 
 find_package(Madthreading REQUIRED)
 
-ConfigureRootSearchPath(TBB)
-find_package(TBB COMPONENTS malloc QUIET)
-if(TBB_FOUND)
-    include_directories(${TBB_INCLUDE_DIRS})
-    list(APPEND EXTERNAL_LIBRARIES ${TBB_LIBRARIES})
-    list(APPEND EXTERNAL_INCLUDE_DIRS ${TBB_INCLUDE_DIRS})
-    add_definitions(-DUSE_TBB)
+if(NOT DEFINED USE_TBB OR USE_TBB)
+    ConfigureRootSearchPath(TBB)
+    find_package(TBB COMPONENTS malloc QUIET)
+    if(TBB_FOUND)
+        include_directories(${TBB_INCLUDE_DIRS})
+        list(APPEND EXTERNAL_LIBRARIES ${TBB_LIBRARIES})
+        list(APPEND EXTERNAL_INCLUDE_DIRS ${TBB_INCLUDE_DIRS})
+        add_definitions(-DUSE_TBB)
+    endif()
 endif()
 
-find_package(OpenMP)
+if(NOT DEFINED USE_OPENMP OR USE_OPENMP)
+    find_package(OpenMP)
 
-if(OpenMP_FOUND)
-    # Add the OpenMP-specific compiler and linker flags
-    set(TARGET_CXX_FLAGS "${OpenMP_CXX_FLAGS}")
-    set(TARGET_EXE_LINKER_FLAGS "${OpenMP_EXE_LINKER_FLAGS}")
-    add_definitions(-DUSE_OPENMP)
+    if(OpenMP_FOUND)
+        # Add the OpenMP-specific compiler and linker flags
+        set(TARGET_CXX_FLAGS "${OpenMP_CXX_FLAGS}")
+        set(TARGET_EXE_LINKER_FLAGS "${OpenMP_EXE_LINKER_FLAGS}")
+        add_definitions(-DUSE_OPENMP)
+    endif()
+else()
+    set(OpenMP_FOUND OFF)
 endif()
-
 
 #------------------------------------------------------------------------------#
 

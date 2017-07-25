@@ -21,7 +21,6 @@
 #include <madthreading/types.hh>
 #include <madthreading/utility/timer.hh>
 #include <madthreading/threading/thread_manager.hh>
-#include <madthreading/vectorization/vectorization_typedefs.hh>
 #include <madthreading/allocator/allocator.hh>
 #include <madthreading/utility/constants.hh>
 #include <madthreading/threading/auto_lock.hh>
@@ -52,7 +51,9 @@ int main(int argc, char** argv)
     //------------------------------------------------------------------------//
     auto block_b = [&sentence] ()
     {
+#ifndef __INTEL_COMPILER
         this_thread::sleep_for(chrono::milliseconds(1));
+#endif
         auto_lock l(mtx);
         sentence += "_";
     };

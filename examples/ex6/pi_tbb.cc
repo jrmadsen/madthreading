@@ -7,10 +7,6 @@
 //
 //
 
-#ifdef USE_OPENMP
-    #include <omp.h>
-#endif
-
 #include <iostream>
 #include <iomanip>
 
@@ -44,11 +40,9 @@ public:
     : m_step(rhs.m_step), m_sum(0.0) { }
 
     // for computing integral
-    __attribute__((always_inline))
-    inline double_type x(ulong_type i) const { return (i-0.5)*m_step; }
+    _inline_ double_type x(ulong_type i) const { return (i-0.5)*m_step; }
 
-    __attribute__((always_inline))
-    inline void operator()(const range_t& range)
+    _inline_ void operator()(const range_t& range)
     {
         for(const_iterator itr = range.begin(); itr != range.end(); ++itr)
         {
@@ -58,8 +52,7 @@ public:
     }
 
     // called at end of tbb::parallel_reduce
-    __attribute__((always_inline))
-    inline void join(ComputePi& rhs) { m_sum += rhs.m_sum; }
+    _inline_ void join(ComputePi& rhs) { m_sum += rhs.m_sum; }
 
     // access sum
     double_type& sum() { return m_sum; }

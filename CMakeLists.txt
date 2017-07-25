@@ -15,9 +15,9 @@ SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 include(VersionUpdate)
 include(InstallDirs)
-include(Packages)
 include(GenericCMakeOptions)
 include(LibraryBuildOptions)
+include(Packages)
 
 OPTION_USE_OPENMP(ON)
 OPTION_RETURN_TYPE_COMPILER_WARNINGS(OFF)

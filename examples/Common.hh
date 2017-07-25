@@ -33,6 +33,25 @@
 #   define PI_EPSILON 1.0e-8
 #endif
 
+#ifndef do_pragma
+#   define do_pragma(x) _Pragma(#x)
+#endif
+
+//============================================================================//
+//  OpenMP
+//============================================================================//
+
+#if defined(USE_OPENMP) && !defined(__INTEL_COMPILER)
+#   include <omp.h>
+#   ifndef pragma_simd
+#       define pragma_simd do_pragma(omp simd)
+#   endif
+#else
+#   ifndef pragma_simd
+#       define pragma_simd {;}
+#   endif
+#endif
+
 //----------------------------------------------------------------------------//
 
 template <typename _Step_t, typename _Pi_t>

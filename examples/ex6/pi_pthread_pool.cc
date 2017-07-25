@@ -7,10 +7,6 @@
 //
 //
 
-#ifdef USE_OPENMP
-    #include <omp.h>
-#endif
-
 #include <iostream>
 #include <iomanip>
 
@@ -35,7 +31,7 @@ int main(int argc, char** argv)
     {
         auto x = [step] (const ulong_type& i) { return (i-0.5)*step; };
         double_type tl_sum = 0.0;
-        #pragma omp simd
+        pragma_simd
         for(ulong_type i = s; i < e; ++i)
             tl_sum += 4.0/(1.0 + x(i)*x(i));
         sum += tl_sum;

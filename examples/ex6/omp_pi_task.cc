@@ -39,7 +39,7 @@ double_type pi_comp(ulong_type Nstart, ulong_type Nfinish, double_type step)
 
     if (Nfinish-Nstart < MIN_BLK)
     {
-        #pragma omp simd
+        pragma_simd
         for (ulong_type i = Nstart; i < Nfinish; ++i)
         {
             double_type x = (i+0.5)*step;

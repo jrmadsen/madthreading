@@ -68,10 +68,11 @@
             defined(__GNUC__) && ((__GNUC__==4 && __GNUC_MINOR__<=9) || (__GNUC__ > 4)) && \
             defined(__INTEL_COMPILER) )
         #if defined (USE_STD11)
-            #define ThreadLocalStatic static __thread
             #if (__INTEL_COMPILER < 1500)
+                #define ThreadLocalStatic static __thread
                 #define ThreadLocal __thread
             #else
+                #define ThreadLocalStatic static thread_local
                 #define ThreadLocal thread_local
             #endif
         #else

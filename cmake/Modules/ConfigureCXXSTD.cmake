@@ -179,7 +179,8 @@ if(BUILD_CXXSTD GREATER 11)
   endif()
 endif()
 
-add_definitions(-DMAD_USE_CXX${BUILD_CXXSTD})
+string(TOUPPER "${BUILD_CXXSTD}" UBUILD_CXXSTD)
+add_definitions(-DMAD_USE_CXX${UBUILD_CXXSTD})
 set(BUILD_CXXSTD "c++${BUILD_CXXSTD}")
-message(STATUS "CXX: ${BUILD_CXXSTD}")
+#message(STATUS "CXX: ${BUILD_CXXSTD}")
 

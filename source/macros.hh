@@ -29,6 +29,10 @@
 #ifndef macros_hh_
 #define macros_hh_
 
+//============================================================================//
+//  CXX{0X,11,14,17}
+//============================================================================//
+
 // Define C++0x
 #ifndef CXX0X
 #   if defined(__GXX_EXPERIMENTAL_CXX0X)    // C++0x
@@ -57,6 +61,10 @@
 #   endif
 #endif
 
+//============================================================================//
+//  MAD_USE_CXX{98,0X,11,14,17}
+//============================================================================//
+
 #if defined(MAD_USE_CXX98)
 #   if defined(MAD_USE_CXX0X)
 #       undef MAD_USE_CXX0X
@@ -76,6 +84,10 @@
 #endif
 
 #if defined(MAD_USE_CXX0X)
+#   if !defined(MAD_USE_CXX98)
+#       define MAD_USE_CXX98
+#   endif
+
 #   if defined(MAD_USE_CXX11)
 #       undef MAD_USE_CXX11
 #   endif
@@ -103,6 +115,35 @@
 #   if defined(MAD_USE_CXX17)
 #       undef MAD_USE_CXX17
 #   endif
+#endif
+
+#ifndef do_pragma
+#   define do_pragma(x) _Pragma(#x)
+#endif
+
+//============================================================================//
+//  OpenMP
+//============================================================================//
+
+#if defined(USE_OPENMP) && !defined(__INTEL_COMPILER)
+#   include <omp.h>
+#   ifndef pragma_simd
+#       define pragma_simd do_pragma(omp simd)
+#   endif
+#else
+#   ifndef pragma_simd
+#       define pragma_simd {;}
+#   endif
+#endif
+
+//============================================================================//
+//  inline
+//============================================================================//
+
+#if !defined(_inline_) && defined(__GNUC__) && !defined(__INTEL_COMPILER)
+#   define _inline_ __attribute__((always_inline)) inline
+#else
+#   define _inline_ inline
 #endif
 
 #endif

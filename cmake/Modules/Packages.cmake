@@ -30,6 +30,18 @@ include(GenericCMakeFunctions)
 include(CMakeDependentOption)
 
 
+################################################################################
+#
+#        Compilers
+#
+################################################################################
+if(CMAKE_CXX_COMPILER MATCHES "icc.*")
+    set(CMAKE_COMPILER_IS_INTEL_ICC ON)
+endif()
+if(CMAKE_CXX_COMPILER MATCHES "icpc.*")
+    set(CMAKE_COMPILER_IS_INTEL_ICPC ON)
+endif()
+
 
 ################################################################################
 #
@@ -120,17 +132,19 @@ option(USE_TBB "Enable Intel Thread Building Blocks (TBB)" OFF)
 add_feature(USE_TBB "Intel Thread Building Blocks library")
 
 if(USE_TBB)
-    ConfigureRootSearchPath(TBB)
+    if(NOT CMAKE_COMPILER_IS_INTEL_ICC AND NOT CMAKE_COMPILER_IS_INTEL_ICPC)
+        ConfigureRootSearchPath(TBB)
 
-    find_package(TBB REQUIRED)
-    if(TBB_FOUND)
-        include_directories(${TBB_INCLUDE_DIRS})
-        list(APPEND EXTERNAL_LIBRARIES ${TBB_LIBRARIES})
-        list(APPEND EXTERNAL_INCLUDE_DIRS ${TBB_INCLUDE_DIRS})
-        add_package_definitions(TBB)
+        find_package(TBB REQUIRED)
+        if(TBB_FOUND)
+            include_directories(${TBB_INCLUDE_DIRS})
+            list(APPEND EXTERNAL_LIBRARIES ${TBB_LIBRARIES})
+            list(APPEND EXTERNAL_INCLUDE_DIRS ${TBB_INCLUDE_DIRS})
+        endif()
+
+        add_feature(TBB_ROOT "Root directory of TBB install")
     endif()
-
-    add_feature(TBB_ROOT "Root directory of TBB install")
+    add_package_definitions(TBB)
 endif()
 
 
@@ -150,7 +164,55 @@ foreach(type SSE2 SSE3 SSSE3 SSE4_1 AVX AVX2)
     add_subfeature(SSE ${type}_FOUND "Hardware support for ${type}")
 endforeach()
 
-if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+if(CMAKE_COMPILER_IS_INTEL_ICC OR CMAKE_COMPILER_IS_INTEL_ICPC)
+    find_program(INTEL_LINKER xild HINTS ENV PATH PATH_SUFFIXES bin bin/intel64 bin/ia32)
+    find_program(INTEL_AR     xiar HINTS ENV PATH PATH_SUFFIXES bin bin/intel64 bin/ia32)
+    #set(CMAKE_LINKER ${INTEL_LINKER} CACHE FILEPATH "Intel C++ linker" FORCE)
+    #set(CMAKE_AR ${INTEL_AR} CACHE FILEPATH "Intel C++ archiver" FORCE)
+    set(_FLAGS )
+    foreach(type SSE2 SSE3 SSSE3 SSE4_1 AVX)
+        string(TOLOWER "${type}" _flag)
+        string(REPLACE "_" "." _flag "${_flag}")
+        set(${type}_FLAGS "-m${_flag}")
+        if(${type}_FOUND)
+            set(_FLAGS "${${type}_FLAGS}")
+            add_definitions(-DHAS_${type})
+        endif()
+    endforeach()
+
+    if(AVX2_FOUND)
+        set(_FLAGS "-march=core-avx2 -axCOMMON-AVX512")
+        add_definitions(-DHAS_AVX2)
+    endif()
+
+    if(USE_TBB)
+        set(_FLAGS "${_FLAGS} -tbb")
+    endif()
+
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${_FLAGS}")
+
+    #find_library(LLVM_LIBRARY
+    #    NAMES clang
+    #    HINTS ENV LD_LIBRARY_PATH
+    #    ENV LIBRARY_PATH
+    #    ENV DYLD_LIBRARY_PATH
+    #    PATH_SUFFIXES
+    #    llvm-3.9 llvm-3.8 llvm-3.7 lib lib64 lib32
+    #    llvm-3.9/lib llvm-3.8/lib llvm-3.7/lib
+    #    llvm-3.9/lib64 llvm-3.8/lib64 llvm-3.7/lib64
+    #    llvm-3.9/lib32 llvm-3.8/lib32 llvm-3.7/lib32)
+
+    #mark_as_advanced(LLVM_LIBRARY)
+    #include(FindPackageHandleStandardArgs)
+    #FIND_PACKAGE_HANDLE_STANDARD_ARGS(LLVM  REQUIRED_VARS LLVM_LIBRARY)
+    #if(NOT LLVM_FOUND)
+    #    message(FATAL_ERROR "LLVM Library not found")
+    #else()
+    #    list(APPEND EXTERNAL_LIBRARIES ${LLVM_LIBRARY})
+    #endif()
+
+elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+
     foreach(type SSE2 SSE3 SSSE3 SSE4_1 AVX AVX2)
         string(TOLOWER "${type}" _flag)
         string(REPLACE "_" "." _flag "${_flag}")
@@ -160,7 +222,8 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
             add_definitions(-DHAS_${type})
         endif()
     endforeach()
-endif()
+
+endif(CMAKE_COMPILER_IS_INTEL_ICC OR CMAKE_COMPILER_IS_INTEL_ICPC)
 
 
 

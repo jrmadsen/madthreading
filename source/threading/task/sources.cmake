@@ -11,7 +11,7 @@ include(MacroDefineModule)
 
 set(COMPAT_FOLDER "cxx11-compat")
 
-if("${BUILD_CXXSTD}" STREQUAL "c++98")
+if("${BUILD_CXXSTD}" STREQUAL "c++98" OR "${BUILD_CXXSTD}" STREQUAL "c++0x")
     set(COMPAT_FOLDER "cxx98-compat")
 endif()
 

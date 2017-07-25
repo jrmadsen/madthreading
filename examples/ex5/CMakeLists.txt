@@ -7,9 +7,11 @@ configure_example()
 
 find_package(Madthreading REQUIRED)
 
-set(VEC_FLAGS "-Wopenmp-simd -Wunknown-pragmas")
-set(VEC_FLAGS "${VEC_FLAGS} -ftree-loop-vectorize")
-set(VEC_FLAGS "${VEC_FLAGS} -ftree-vectorize -Wvector-operation-performance -fopt-info-vec-optimized")
+if(CMAKE_COMPILER_IS_GNUCXX)
+    set(VEC_FLAGS "${VEC_FLAGS} -Wopenmp-simd")
+    set(VEC_FLAGS "${VEC_FLAGS} -ftree-loop-vectorize -fopt-info-vec-optimized")
+    set(VEC_FLAGS "${VEC_FLAGS} -ftree-vectorize -Wvector-operation-performance")
+endif()
 
 include_directories(${Madthreading_INCLUDE_DIRS})
 

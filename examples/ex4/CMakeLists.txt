@@ -10,6 +10,8 @@ find_package(Madthreading REQUIRED)
 set(VEC_FLAGS )
 if(CMAKE_COMPILER_IS_GNUCXX)
     set(VEC_FLAGS "-Wvector-operation-performance -fopt-info-vec-optimized")
+else()
+    set(VEC_FLAGS "-axCOMMON-AVX512")
 endif()
 
 include_directories(${Madthreading_INCLUDE_DIRS})

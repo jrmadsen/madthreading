@@ -4,11 +4,6 @@
 //
 //
 
-
-#ifdef USE_OPENMP
-    #include <omp.h>
-#endif
-
 #include <iostream>
 #include <iomanip>
 
@@ -16,7 +11,6 @@
 #include <madthreading/utility/timer.hh>
 #include <madthreading/threading/thread_manager.hh>
 #include "../Common.hh"
-
 
 using namespace mad;
 
@@ -29,7 +23,7 @@ int main(int argc, char** argv)
     //========================================================================//
     timer::timer t;
 
-    #pragma omp simd
+    pragma_simd
     for(ulong_type i = 0; i < num_steps; ++i)
     {
         double_type x = (i-0.5)*step;

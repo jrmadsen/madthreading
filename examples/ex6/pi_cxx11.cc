@@ -4,10 +4,6 @@
 //
 //
 
-#ifdef USE_OPENMP
-    #include <omp.h>
-#endif
-
 #include <iostream>
 #include <iomanip>
 #include <thread>
@@ -15,13 +11,12 @@
 #include <madthreading/types.hh>
 #include <madthreading/utility/timer.hh>
 #include <madthreading/threading/thread_manager.hh>
-#include "../Common.hh"
-
 #include <madthreading/atomics/omp_atomic.hh>
+#include "../Common.hh"
 
 using namespace mad;
 
-typedef omp_atomic<double_type>     atomic_double_type;
+typedef atomic<double_type>     atomic_double_type;
 
 int main(int argc, char** argv)
 {
@@ -37,7 +32,7 @@ int main(int argc, char** argv)
     auto compute_block = [x, &sum] (const ulong_type& s, const ulong_type& e)
     {
         double_type tl_sum = 0.0;
-        #pragma omp simd
+        pragma_simd
         for(ulong_type i = s; i < e; ++i)
             tl_sum += 4.0/(1.0 + x(i)*x(i));
         sum += tl_sum;

@@ -11,13 +11,14 @@
 
 #include <iostream>
 #include <iomanip>
-#include <immintrin.h>
 #include <inttypes.h>
 #include <cstdint>
 #include <cpuid.h>
 #include <string.h>
 #include <stdio.h>
 #include <chrono>
+//#include <immintrin.h>
+#include <x86intrin.h>
 
 #include <madthreading/utility/timer.hh>
 #include <madthreading/allocator/aligned_allocator.hh>
@@ -110,7 +111,7 @@ public:
     }
 
     inline
-    tv_vec& loop(const double& val)
+    tv_vec& operator+=(const double& val)
     {
         for(uint32 i = 0; i < m_size; ++i)
             m_data[i].sd = _mm256_add_pd(m_data[i].sd, _mm256_set1_pd(val));
@@ -118,7 +119,7 @@ public:
     }
 
     inline
-    tv_vec& loop(const tv_vec& val)
+    tv_vec& operator+=(const tv_vec& val)
     {
         for(uint32 i = 0; i < m_size; ++i)
             m_data[i].sd = _mm256_add_pd(m_data[i].sd, val.m_data[i].sd);
@@ -184,7 +185,7 @@ public:
     }
 
     inline
-    tv_array& loop(const double& val)
+    tv_array& operator+=(const double& val)
     {
         for(uint32 i = 0; i < m_size; ++i)
             m_data[i].sd += val;
@@ -192,7 +193,7 @@ public:
     }
 
     inline
-    tv_array& loop(const tv_array& val)
+    tv_array& operator+=(const tv_array& val)
     {
         for(uint32 i = 0; i < m_size; ++i)
             m_data[i].sd += val.m_data[i].sd;
@@ -232,7 +233,7 @@ int main(int argc, char** argv)
         timer::timer t;
         tv_vec sum(size, 0.0);
         for(uint64_t i = 0; i < num_steps; ++i)
-            sum.loop((static_cast<double>(i)-0.5)*step);
+            sum += (static_cast<double>(i)-0.5)*step;
         report(num_steps, sum.str(), t.stop_and_return(),
                string(argv[0]) + " - intrin (double)");
     }
@@ -241,7 +242,7 @@ int main(int argc, char** argv)
         timer::timer t;
         tv_array sum(size, 0.0);
         for(uint64_t i = 0; i < num_steps; ++i)
-            sum.loop((static_cast<double>(i)-0.5)*step);
+            sum += (static_cast<double>(i)-0.5)*step;
         report(num_steps, sum.str(), t.stop_and_return(),
                string(argv[0]) + " - array (double)");
     }
@@ -255,7 +256,7 @@ int main(int argc, char** argv)
         for(uint64_t i = 0; i < num_steps; ++i)
         {
             vincr = static_cast<double>(i-0.5)*(step/3.0);
-            sum.loop(vincr);
+            sum += vincr;
         }
         report(num_steps, sum.str(), t.stop_and_return(),
                string(argv[0]) + " - intrin (tv)");
@@ -267,7 +268,7 @@ int main(int argc, char** argv)
         for(uint64_t i = 0; i < num_steps; ++i)
         {
             aincr = static_cast<double>(i-0.5)*(step/3.0);
-            sum.loop(aincr);
+            sum += aincr;
         }
         report(num_steps, sum.str(), t.stop_and_return(),
                string(argv[0]) + " - array (tv)");

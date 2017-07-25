@@ -29,7 +29,7 @@
 #ifndef vectorization_typedefs_hh_
 #define vectorization_typedefs_hh_
 
-#include <immintrin.h>
+#include <x86intrin.h>
 #include <inttypes.h>
 #include <cstdint>
 #include <cpuid.h>
