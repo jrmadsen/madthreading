@@ -131,16 +131,8 @@ public:
         ss.precision(_prec);
         ss << std::scientific;
         ss << "(";
-        for(uint32 j = 0; j < m_size; ++j)
-        {
-            uint32 nstop = (j == m_size - 1) ? 3 : 4;
-            for(uint32 i = 0; i < nstop; ++i)
-            {
-                ss << std::setw(_wid) << m_data[j].d[i] << ", ";
-            }
-            if(nstop == 3)
-                ss << std::setw(_wid) << m_data[j].d[3] << ")";
-        }
+        ss << std::setw(_wid) << m_data[0].d[0] << ", ... , ";
+        ss << std::setw(_wid) << m_data[m_size-1].d[3] << ")";
         return ss.str();
     }
 
@@ -205,13 +197,8 @@ public:
         ss.precision(_prec);
         ss << std::scientific;
         ss << "(";
-        for(uint32 j = 0; j < m_size; ++j)
-        {
-            if(j < m_size - 1)
-                ss << std::setw(_wid) << m_data[j].d << ", ";
-            else
-                ss << std::setw(_wid) << m_data[j].d << ")";
-        }
+        ss << std::setw(_wid) << m_data[0].d << ", ... , ";
+        ss << std::setw(_wid) << m_data[m_size-1].d << ")";
         return ss.str();
     }
 };
