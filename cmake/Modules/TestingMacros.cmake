@@ -16,8 +16,8 @@ cmake_policy(SET CMP0060 NEW)
 macro(ADD_UNIT_TEST)
     CMAKE_PARSE_ARGUMENTS(  Test    # prefix
                             "BATCH"      # options
-                            "Name"  # single-value args
-                            "LinkLibraries;ExcludeSource" # multi-valued args
+                            "NAME;COMPILE_FLAGS"  # single-value args
+                            "LINK_LIBRARIES;EXCLUDE_SOURCE;FILES" # multi-valued args
                             ${ARGN}      # catches any unexpected arguments
                          )
 
@@ -25,7 +25,7 @@ macro(ADD_UNIT_TEST)
 #  Get the name of directory
 get_filename_component( TestDirName ${CMAKE_CURRENT_SOURCE_DIR} NAME )
 
-set(testname ${Test_Name})
+set(testname ${Test_NAME})
 
 if( NOT DEFINED testname )
     message( FATAL_ERROR "AddTest.cmake must be called AFTER a testname has been defined." )
@@ -50,7 +50,7 @@ set( appName ${TestType}${testname} )
 
 file( GLOB ${appName}_srcs "*.cpp" "*.cc" )
 
-foreach( src ${Test_ExcludeSource} )
+foreach( src ${Test_EXCLUDE_SOURCE} )
     list( REMOVE_ITEM ${appName}_srcs ${CMAKE_CURRENT_SOURCE_DIR}/${src} )
 endforeach()
 
@@ -59,10 +59,11 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${UnitTest++_INCLUDE_DIRS})
 ########################################
 #  Add the new test
 
-add_executable( ${appName} ${${appName}_srcs} )
+add_executable( ${appName} ${${appName}_srcs} ${Test_FILES})
 
 set_target_properties( ${appName} PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY   ${CMAKE_CURRENT_BINARY_DIR}
+  COMPILE_OPTIONS "${Test_COMPILE_FLAGS}"
 )
 
 ########################################
@@ -85,7 +86,7 @@ endif()
 #  Toolkit libraries that need to linked in
 
 # Always try to add parent directories library
-target_link_libraries( ${appName} ${Test_LinkLibraries} ${UnitTest++_LIBRARIES})
+target_link_libraries( ${appName} ${Test_LINK_LIBRARIES} ${UnitTest++_LIBRARIES})
 
 ######################################################################
 #  TESTING
@@ -127,7 +128,8 @@ if( NOT nightly AND NOT Test_BATCH )
     add_custom_command(
         TARGET ${appName} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --blue --bold ${CmdTag}
-        COMMAND ${CMAKE_COMMAND} -DAPP=${appName} -DTAG=${CmdTag} -P ${PROJECT_SOURCE_DIR}/cmake/Scripts/AnalyzeRun.cmake
+        COMMAND ${CMAKE_COMMAND} -DAPP=${appName}${CMAKE_EXECUTABLE_SUFFIX}
+        -DTAG=${CmdTag} -P ${PROJECT_SOURCE_DIR}/cmake/Scripts/AnalyzeRun.cmake
 #        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --no-label-summary
         COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --blue --bold ${CmdTagSuccess})
 else()

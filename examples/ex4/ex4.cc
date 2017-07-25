@@ -17,7 +17,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <chrono>
-//#include <immintrin.h>
 #include <x86intrin.h>
 
 #include <madthreading/utility/timer.hh>

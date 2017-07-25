@@ -8,7 +8,7 @@
 #set( FailTag "${CmdTag} FAIL" )
 set( FailTag "${TAG}  FAIL" )
 
-execute_process( COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${APP} 
+execute_process( COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${APP}
                  TIMEOUT 60
                  RESULT_VARIABLE result
                  OUTPUT_VARIABLE warnings

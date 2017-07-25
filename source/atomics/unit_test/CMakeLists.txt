@@ -6,13 +6,13 @@ message(STATUS "Adding unit test for ${CMAKE_CURRENT_LIST_DIR}")
 
 if(BATCH_MODE)
     Add_Unit_Test(BATCH
-                  Name
+                  NAME
                     "atomics_tester"
-                  LinkLibraries
+                  LINK_LIBRARIES
                     ${LIBRARIES} ${PROJECT_NAME}-SHARED)
 else()
-    Add_Unit_Test(Name
+    Add_Unit_Test(NAME
                     "atomics_tester"
-                  LinkLibraries
+                  LINK_LIBRARIES
                     ${LIBRARIES} ${PROJECT_NAME}-SHARED)
 endif()

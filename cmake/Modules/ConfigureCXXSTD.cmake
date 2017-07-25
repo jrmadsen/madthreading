@@ -7,6 +7,14 @@ set(__configurecxxstd_isloaded YES)
 
 include(MacroUtilities)
 
+# make C++11 required for compilers that recognise standards
+if(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+    set(CMAKE_CXX_STANDARD "98")
+else()
+    set(CMAKE_CXX_STANDARD "11")
+endif()
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # - Rough n'Ready setup of CXX compile features for Intel
 #
 #-----------------------------------------------------------------------
@@ -144,14 +152,14 @@ set(${PROJECT_NAME}_TARGET_COMPILE_FEATURES
   cxx_range_for
   cxx_strong_enums
   cxx_uniform_initialization
-  # Features that MSVC 18.0 cannot support but in list of Madthreading coding
+  # Features that MSVC 18.0 cannot support but in list of coding
   # guidelines - to be required once support for that compiler is dropped.
   # Version 10.2 is coded without these being required.
   #cxx_deleted_functions
   #cxx_generalized_initializers
   #cxx_constexpr
   #cxx_inheriting_constructors
-  )
+)
 
 # - BUILD_CXXSTD
 # Choose C++ Standard to build against from supported list. Allow user
@@ -162,7 +170,7 @@ enum_option(BUILD_CXXSTD
   DOC "C++ Standard to compile against"
   VALUES 98 0x 11 14 c++98 c++0x c++11 c++14
   CASE_INSENSITIVE
-  )
+)
 
 string(REGEX REPLACE "^c\\+\\+" "" BUILD_CXXSTD "${BUILD_CXXSTD}")
 mark_as_advanced(BUILD_CXXSTD)
@@ -182,5 +190,3 @@ endif()
 string(TOUPPER "${BUILD_CXXSTD}" UBUILD_CXXSTD)
 add_definitions(-DMAD_USE_CXX${UBUILD_CXXSTD})
 set(BUILD_CXXSTD "c++${BUILD_CXXSTD}")
-#message(STATUS "CXX: ${BUILD_CXXSTD}")
-
