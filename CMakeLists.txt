@@ -49,7 +49,7 @@ endforeach()
 include(ConfigureCXXSTD)
 set(CMAKE_CXX_FLAGS "-std=${BUILD_CXXSTD} ${CMAKE_CXX_FLAGS}")
 
-add_subdirectory(source)
+add_subdirectory(madthreading)
 
 #------------------------------------------------------------------------------#
 

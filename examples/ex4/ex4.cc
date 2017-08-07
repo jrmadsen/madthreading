@@ -131,8 +131,9 @@ public:
         ss.precision(_prec);
         ss << std::scientific;
         ss << "(";
-        ss << std::setw(_wid) << m_data[0].d[0] << ", ... , ";
-        ss << std::setw(_wid) << m_data[m_size-1].d[3] << ")";
+        ss << std::setw(_wid) << m_data[0].d[0] << ", ";
+        ss << "... , ";
+        ss << std::setw(_wid) << m_data[m_size-1].d[3] << ") ";
         return ss.str();
     }
 
@@ -152,6 +153,7 @@ public:
     tv_array(uint64 n)
     : m_size(n), m_data(new array_type[m_size])
     {
+    #pragma omp simd
         for(uint32 i = 0; i < m_size; ++i)
             m_data[i].sd = 0.0;
     }
@@ -159,6 +161,7 @@ public:
     tv_array(uint64 n, const double& val)
     : m_size(n), m_data(new array_type[m_size])
     {
+    #pragma omp simd
         for(uint32 i = 0; i < m_size; ++i)
             m_data[i].sd = val;
     }
@@ -170,6 +173,7 @@ public:
 
     tv_array& operator=(const double& val)
     {
+    #pragma omp simd
         for(uint32 i = 0; i < m_size; ++i)
             m_data[i].sd = val;
         return *this;
@@ -178,6 +182,7 @@ public:
     inline
     tv_array& operator+=(const double& val)
     {
+    #pragma omp simd
         for(uint32 i = 0; i < m_size; ++i)
             m_data[i].sd += val;
         return *this;
@@ -186,6 +191,7 @@ public:
     inline
     tv_array& operator+=(const tv_array& val)
     {
+    #pragma omp simd
         for(uint32 i = 0; i < m_size; ++i)
             m_data[i].sd += val.m_data[i].sd;
         return *this;
@@ -197,8 +203,9 @@ public:
         ss.precision(_prec);
         ss << std::scientific;
         ss << "(";
-        ss << std::setw(_wid) << m_data[0].d << ", ... , ";
-        ss << std::setw(_wid) << m_data[m_size-1].d << ")";
+        ss << std::setw(_wid) << m_data[0].d << ", ";
+        ss << "... , ";
+        ss << std::setw(_wid) << m_data[m_size-1].d << ") ";
         return ss.str();
     }
 };
@@ -220,8 +227,7 @@ int main(int argc, char** argv)
         tv_vec sum(size, 0.0);
         for(uint64_t i = 0; i < num_steps; ++i)
             sum += (static_cast<double>(i)-0.5)*step;
-        report(num_steps, sum.str(), t.stop_and_return(),
-               string(argv[0]) + " - intrin (double)");
+        report(num_steps, sum.str(), t.stop_and_return(), "intrin (double)");
     }
     //========================================================================//
     {
@@ -229,8 +235,7 @@ int main(int argc, char** argv)
         tv_array sum(size, 0.0);
         for(uint64_t i = 0; i < num_steps; ++i)
             sum += (static_cast<double>(i)-0.5)*step;
-        report(num_steps, sum.str(), t.stop_and_return(),
-               string(argv[0]) + " - array (double)");
+        report(num_steps, sum.str(), t.stop_and_return(), "array (double)");
     }
     //========================================================================//
     tv_vec   vincr = tv_vec(size, 0.0);
@@ -244,8 +249,7 @@ int main(int argc, char** argv)
             vincr = static_cast<double>(i-0.5)*(step/3.0);
             sum += vincr;
         }
-        report(num_steps, sum.str(), t.stop_and_return(),
-               string(argv[0]) + " - intrin (tv)");
+        report(num_steps, sum.str(), t.stop_and_return(), "intrin (tv_vec)");
     }
     //========================================================================//
     {
@@ -256,8 +260,7 @@ int main(int argc, char** argv)
             aincr = static_cast<double>(i-0.5)*(step/3.0);
             sum += aincr;
         }
-        report(num_steps, sum.str(), t.stop_and_return(),
-               string(argv[0]) + " - array (tv)");
+        report(num_steps, sum.str(), t.stop_and_return(), "array (tv_array)");
     }
     //========================================================================//
 
