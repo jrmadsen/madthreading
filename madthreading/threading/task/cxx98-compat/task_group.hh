@@ -17,6 +17,7 @@
 #include "madthreading/threading/condition.hh"
 #include "madthreading/allocator/allocator.hh"
 #include "madthreading/atomics/atomic.hh"
+#include "madthreading/types.hh"
 
 #include <iostream>
 #include <deque>
@@ -24,8 +25,6 @@
 #include <map>
 #include <queue>
 #include <stack>
-
-#include "madthreading/types.hh"
 
 //----------------------------------------------------------------------------//
 

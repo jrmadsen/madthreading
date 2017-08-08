@@ -90,7 +90,7 @@ void task_group::join()
 
     if(m_task_count > 0)
     {
-        uint_type ntask = m_task_count;
+        long_type ntask = m_task_count;
         std::stringstream ss;
         ss << "\bError! Join operation failure! " << ntask << " tasks still "
            << "are running!" << std::endl;
@@ -105,12 +105,9 @@ void task_group::join()
 
 int task_group::save_task(vtask* task)
 {
-    m_save_lock.lock();
-
+    mad::auto_lock l(m_save_lock);
     // TODO: put a limit on how many tasks can be added at most
     m_save_tasks.push_back(task);
-
-    m_save_lock.unlock();
 
     return 0;
 }

@@ -72,6 +72,35 @@ if(ENABLE_UNIT_TEST)
 endif()
 
 
+################################################################################
+#
+#        TCMALLOC
+#
+################################################################################
+
+option(USE_TCMALLOC "Enable gperftools TCMALLOC - an efficient thread-caching malloc" ON)
+add_feature(USE_TCMALLOC "Enable gperftools TCMALLOC - an efficient thread-caching malloc")
+
+if(USE_TCMALLOC)
+    ConfigureRootSearchPath(TCMALLOC)
+    find_library(TCMALLOC_LIBRARY
+        NAMES tcmalloc_minimal
+        HINTS ${TCMALLOC_ROOT} ENV TCMALLOC_ROOT
+        PATH_SUFFIXES lib64 lib
+        DOC "TCMALLOC library"
+    )
+    mark_as_advanced(TCMALLOC_LIBRARY)
+    find_package_handle_standard_args(TCMALLOC DEFAULT_MSG
+        TCMALLOC_LIBRARY)
+
+    if(TCMALLOC_FOUND)
+        set(TCMALLOC_LIBRARIES ${TCMALLOC_LIBRARY})
+    else()
+        message(FATAL_ERROR "Unable to find tcmalloc library")
+    endif()
+    list(APPEND EXTERNAL_LIBRARIES ${TCMALLOC_LIBRARIES})
+endif()
+
 
 ################################################################################
 #
@@ -154,77 +183,61 @@ endif()
 #        SSE
 #
 ################################################################################
-include(FindSSE)
-set(SSE OFF CACHE BOOL "SSE support")
-add_feature(SSE "SSE Support")
-foreach(type SSE2 SSE3 SSSE3 SSE4_1 AVX AVX2)
-    if(${type}_FOUND)
-        set(SSE ON CACHE BOOL "SSE support" FORCE)
-    endif()
-    add_subfeature(SSE ${type}_FOUND "Hardware support for ${type}")
-endforeach()
+option(USE_SSE "Enable SSE support" OFF)
+add_feature(USE_SSE "Enable SSE/AVX support")
 
-if(CMAKE_COMPILER_IS_INTEL_ICC OR CMAKE_COMPILER_IS_INTEL_ICPC)
-    find_program(INTEL_LINKER xild HINTS ENV PATH PATH_SUFFIXES bin bin/intel64 bin/ia32)
-    find_program(INTEL_AR     xiar HINTS ENV PATH PATH_SUFFIXES bin bin/intel64 bin/ia32)
-    #set(CMAKE_LINKER ${INTEL_LINKER} CACHE FILEPATH "Intel C++ linker" FORCE)
-    #set(CMAKE_AR ${INTEL_AR} CACHE FILEPATH "Intel C++ archiver" FORCE)
-    set(_FLAGS )
-    foreach(type SSE2 SSE3 SSSE3 SSE4_1 AVX)
-        string(TOLOWER "${type}" _flag)
-        string(REPLACE "_" "." _flag "${_flag}")
-        set(${type}_FLAGS "-m${_flag}")
-        if(${type}_FOUND)
-            set(_FLAGS "${${type}_FLAGS}")
-            add_definitions(-DHAS_${type})
-        endif()
-    endforeach()
-
-    if(AVX2_FOUND)
-        set(_FLAGS "-march=core-avx2 -axCOMMON-AVX512")
-        add_definitions(-DHAS_AVX2)
-    endif()
-
-    if(USE_TBB)
-        set(_FLAGS "${_FLAGS} -tbb")
-    endif()
-
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${_FLAGS}")
-
-    #find_library(LLVM_LIBRARY
-    #    NAMES clang
-    #    HINTS ENV LD_LIBRARY_PATH
-    #    ENV LIBRARY_PATH
-    #    ENV DYLD_LIBRARY_PATH
-    #    PATH_SUFFIXES
-    #    llvm-3.9 llvm-3.8 llvm-3.7 lib lib64 lib32
-    #    llvm-3.9/lib llvm-3.8/lib llvm-3.7/lib
-    #    llvm-3.9/lib64 llvm-3.8/lib64 llvm-3.7/lib64
-    #    llvm-3.9/lib32 llvm-3.8/lib32 llvm-3.7/lib32)
-
-    #mark_as_advanced(LLVM_LIBRARY)
-    #include(FindPackageHandleStandardArgs)
-    #FIND_PACKAGE_HANDLE_STANDARD_ARGS(LLVM  REQUIRED_VARS LLVM_LIBRARY)
-    #if(NOT LLVM_FOUND)
-    #    message(FATAL_ERROR "LLVM Library not found")
-    #else()
-    #    list(APPEND EXTERNAL_LIBRARIES ${LLVM_LIBRARY})
-    #endif()
-
-elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-
+if(USE_SSE)
+    include(FindSSE)
     foreach(type SSE2 SSE3 SSSE3 SSE4_1 AVX AVX2)
-        string(TOLOWER "${type}" _flag)
-        string(REPLACE "_" "." _flag "${_flag}")
-        set(${type}_FLAGS "-m${_flag}")
-        if(${type}_FOUND)
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${${type}_FLAGS}")
-            add_definitions(-DHAS_${type})
-        endif()
+        add_subfeature(USE_SSE ${type}_FOUND "Hardware support for ${type}")
+        mark_as_advanced(${type}_FOUND)
     endforeach()
 
-endif(CMAKE_COMPILER_IS_INTEL_ICC OR CMAKE_COMPILER_IS_INTEL_ICPC)
+    if(CMAKE_COMPILER_IS_INTEL_ICC OR CMAKE_COMPILER_IS_INTEL_ICPC)
+        find_program(INTEL_LINKER xild HINTS ENV PATH PATH_SUFFIXES bin bin/intel64 bin/ia32)
+        find_program(INTEL_AR     xiar HINTS ENV PATH PATH_SUFFIXES bin bin/intel64 bin/ia32)
+        #set(CMAKE_LINKER ${INTEL_LINKER} CACHE FILEPATH "Intel C++ linker" FORCE)
+        #set(CMAKE_AR ${INTEL_AR} CACHE FILEPATH "Intel C++ archiver" FORCE)
+        set(_FLAGS )
+        foreach(type SSE2 SSE3 SSSE3 SSE4_1 AVX)
+            string(TOLOWER "${type}" _flag)
+            string(REPLACE "_" "." _flag "${_flag}")
+            set(${type}_FLAGS "-m${_flag}")
+            if(${type}_FOUND)
+                set(_FLAGS "${${type}_FLAGS}")
+                add_definitions(-DHAS_${type})
+            endif()
+        endforeach()
 
+        if(AVX2_FOUND)
+            set(_FLAGS "-march=core-avx2 -axCOMMON-AVX512")
+            add_definitions(-DHAS_AVX2)
+        endif()
+
+        if(USE_TBB)
+            set(_FLAGS "${_FLAGS} -tbb")
+        endif()
+
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${_FLAGS}")
+
+    elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+
+        foreach(type SSE2 SSE3 SSSE3 SSE4_1 AVX AVX2)
+            string(TOLOWER "${type}" _flag)
+            string(REPLACE "_" "." _flag "${_flag}")
+            set(${type}_FLAGS "-m${_flag}")
+            if(${type}_FOUND)
+                set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${${type}_FLAGS}")
+                add_definitions(-DHAS_${type})
+            endif()
+        endforeach()
+
+    endif(CMAKE_COMPILER_IS_INTEL_ICC OR CMAKE_COMPILER_IS_INTEL_ICPC)
+else()
+    foreach(type SSE2 SSE3 SSSE3 SSE4_1 AVX AVX2)
+        remove_definitions(-DHAS_${type})
+    endforeach()
+endif()
 
 
 ################################################################################

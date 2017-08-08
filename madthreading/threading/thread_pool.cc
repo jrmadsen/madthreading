@@ -48,6 +48,8 @@
 #   define CTCAST(field) (unsigned long)(field)
 #endif
 
+static mad::mutex io_mutex;
+
 namespace mad
 {
 
@@ -94,7 +96,7 @@ thread_pool::thread_pool(bool _use_affinity)
               << m_pool_size << std::endl;
 #endif
 
-#ifdef DEBUG
+#ifdef FPE_DEBUG
         fpe_settings::fpe_set ops;
         ops.insert(fpe::underflow);
         ops.insert(fpe::overflow);
@@ -120,7 +122,7 @@ thread_pool::thread_pool(size_type pool_size, bool _use_affinity)
     std::cout << "Constructing ThreadPool of size " << m_pool_size << std::endl;
 #endif
 
-#ifdef DEBUG
+#ifdef FPE_DEBUG
         fpe_settings::fpe_set ops;
         ops.insert(fpe::underflow);
         ops.insert(fpe::overflow);
@@ -308,9 +310,10 @@ int thread_pool::destroy_threadpool()
     // the modified m_pool_state may not show up to other threads until its
     // modified in a lock!
     //------------------------------------------------------------------------//
-    m_task_lock.lock();
-    m_pool_state = state::STOPPED;
-    m_task_lock.unlock();
+    {
+        mad::auto_lock l(m_task_lock);
+        m_pool_state = state::STOPPED;
+    }
 
     //------------------------------------------------------------------------//
     // notify all threads we are shutting down
@@ -382,8 +385,10 @@ int thread_pool::destroy_threadpool()
     m_back_threads.clear();
     m_is_joined.clear();
 
-    m_task_lock.unlock();
-    m_back_lock.unlock();
+    if(m_task_lock.is_locked())
+        m_task_lock.unlock();
+    if(m_back_lock.is_locked())
+        m_back_lock.unlock();
 
     is_alive_flag = false;
 
@@ -418,7 +423,7 @@ void* thread_pool::execute_thread()
         // If the thread was waked to notify process shutdown, return from here
         if (m_pool_state == state::STOPPED)
         {
-            //m_has_exited.
+            // has exited.
             m_task_lock.unlock();
             //----------------------------------------------------------------//
             if(mad::details::allocator_list_tl::get_allocator_list_if_exists()
@@ -426,10 +431,10 @@ void* thread_pool::execute_thread()
                 mad::details::allocator_list_tl::get_allocator_list()
                         ->Destroy(tids.find(CORETHREADSELFINT())->second, 1);
             //----------------------------------------------------------------//
-
             CORETHREADEXIT(NULL);
         }
 
+        // get the task
         task = m_main_tasks.front();
         m_main_tasks.pop_front();
         //--------------------------------------------------------------------//
@@ -438,9 +443,24 @@ void* thread_pool::execute_thread()
         m_task_lock.unlock();
         //--------------------------------------------------------------------//
 
+        // get the task group
+        task_group* tg = task->group();
+        //--------------------------------------------------------------------//
+
         // execute the task
         run(task);
+        //--------------------------------------------------------------------//
 
+        // decrement the task group
+        //task->group()->task_count() -= 1;
+        long_type tc = (tg->task_count() -= 1);
+        {
+            mad::auto_lock l(io_mutex);
+            tmcout << "Task count (-) : " << tc << std::endl;
+        }
+        tg->join_lock().lock();
+        tg->join_cond().signal();
+        tg->join_lock().unlock();
         //--------------------------------------------------------------------//
     }
     return NULL;
@@ -540,9 +560,10 @@ void thread_pool::background_thread()
         (*task)();
 
         // notify that it is done
-        m_back_lock.lock();
-        m_back_done.find(task_key)->second = true;
-        m_back_lock.unlock();
+        {
+            mad::auto_lock l(m_back_lock);
+            m_back_done.find(task_key)->second = true;
+        }
 
         task = NULL;
         task_key = NULL;
@@ -557,12 +578,6 @@ void thread_pool::run(vtask*& task)
 {
     // execute task
     (*task)();
-
-    task->group()->task_count() -= 1;
-    {
-        auto_lock l(task->group()->join_lock());
-        task->group()->join_cond().signal();
-    }
 
     if(task->force_delete()) // should we delete
     {
@@ -579,12 +594,14 @@ void thread_pool::run(vtask*& task)
             task = 0;
         }
     }
+
 }
 
 //============================================================================//
 
 int thread_pool::add_task(vtask* task)
 {
+
 #ifdef VERBOSE_THREAD_POOL
     std::cout << "Adding task..." << std::endl;
 #endif
@@ -602,7 +619,12 @@ int thread_pool::add_task(vtask* task)
 
     // do outside of lock because is thread-safe and needs to be updated as
     // soon as possible
-    task->group()->task_count() += 1;
+    //task->group()->task_count() += 1;
+    long_type tc = (task->group()->task_count() += 1);
+    {
+        mad::auto_lock l(io_mutex);
+        tmcout << "Task count (+) : " << tc << std::endl;
+    }
 
     m_task_lock.lock();
 

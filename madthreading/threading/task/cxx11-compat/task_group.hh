@@ -46,7 +46,7 @@ public:
     typedef std::deque<task_type*, Allocator_t(task_type*)> TaskContainer_t;
     typedef std::vector<bool, Allocator_t(bool)>            JoinContainer_t;
     typedef mutex                                           Lock_t;
-    typedef ulong_ts                                        task_count_type;
+    typedef long_ts                                         task_count_type;
     typedef volatile int                                    pool_state_type;
     typedef mad::condition                                  Condition_t;
     typedef TaskContainer_t::iterator                       iterator;

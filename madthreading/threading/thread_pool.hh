@@ -259,9 +259,9 @@ int thread_pool::add_tasks(task_tree_node<_Tp, _A1, _A2, _TpJ>* node)
 
     // do outside of lock because is thread-safe and needs to be updated as
     // soon as possible
-    node->group()->task_count() += 1;
 
     m_task_lock.lock();
+    node->group()->task_count() += 1;
     // if the thread pool hasn't been initialize, initialize it
     if(!is_initialized())
         initialize_threadpool();

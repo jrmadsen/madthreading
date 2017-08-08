@@ -78,9 +78,10 @@ void task_group::join()
 
         while(pending() > 0 && m_pool->state() != state::STOPPED)
         {
+            long_type n = m_task_count;
             // Wait until signaled that a task has been competed
             // Unlock mutex while wait, then lock it back when signaled
-            m_join_cond.wait(m_join_lock.base_mutex_ptr());
+            m_join_cond.wait(m_join_lock);
         }
 
         // if pending is not greater than zero, we are joined
@@ -90,7 +91,7 @@ void task_group::join()
 
     if(m_task_count > 0)
     {
-        uint_type ntask = m_task_count;
+        long_type ntask = m_task_count;
         std::stringstream ss;
         ss << "\bError! Join operation failure! " << ntask << " tasks still "
            << "are running!" << std::endl;
@@ -105,12 +106,9 @@ void task_group::join()
 
 int task_group::save_task(vtask* task)
 {
-    m_save_lock.lock();
-
+    mad::auto_lock l(m_save_lock);
     // TODO: put a limit on how many tasks can be added at most
     m_save_tasks.push_back(task);
-
-    m_save_lock.unlock();
 
     return 0;
 }

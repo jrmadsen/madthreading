@@ -141,12 +141,12 @@ file(RELATIVE_PATH REL_INCLUDE_DIR "${CMAKE_INSTALL_FULL_CMAKEDIR}"
      "${CMAKE_INSTALL_FULL_INCLUDEDIR}")
 
 # ... for the build tree
-set(CONF_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}" "${PROJECT_BINARY_DIR}")
+set(CONF_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}")
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/Config.cmake.in
     "${PROJECT_BINARY_DIR}/${_prefix}Config.cmake" @ONLY)
 
 # ... for the install tree
-set(CONF_INCLUDE_DIRS "\${${_PROJECT_NAME}_CMAKE_DIR}/${REL_INCLUDE_DIR};\${${_PROJECT_NAME}_CMAKE_DIR}/${REL_INCLUDE_DIR}/madthreading")
+set(CONF_INCLUDE_DIRS "\${${_PROJECT_NAME}_CMAKE_DIR}/${REL_INCLUDE_DIR}")
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/Config.cmake.in
     "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${_prefix}Config.cmake" @ONLY)
 

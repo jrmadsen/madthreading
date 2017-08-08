@@ -214,12 +214,6 @@ public:
 
     inline void* get() const { return m_result; }
 
-    /*template <unsigned _N, typename _Tp>
-    void set(_Tp val)
-    {
-        std::get<_N>(m_args) = val;
-    }*/
-
     // don't save the task even if it has a return value
     bool is_stored_elsewhere() const { return m_is_stored_elsewhere; }
     void is_stored_elsewhere(bool val) { m_is_stored_elsewhere = val; }
