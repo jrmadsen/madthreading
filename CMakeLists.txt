@@ -10,7 +10,7 @@ set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX
 
 include(MakeRules_cxx)
 include(GenericCMakeFunctions)
-SET_PROJECT_VERSION("1" "0" "0" "Multithreading API using pthreads")
+SET_PROJECT_VERSION("1" "1" "0" "Multithreading API using pthreads. Task-based with thread-pool")
 SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 include(VersionUpdate)

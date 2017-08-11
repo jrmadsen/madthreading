@@ -452,12 +452,12 @@ void* thread_pool::execute_thread()
         //--------------------------------------------------------------------//
 
         // decrement the task group
-        //task->group()->task_count() -= 1;
-        long_type tc = (tg->task_count() -= 1);
+        task->group()->task_count() -= 1;
+        /*long_type tc = (tg->task_count() -= 1);
         {
             mad::auto_lock l(io_mutex);
             tmcout << "Task count (-) : " << tc << std::endl;
-        }
+        }*/
         tg->join_lock().lock();
         tg->join_cond().signal();
         tg->join_lock().unlock();
@@ -619,12 +619,12 @@ int thread_pool::add_task(vtask* task)
 
     // do outside of lock because is thread-safe and needs to be updated as
     // soon as possible
-    //task->group()->task_count() += 1;
-    long_type tc = (task->group()->task_count() += 1);
+    task->group()->task_count() += 1;
+    /*long_type tc = (task->group()->task_count() += 1);
     {
         mad::auto_lock l(io_mutex);
         tmcout << "Task count (+) : " << tc << std::endl;
-    }
+    }*/
 
     m_task_lock.lock();
 

@@ -78,7 +78,6 @@ void task_group::join()
 
         while(pending() > 0 && m_pool->state() != state::STOPPED)
         {
-            long_type n = m_task_count;
             // Wait until signaled that a task has been competed
             // Unlock mutex while wait, then lock it back when signaled
             m_join_cond.wait(m_join_lock);
