@@ -399,7 +399,6 @@ int thread_pool::destroy_threadpool()
 
 void* thread_pool::execute_thread()
 {
-    vtask* task = NULL;
     while(true)
     {
         //--------------------------------------------------------------------//
@@ -435,7 +434,7 @@ void* thread_pool::execute_thread()
         }
 
         // get the task
-        task = m_main_tasks.front();
+        vtask* task = m_main_tasks.front();
         m_main_tasks.pop_front();
         //--------------------------------------------------------------------//
 
@@ -452,7 +451,7 @@ void* thread_pool::execute_thread()
         //--------------------------------------------------------------------//
 
         // decrement the task group
-        task->group()->task_count() -= 1;
+        tg->task_count() -= 1;
         /*long_type tc = (tg->task_count() -= 1);
         {
             mad::auto_lock l(io_mutex);
