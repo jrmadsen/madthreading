@@ -109,12 +109,15 @@ get_directory_property(compile_defs COMPILE_DEFINITIONS)
 
 #------------------------------------------------------------------------------#
 
-capitalize(${PROJECT_NAME} _cproject_name)
+# write a build specific config.hh header file
+write_config_file("config.hh" ${PROJECT_BINARY_DIR}/InstallTreeFiles
+    ${CMAKE_INSTALL_CMAKEDIR}/${CMAKE_BUILD_TYPE}/${LOWER_PROJECT_NAME})
 
-set(_prefix "${_cproject_name}")
-set(_filename "${_prefix}LibraryDepends.cmake")
-set(_PROJECT_NAME "${_cproject_name}")
+set(CMAKE_EXPORT_COMPILE_COMMANDS OFF)
+set(PROJECT_SHARED_LIBRARY ${PROJECT_NAME}-SHARED)
+set(PROJECT_STATIC_LIBRARY ${PROJECT_NAME}-STATIC)
 set(PACKAGE_VERSION "${${PROJECT_NAME}_VERSION}")
+set(config_target ${PROJECT_NAME}LibraryDepends)
 
 set(_TARGETS )
 set(PROJECT_LIBRARY_NAMES )
@@ -130,7 +133,7 @@ list(GET _TARGETS 0 PROJECT_LIBRARY_NAMES)
 
 # ===============================
 # Add all targets to the build-tree export set
-export(TARGETS ${_TARGETS} FILE "${PROJECT_BINARY_DIR}/${_filename}")
+export(TARGETS ${_TARGETS} FILE "${PROJECT_BINARY_DIR}/${CPROJECT_NAME}LibraryDepends.cmake")
 
 # Export the package for use from the build-tree
 # (this registers the build-tree with a global CMake-registry)
@@ -143,21 +146,30 @@ file(RELATIVE_PATH REL_INCLUDE_DIR "${CMAKE_INSTALL_FULL_CMAKEDIR}"
 # ... for the build tree
 set(CONF_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}")
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/Config.cmake.in
-    "${PROJECT_BINARY_DIR}/${_prefix}Config.cmake" @ONLY)
+    "${PROJECT_BINARY_DIR}/${CPROJECT_NAME}Config.cmake"
+    @ONLY)
+configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/ConfigHeader.cmake.in
+    "${PROJECT_BINARY_DIR}/${CPROJECT_NAME}ConfigHeader-${CMAKE_BUILD_TYPE}.cmake"
+    @ONLY)
 
 # ... for the install tree
 set(CONF_INCLUDE_DIRS "\${${_PROJECT_NAME}_CMAKE_DIR}/${REL_INCLUDE_DIR}")
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/Config.cmake.in
-    "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${_prefix}Config.cmake" @ONLY)
+    "${PROJECT_BINARY_DIR}/${CPROJECT_NAME}Config.cmake"
+    @ONLY)
+configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/ConfigHeader.cmake.in
+    "${PROJECT_BINARY_DIR}/${CPROJECT_NAME}ConfigHeader-${CMAKE_BUILD_TYPE}.cmake"
+    @ONLY)
 
 # ... for both
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/ConfigVersion.cmake.in
-    "${PROJECT_BINARY_DIR}/${_prefix}ConfigVersion.cmake" @ONLY)
+    "${PROJECT_BINARY_DIR}/${CPROJECT_NAME}ConfigVersion.cmake" @ONLY)
 
 # Install the Config.cmake and ConfigVersion.cmake
 install(FILES
-    "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${_prefix}Config.cmake"
-    "${PROJECT_BINARY_DIR}/${_prefix}ConfigVersion.cmake"
+    "${PROJECT_BINARY_DIR}/${CPROJECT_NAME}Config.cmake"
+    "${PROJECT_BINARY_DIR}/${CPROJECT_NAME}ConfigVersion.cmake"
+    "${PROJECT_BINARY_DIR}/${CPROJECT_NAME}ConfigHeader-${CMAKE_BUILD_TYPE}.cmake"
     DESTINATION "${CMAKE_INSTALL_FULL_CMAKEDIR}" COMPONENT dev)
 
 # Install the export set for use with the install-tree

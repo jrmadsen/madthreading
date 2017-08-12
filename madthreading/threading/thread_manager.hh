@@ -251,9 +251,12 @@ public:
     /// allocate the number of threads
     void allocate_threads(size_type _n) { m_data->allocate_threads(_n); }
     //------------------------------------------------------------------------//
+    /// get the default task group
+    static mad::task_group* default_task_group() { return m_default_group; }
+    //------------------------------------------------------------------------//
 
 private:
-    mad::task_group* set_task_group(mad::task_group* tg)
+    mad::task_group* set_task_group(mad::task_group* tg = NULL)
     {
         if(tg && tg != m_current_group && tg != m_default_group)
         {
@@ -268,10 +271,7 @@ private:
             std::cerr << ss.str() << std::endl;
         }
 
-        if(tg && tg != m_default_group)
-            m_current_group = tg;
-        else
-            m_current_group = m_default_group;
+        m_current_group = (tg && tg != m_default_group) ? tg : m_default_group;
 
         assert(m_current_group != 0);
 
@@ -279,8 +279,9 @@ private:
     }
 
 public:
+#if defined(MAD_USE_CXX98)
     //------------------------------------------------------------------------//
-    // public run functions
+    // public exec functions
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func,
               typename _Arg1, typename _Arg2, typename _Arg3>
@@ -338,19 +339,121 @@ public:
     void exec(_Func function,
               mad::task_group* tg = 0)
     {
-#ifdef MAD_USE_CXX98
         typedef task<void, void> task_type;
-#else
-        typedef task<void> task_type;
-#endif
 
         tg = set_task_group(tg);
         task_type* t = new task_type(tg, function);
         m_data->tp()->add_task(t);
     }
     //------------------------------------------------------------------------//
+#else // defined(MAD_USE_CXX98)
+    //------------------------------------------------------------------------//
+    // public exec functions
+    //------------------------------------------------------------------------//
+    template <typename _Ret, typename _Func, typename... _Args>
+    __inline__
+    void exec(mad::task_group* tg, _Func function, _Args... args)
+    {
+        typedef task<_Ret, _Args...> task_type;
+
+        tg = set_task_group(tg);
+        task_type* t = new task_type(tg, function, args...);
+        m_data->tp()->add_task(t);
+    }
+    //------------------------------------------------------------------------//
+#ifndef SWIG
+    template <typename _Func, typename... _Args>
+    __inline__
+    void exec(mad::task_group* tg, _Func function, _Args... args)
+    {
+        typedef task<void, _Args...> task_type;
+
+        tg = set_task_group(tg);
+        task_type* t = new task_type(tg, function, args...);
+        m_data->tp()->add_task(t);
+    }
+#endif
+    //------------------------------------------------------------------------//
+    template <typename _Ret, typename _Func>
+    __inline__
+    void exec(mad::task_group* tg, _Func function)
+    {
+        typedef task<_Ret> task_type;
+
+        tg = set_task_group(tg);
+        task_type* t = new task_type(tg, function);
+        m_data->tp()->add_task(t);
+    }
+    //------------------------------------------------------------------------//
+#ifndef SWIG
+    template <typename _Func>
+    __inline__
+    void exec(mad::task_group* tg, _Func function)
+    {
+        typedef task<void> task_type;
+
+        tg = set_task_group(tg);
+        task_type* t = new task_type(tg, function);
+        m_data->tp()->add_task(t);
+    }
+#endif
+    //------------------------------------------------------------------------//
+
+    //------------------------------------------------------------------------//
+    // public exec functions using default task group
+    //------------------------------------------------------------------------//
+    template <typename _Ret, typename _Func, typename... _Args>
+    __inline__
+    void exec(_Func function, _Args... args)
+    {
+        typedef task<_Ret, _Args...> task_type;
+
+        mad::task_group* tg = set_task_group();
+        task_type* t = new task_type(tg, function, args...);
+        m_data->tp()->add_task(t);
+    }
+    //------------------------------------------------------------------------//
+#ifndef SWIG
+    template <typename _Func, typename... _Args>
+    __inline__
+    void exec(_Func function, _Args... args)
+    {
+        typedef task<void, _Args...> task_type;
+
+        mad::task_group* tg = set_task_group();
+        task_type* t = new task_type(tg, function, args...);
+        m_data->tp()->add_task(t);
+    }
+#endif
+    //------------------------------------------------------------------------//
+    template <typename _Ret, typename _Func>
+    __inline__
+    void exec(_Func function)
+    {
+        typedef task<_Ret> task_type;
+
+        mad::task_group* tg = set_task_group();
+        task_type* t = new task_type(tg, function);
+        m_data->tp()->add_task(t);
+    }
+    //------------------------------------------------------------------------//
+#ifndef SWIG
+    template <typename _Func>
+    __inline__
+    void exec(_Func function)
+    {
+        typedef task<void> task_type;
+
+        mad::task_group* tg = set_task_group();
+        task_type* t = new task_type(tg, function);
+        m_data->tp()->add_task(t);
+    }
+#endif
+    //------------------------------------------------------------------------//
+#endif // defined(MAD_USE_CXX98)
 
 public:
+#if defined(MAD_USE_CXX98)
     //------------------------------------------------------------------------//
     // public run functions
     //------------------------------------------------------------------------//
@@ -455,11 +558,7 @@ public:
     void run(_Func function,
              mad::task_group* tg = 0)
     {
-#ifdef MAD_USE_CXX98
         typedef task<void, void> task_type;
-#else
-        typedef task<void> task_type;
-#endif
 
         tg = set_task_group(tg);
         for(size_type i = 0; i < size(); ++i)
@@ -469,6 +568,133 @@ public:
         }
     }
     //------------------------------------------------------------------------//
+#else // defined(MAD_USE_CXX98)
+    //------------------------------------------------------------------------//
+    // public run functions
+    //------------------------------------------------------------------------//
+    template <typename _Ret, typename _Func, typename... _Args>
+    __inline__
+    void run(mad::task_group* tg, _Func function, _Args... args)
+    {
+        typedef task<_Ret, _Args...> task_type;
+
+        tg = set_task_group(tg);
+        for(size_type i = 0; i < size(); ++i)
+        {
+            task_type* t = new task_type(tg, function, args...);
+            m_data->tp()->add_task(t);
+        }
+    }
+    //------------------------------------------------------------------------//
+#ifndef SWIG
+    template <typename _Func, typename... _Args>
+    __inline__
+    void run(mad::task_group* tg, _Func function, _Args... args)
+    {
+        typedef task<void, _Args...> task_type;
+
+        tg = set_task_group(tg);
+        for(size_type i = 0; i < size(); ++i)
+        {
+            task_type* t = new task_type(tg, function, args...);
+            m_data->tp()->add_task(t);
+        }
+    }
+#endif
+    //------------------------------------------------------------------------//
+    template <typename _Ret, typename _Func>
+    __inline__
+    void run(mad::task_group* tg, _Func function)
+    {
+        typedef task<_Ret> task_type;
+
+        for(size_type i = 0; i < size(); ++i)
+        {
+            task_type* t = new task_type(tg, function);
+            m_data->tp()->add_task(t);
+        }
+    }
+    //------------------------------------------------------------------------//
+#ifndef SWIG
+    template <typename _Func>
+    __inline__
+    void run(mad::task_group* tg, _Func function)
+    {
+        typedef task<void> task_type;
+
+        for(size_type i = 0; i < size(); ++i)
+        {
+            task_type* t = new task_type(tg, function);
+            m_data->tp()->add_task(t);
+        }
+    }
+#endif
+    //------------------------------------------------------------------------//
+
+    //------------------------------------------------------------------------//
+    // public run functions using default task group
+    //------------------------------------------------------------------------//
+    template <typename _Ret, typename _Func, typename... _Args>
+    __inline__
+    void run(_Func function, _Args... args)
+    {
+        typedef task<_Ret, _Args...> task_type;
+
+        mad::task_group* tg = set_task_group();
+        for(size_type i = 0; i < size(); ++i)
+        {
+            task_type* t = new task_type(tg, function, args...);
+            m_data->tp()->add_task(t);
+        }
+    }
+    //------------------------------------------------------------------------//
+#ifndef SWIG
+    template <typename _Func, typename... _Args>
+    __inline__
+    void run(_Func function, _Args... args)
+    {
+        typedef task<void, _Args...> task_type;
+
+        mad::task_group* tg = set_task_group();
+        for(size_type i = 0; i < size(); ++i)
+        {
+            task_type* t = new task_type(tg, function, args...);
+            m_data->tp()->add_task(t);
+        }
+    }
+#endif
+    //------------------------------------------------------------------------//
+    template <typename _Ret, typename _Func>
+    __inline__
+    void run(_Func function)
+    {
+        typedef task<_Ret> task_type;
+
+        mad::task_group* tg = set_task_group();
+        for(size_type i = 0; i < size(); ++i)
+        {
+            task_type* t = new task_type(tg, function);
+            m_data->tp()->add_task(t);
+        }
+    }
+    //------------------------------------------------------------------------//
+#ifndef SWIG
+    template <typename _Func>
+    __inline__
+    void run(_Func function)
+    {
+        typedef task<void> task_type;
+
+        mad::task_group* tg = set_task_group();
+        for(size_type i = 0; i < size(); ++i)
+        {
+            task_type* t = new task_type(tg, function);
+            m_data->tp()->add_task(t);
+        }
+    }
+#endif
+    //------------------------------------------------------------------------//
+#endif // defined(MAD_USE_CXX98)
 
 public:
     //------------------------------------------------------------------------//
@@ -523,13 +749,11 @@ public:
             m_data->tp()->add_task(t);
         }
     }
-#endif
     //------------------------------------------------------------------------//
     // Specialization for above when run_loop(func, 0, container->size())
     // is called. Generally, the "0" is defaulted to a signed type
     // so template deduction fails
     //------------------------------------------------------------------------//
-#ifndef SWIG
     template <typename _Func, typename _Arg1, typename _Arg>
     __inline__
     void run_loop(_Func function, const _Arg1& _s, const _Arg& _e,

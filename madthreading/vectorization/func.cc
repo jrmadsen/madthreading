@@ -701,10 +701,10 @@ void mad::func::fast_erfinv(int n, const double* in, double* out)
 #endif
 
     double* arg = static_cast<double*>(mad::aligned_alloc(n * sizeof(double),
-                                                          mad::SIMD_ALIGN));
+                                                          mad::SIMD_WIDTH));
 
     double* lg = static_cast<double*>(mad::aligned_alloc(n * sizeof(double),
-                                                         mad::SIMD_ALIGN));
+                                                         mad::SIMD_WIDTH));
 
     int i;
     double ab;

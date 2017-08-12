@@ -49,7 +49,7 @@ namespace mad
 
 // Byte alignment for SIMD.  This should work for all modern systems,
 // including MIC
-static size_t const SIMD_ALIGN = 64;
+static size_t const SIMD_WIDTH = 64;
 
 void* aligned_alloc(size_t size, size_t align);
 void  aligned_free(void* ptr);
@@ -107,7 +107,7 @@ public:
     // allocate but don't initialize num elements of type T
     pointer allocate(const size_type num, const void* hint = 0)
     {
-        return static_cast<pointer>(aligned_alloc(num*sizeof(T), SIMD_ALIGN));
+        return static_cast<pointer>(aligned_alloc(num*sizeof(T), SIMD_WIDTH));
     }
 
     // initialize elements of allocated storage p with value value
