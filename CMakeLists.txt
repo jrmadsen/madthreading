@@ -5,10 +5,10 @@ project(madthreading C CXX)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules ${CMAKE_MODULE_PATH})
 
 set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX
-    ${CMAKE_SOURCE_DIR}/cmake/Modules/MakeRules_cxx.cmake)
+    ${CMAKE_SOURCE_DIR}/cmake/Modules/MakeRulesCXX.cmake)
 
 
-include(MakeRules_cxx)
+include(MakeRulesCXX)
 include(GenericCMakeFunctions)
 SET_PROJECT_VERSION("1" "1" "0" "Multithreading API using pthreads. Task-based with thread-pool")
 SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
