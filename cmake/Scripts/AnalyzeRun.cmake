@@ -2,11 +2,9 @@
 # Analyze results of unit test runs
 
 ################################################################################
-#get_filename_component( TestDirName ${CMAKE_CURRENT_BINARY_DIR} NAME )
+include("${CMAKE_CURRENT_LIST_DIR}/../Modules/DefineColors.cmake")
 
-#set( CmdTag "Testing ${UNIT}[ ${TestDirName} ]..." )
-#set( FailTag "${CmdTag} FAIL" )
-set( FailTag "${TAG}  FAIL" )
+set( FailTag "${TAG}  ${Red}FAIL${ColorReset}" )
 
 execute_process( COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${APP}
                  TIMEOUT 60
@@ -20,6 +18,12 @@ execute_process( COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${APP}
 file( STRINGS ${APP}.err errFile )
 set(IGNORE "[NVBLAS] NVBLAS_CONFIG_FILE environment variable is set to '$ENV{NVBLAS_CONFIG_FILE}'")
 STRING(REPLACE "${IGNORE}" "" errFile "${errFile}")
+STRING(REPLACE ";" "" errFile "${errFile}")
+STRING(REGEX REPLACE "[^a-zA-Z0-9]" "" errFile "${errFile}")
+
+file( WRITE ${APP}.read.err "${errFile}" )
+
+STRING(STRIP "${errFile}" errFile)
 
 if( errFile )
     execute_process( COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red --bold ${FailTag} )

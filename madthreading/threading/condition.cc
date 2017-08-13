@@ -51,4 +51,18 @@ void condition::wait(mad::mutex* mutex)
 
 //============================================================================//
 
+void condition::timed_wait(mad::mutex& mutex, const float& tsec)
+{
+    timed_wait(mutex.base_mutex_ptr(), tsec);
+}
+
+//============================================================================//
+
+void condition::timed_wait(mad::mutex* mutex, const float& tsec)
+{
+    timed_wait(mutex->base_mutex_ptr(), tsec);
+}
+
+//============================================================================//
+
 } // namespace mad

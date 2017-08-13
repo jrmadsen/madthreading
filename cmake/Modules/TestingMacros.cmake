@@ -9,6 +9,7 @@ cmake_policy(SET CMP0011 NEW)
 ################################################################################
 
 include(CMakeMacroParseArguments)
+include(DefineColors)
 
 # use full path to libraries
 cmake_policy(SET CMP0060 NEW)
@@ -123,15 +124,15 @@ endforeach()
 
 # This will cause it to run once after building (for all but nightlies!)
 if( NOT nightly AND NOT Test_BATCH )
-    set( CmdTag "Testing ${testname}[ ${TestDirName} ]..." )
-    set( CmdTagSuccess "${CmdTag} PASS" )
+    set( CmdTag "${Cyan}Testing ${testname}[ ${TestDirName} ]...${ColorReset}" )
+    set( CmdTagSuccess "${CmdTag}${Cyan} PASS${ColorReset}" )
+    
     add_custom_command(
         TARGET ${appName} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --blue --bold ${CmdTag}
+        COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --bold ${CmdTag}
         COMMAND ${CMAKE_COMMAND} -DAPP=${appName}${CMAKE_EXECUTABLE_SUFFIX}
         -DTAG=${CmdTag} -P ${PROJECT_SOURCE_DIR}/cmake/Scripts/AnalyzeRun.cmake
-#        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --no-label-summary
-        COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --blue --bold ${CmdTagSuccess})
+        COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --bold ${CmdTagSuccess})
 else()
     message(STATUS "Skipping running of ${testname}...")
 endif()

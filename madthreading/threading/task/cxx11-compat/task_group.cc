@@ -13,6 +13,7 @@
 #include "madthreading/threading/task/task_group.hh"
 #include "madthreading/threading/thread_pool.hh"
 #include "madthreading/threading/task/task.hh"
+#include "madthreading/threading/thread_manager.hh"
 #include "madthreading/utility/fpe_detection.hh"
 
 namespace mad
@@ -78,8 +79,20 @@ void task_group::join()
 
         while(pending() > 0 && m_pool->state() != state::STOPPED)
         {
+            #if defined(DEBUG)
+            long_type ntasks = pending();
+            if(false)
+            {
+                static mad::mutex _mutex;
+                mad::auto_lock l(_mutex);
+                tmcout << "# of tasks: " << ntasks << std::endl;
+            }
+            #endif
+            // if not locked, we need to lock it
+            /*m_join_lock.lock();
             // Wait until signaled that a task has been competed
             // Unlock mutex while wait, then lock it back when signaled
+            m_join_cond.timed_wait(m_join_lock, 5.0);*/
             m_join_cond.wait(m_join_lock);
         }
 

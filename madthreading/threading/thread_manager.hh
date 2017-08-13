@@ -186,7 +186,18 @@ private:
     thread_manager(const thread_manager&);
 
 public:
+    /// get the singleton pointer
     static thread_manager* Instance();
+    /// get the singleton pointer
+    static thread_manager* instance();
+    /// get the default task group
+    static mad::task_group* default_task_group() { return m_default_group; }
+    /// get the singleton pointer if exists and allocate nthreads in the
+    /// thread pool.
+    /// if an instance has not been created, create one with thread pool of
+    /// nthreads
+    static thread_manager* get_thread_manager(const uint32_t& nthreads,
+                                              const int& verbose = 0);
 
     /// function for returning the thread id
     template <typename _Tp>
@@ -239,9 +250,12 @@ private:
 
 public:
     // Public functions
-    void SetMaxThreads(size_type _n) { max_threads = _n; }
-    size_type GetMaxThreads() { return max_threads; }
     void use_affinity(bool _val) { m_data->tp()->use_affinity(_val); }
+
+    void SetMaxThreads(const size_type& _n)   { max_threads = _n; }
+    void set_max_threads(const size_type& _n) { max_threads = _n; }
+    size_type GetMaxThreads()   const         { return max_threads; }
+    size_type get_max_threads() const         { return max_threads; }
 
 public:
     //------------------------------------------------------------------------//
@@ -250,9 +264,6 @@ public:
     //------------------------------------------------------------------------//
     /// allocate the number of threads
     void allocate_threads(size_type _n) { m_data->allocate_threads(_n); }
-    //------------------------------------------------------------------------//
-    /// get the default task group
-    static mad::task_group* default_task_group() { return m_default_group; }
     //------------------------------------------------------------------------//
 
 private:
@@ -1037,6 +1048,11 @@ public:
     //------------------------------------------------------------------------//
     // looks for environment variable FORCE_NUM_THREADS
     static int GetEnvNumThreads(int _default = -1)
+    {
+        return mad::thread_pool::GetEnvNumThreads(_default);
+    }
+    //------------------------------------------------------------------------//
+    static int get_env_num_threads(int _default = -1)
     {
         return mad::thread_pool::GetEnvNumThreads(_default);
     }

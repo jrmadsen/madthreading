@@ -59,49 +59,35 @@ endif()
 #------------------------------------------------------------------------------#
 if(BUILD_SHARED_LIBS)
 
-    add_library(${PROJECT_NAME}-SHARED SHARED ${GLOBAL_OBJECT_TARGETS})
+    add_library(${PROJECT_NAME}-shared SHARED ${GLOBAL_OBJECT_TARGETS})
 
-    set_target_properties(${PROJECT_NAME}-SHARED
+    set_target_properties(${PROJECT_NAME}-shared
         PROPERTIES OUTPUT_NAME      "${PROJECT_NAME}"
                    VERSION          "${${PROJECT_NAME}_SHORT_VERSION}"
                    SOVERSION        "${${PROJECT_NAME}_MAJOR_VERSION}"
                    SUFFIX           "${_SUFFIX}${CMAKE_SHARED_LIBRARY_SUFFIX}"
+                   LINK_FLAGS       "${EXTERNAL_CXX_LINK_FLAGS}"
                    LINKER_LANGUAGE  CXX)
 
-    target_link_libraries(${PROJECT_NAME}-SHARED
+    target_link_libraries(${PROJECT_NAME}-shared
                           ${EXTRA_LIBS} ${EXTERNAL_LIBRARIES})
-
-
-    install(TARGETS ${PROJECT_NAME}-SHARED
-            EXPORT ${CPROJECT_NAME}LibraryDepends
-            RUNTIME DESTINATION ${CMAKE_INSTALL_FULL_BINDIR} COMPONENT bin
-            LIBRARY DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR} COMPONENT lib
-            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_FULL_INCLUDEDIR} COMPONENT dev
-            DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR})
 
 endif()
 
 if(BUILD_STATIC_LIBS)
 
-    add_library(${PROJECT_NAME}-STATIC STATIC ${GLOBAL_OBJECT_TARGETS})
+    add_library(${PROJECT_NAME}-static STATIC ${GLOBAL_OBJECT_TARGETS})
 
-    set_target_properties(${PROJECT_NAME}-STATIC
+    set_target_properties(${PROJECT_NAME}-static
         PROPERTIES OUTPUT_NAME     "${PROJECT_NAME}"
                    VERSION         "${${PROJECT_NAME}_SHORT_VERSION}"
                    POSITION_INDEPENDENT_CODE ON
                    SUFFIX           "${_SUFFIX}${CMAKE_STATIC_LIBRARY_SUFFIX}"
+                   LINK_FLAGS       "${EXTERNAL_CXX_LINK_FLAGS}"
                    LINKER_LANGUAGE CXX)
 
-    target_link_libraries(${PROJECT_NAME}-STATIC
+    target_link_libraries(${PROJECT_NAME}-static
                           ${EXTRA_LIBS} ${EXTERNAL_LIBRARIES})
-
-    install(TARGETS ${PROJECT_NAME}-STATIC
-            EXPORT ${CPROJECT_NAME}LibraryDepends
-            RUNTIME DESTINATION ${CMAKE_INSTALL_FULL_BINDIR} COMPONENT bin
-            LIBRARY DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR} COMPONENT lib
-            ARCHIVE DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR} COMPONENT lib
-            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_FULL_INCLUDEDIR} COMPONENT dev
-            DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR})
 
 endif()
 
@@ -114,8 +100,8 @@ write_config_file("config.hh" ${PROJECT_BINARY_DIR}/InstallTreeFiles
     ${CMAKE_INSTALL_CMAKEDIR}/${CMAKE_BUILD_TYPE}/${LOWER_PROJECT_NAME})
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS OFF)
-set(PROJECT_SHARED_LIBRARY ${PROJECT_NAME}-SHARED)
-set(PROJECT_STATIC_LIBRARY ${PROJECT_NAME}-STATIC)
+set(PROJECT_SHARED_LIBRARY ${PROJECT_NAME}-shared)
+set(PROJECT_STATIC_LIBRARY ${PROJECT_NAME}-static)
 set(PACKAGE_VERSION "${${PROJECT_NAME}_VERSION}")
 set(config_target ${PROJECT_NAME}LibraryDepends)
 
@@ -123,28 +109,23 @@ set(_TARGETS )
 set(PROJECT_LIBRARY_NAMES )
 
 if(BUILD_SHARED_LIBS)
-    list(APPEND _TARGETS ${PROJECT_NAME}-SHARED)
+    list(APPEND _TARGETS ${PROJECT_NAME}-shared)
 endif()
 if(BUILD_STATIC_LIBS )
-    list(APPEND _TARGETS ${PROJECT_NAME}-STATIC)
+    list(APPEND _TARGETS ${PROJECT_NAME}-static)
 endif()
 
 list(GET _TARGETS 0 PROJECT_LIBRARY_NAMES)
 
-# ===============================
+# =============================================================================#
+# BUILD TREE
+# =============================================================================#
 # Add all targets to the build-tree export set
 export(TARGETS ${_TARGETS} FILE "${PROJECT_BINARY_DIR}/${CPROJECT_NAME}LibraryDepends.cmake")
-
 # Export the package for use from the build-tree
 # (this registers the build-tree with a global CMake-registry)
-export(PACKAGE ${_prefix}LibraryDepends)
-
-# Create the Config.cmake and ConfigVersion.cmake
-file(RELATIVE_PATH REL_INCLUDE_DIR "${CMAKE_INSTALL_FULL_CMAKEDIR}"
-     "${CMAKE_INSTALL_FULL_INCLUDEDIR}")
-
-# ... for the build tree
-set(CONF_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}")
+export(PACKAGE ${CPROJECT_NAME}LibraryDepends)
+# Create the Config.cmake and ConfigHeader-${CMAKE_BUILD_TYPE}.cmake for the build tree
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/Config.cmake.in
     "${PROJECT_BINARY_DIR}/${CPROJECT_NAME}Config.cmake"
     @ONLY)
@@ -152,8 +133,10 @@ configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/ConfigHeader.cmake.in
     "${PROJECT_BINARY_DIR}/${CPROJECT_NAME}ConfigHeader-${CMAKE_BUILD_TYPE}.cmake"
     @ONLY)
 
-# ... for the install tree
-set(CONF_INCLUDE_DIRS "\${${_PROJECT_NAME}_CMAKE_DIR}/${REL_INCLUDE_DIR}")
+# =============================================================================#
+# INSTALL TREE
+# =============================================================================#
+# Create the Config.cmake and ConfigHeader-${CMAKE_BUILD_TYPE}.cmake for the install tree
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/Config.cmake.in
     "${PROJECT_BINARY_DIR}/${CPROJECT_NAME}Config.cmake"
     @ONLY)
@@ -161,17 +144,25 @@ configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/ConfigHeader.cmake.in
     "${PROJECT_BINARY_DIR}/${CPROJECT_NAME}ConfigHeader-${CMAKE_BUILD_TYPE}.cmake"
     @ONLY)
 
-# ... for both
+# Create the ConfigVersion.cmake for both
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/ConfigVersion.cmake.in
     "${PROJECT_BINARY_DIR}/${CPROJECT_NAME}ConfigVersion.cmake" @ONLY)
 
-# Install the Config.cmake and ConfigVersion.cmake
+# Install the ${PROJECT_NAME}Config*.cmake files
 install(FILES
     "${PROJECT_BINARY_DIR}/${CPROJECT_NAME}Config.cmake"
     "${PROJECT_BINARY_DIR}/${CPROJECT_NAME}ConfigVersion.cmake"
     "${PROJECT_BINARY_DIR}/${CPROJECT_NAME}ConfigHeader-${CMAKE_BUILD_TYPE}.cmake"
-    DESTINATION "${CMAKE_INSTALL_FULL_CMAKEDIR}" COMPONENT dev)
-
+    DESTINATION ${CMAKE_INSTALL_CMAKEDIR}
+    COMPONENT dev)
+# install the libraries
+install(TARGETS ${_TARGETS}
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    EXPORT ${CPROJECT_NAME}LibraryDepends)
 # Install the export set for use with the install-tree
 install(EXPORT ${CPROJECT_NAME}LibraryDepends
-    DESTINATION "${CMAKE_INSTALL_FULL_CMAKEDIR}" COMPONENT dev)
+    DESTINATION ${CMAKE_INSTALL_CMAKEDIR}
+    COMPONENT dev)
+
+# export the packages
+export(PACKAGE ${PROJECT_NAME})

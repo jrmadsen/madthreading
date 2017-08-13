@@ -36,13 +36,17 @@
 %module condition
 %{
     #define SWIG_FILE_WITH_INIT
+    #include <time.h>
+    #include "madthreading/threading/threading.hh"
     #include "madthreading/threading/condition.hh"
 %}
 
+%import "madthreading/threading/threading.hh"
 %include "condition.hh"
 #endif
 
 #include "madthreading/threading/threading.hh"
+#include <time.h>
 
 namespace mad
 {
@@ -87,6 +91,18 @@ public:
     void wait(mad::mutex*);
 #endif
 
+    // interface directly with pthread_mutex_t
+    void timed_wait(mad::CoreMutex* mutex, const float& tseconds);
+    // indirectly interface with mad::mutex
+    void timed_wait(mad::mutex&, const float& tseconds);
+#ifndef SWIG
+    // indirectly interface with mad::mutex
+    void timed_wait(mad::mutex*, const float& tseconds);
+#endif
+
+protected:
+    timespec get_time(const float& tseconds) const;
+
 protected:
     // Protected variables
     CoreCondition m_cond_var;
@@ -110,6 +126,25 @@ inline
 void condition::wait(mad::CoreMutex* cmutex)
 {
     CORECONDITIONWAIT(&m_cond_var, cmutex);
+}
+//----------------------------------------------------------------------------//
+inline
+void condition::timed_wait(mad::CoreMutex* cmutex, const float& tseconds)
+{
+    timespec reltime = get_time(tseconds);
+    CORECONDITIONTIMEWAIT(&m_cond_var, cmutex, &reltime);
+}
+//----------------------------------------------------------------------------//
+inline
+timespec condition::get_time(const float& tsec) const
+{
+    constexpr float nsec = 1.0e9;
+    timespec now;
+    timespec rel;
+    clock_gettime(CLOCK_REALTIME, &now);
+    rel = now;
+    rel.tv_nsec += static_cast<int64_t>(nsec * tsec);
+    return rel;
 }
 //----------------------------------------------------------------------------//
 

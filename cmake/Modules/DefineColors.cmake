@@ -1,0 +1,27 @@
+
+# - Include guard
+if(__definecolors_isloaded)
+  return()
+endif()
+set(__definecolors_isloaded ON CACHE BOOLEAN "Colors have been defined")
+
+if(NOT WIN32)
+  string(ASCII 27 Esc)
+  set(ColorReset  "${Esc}[m"     CACHE STRING "reset color code")
+  set(ColorBold   "${Esc}[1m"    CACHE STRING "bold color code")
+  set(Red         "${Esc}[31m"   CACHE STRING "red color code")
+  set(Green       "${Esc}[32m"   CACHE STRING "green color code")
+  set(Yellow      "${Esc}[33m"   CACHE STRING "yellow color code")
+  set(Blue        "${Esc}[34m"   CACHE STRING "blue color code")
+  set(Magenta     "${Esc}[35m"   CACHE STRING "magneta color code")
+  set(Cyan        "${Esc}[36m"   CACHE STRING "cyan color code")
+  set(White       "${Esc}[37m"   CACHE STRING "white color code")
+  set(BoldRed     "${Esc}[1;31m" CACHE STRING "bold red color code")
+  set(BoldGreen   "${Esc}[1;32m" CACHE STRING "bold green color code")
+  set(BoldYellow  "${Esc}[1;33m" CACHE STRING "bold yellow color code")
+  set(BoldBlue    "${Esc}[1;34m" CACHE STRING "bold blue color code")
+  set(BoldMagenta "${Esc}[1;35m" CACHE STRING "bold magenta color code")
+  set(BoldCyan    "${Esc}[1;36m" CACHE STRING "bold cyan color code")
+  set(BoldWhite   "${Esc}[1;37m" CACHE STRING "bold white color code")
+endif()
+

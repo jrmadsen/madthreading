@@ -284,6 +284,8 @@ endfunction()
 #-----------------------------------------------------------------------
 function(subConfigureRootSearchPath _package_name _search_other)
 
+    mark_as_advanced(PREVIOUS_${_package_name}_ROOT)
+
     # if ROOT not already defined and ENV variable defines it
     if(NOT ${_package_name}_ROOT AND
        NOT "$ENV{${_package_name}_ROOT}" STREQUAL "")
@@ -394,6 +396,10 @@ endfunction()
 macro(ConfigureRootSearchPath)
     foreach(_package_name ${ARGN})
         subConfigureRootSearchPath(${_package_name} ON)
+        if($ENV{${_package_name}_DIR})
+            set(${_package_name}_DIR "$ENV{${_package_name}_DIR}" CACHE PATH
+                "CMake config directory for ${_package_name}")
+        endif()
     endforeach()
 endmacro()
 
@@ -440,6 +446,21 @@ function(ADD_SUBFEATURE _root _var _description)
     #set(${_var} ${${_var}} CACHE INTERNAL "${_description}${EXTRA_DESC}")
 
 endfunction()
+
+
+#------------------------------------------------------------------------------#
+# function add_option(<OPTION_NAME> <DOCSRING> <DEFAULT_SETTING> [NO_FEATURE])
+#          Add an option and add as a feature if NO_FEATURE is not provided
+#
+MACRO(ADD_OPTION _NAME _MESSAGE _DEFAULT)
+    SET(_FEATURE ${ARGN})
+    OPTION(${_NAME} "${_MESSAGE}" ${_DEFAULT})
+    IF(NOT "${_FEATURE}" STREQUAL "NO_FEATURE")
+        ADD_FEATURE(${_NAME} "${_MESSAGE}")
+    ELSE()
+        MARK_AS_ADVANCED(${_NAME})
+    ENDIF()
+ENDMACRO()
 
 
 #------------------------------------------------------------------------------#

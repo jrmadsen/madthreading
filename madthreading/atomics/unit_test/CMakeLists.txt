@@ -9,10 +9,10 @@ if(BATCH_MODE)
                   NAME
                     "atomics_tester"
                   LINK_LIBRARIES
-                    ${LIBRARIES} ${PROJECT_NAME}-SHARED)
+                    ${LIBRARIES} ${PROJECT_NAME}-shared)
 else()
     Add_Unit_Test(NAME
                     "atomics_tester"
                   LINK_LIBRARIES
-                    ${LIBRARIES} ${PROJECT_NAME}-SHARED)
+                    ${LIBRARIES} ${PROJECT_NAME}-shared)
 endif()

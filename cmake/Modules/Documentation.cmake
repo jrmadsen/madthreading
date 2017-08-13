@@ -11,11 +11,10 @@ include(MacroUtilities)
 #-----------------------------------------------------------------------
 
 option(DOXYGEN_DOCS "Make a `doc` make target" ON)
-add_feature(DOXYGEN_DOCS "Make a `doc` build target to build doxygen documentation.")
 
 if(DOXYGEN_DOCS)
   option(BUILD_DOXYGEN_DOCS "Include `doc` make target in all" OFF)
-  add_subfeature(DOXYGEN_DOCS BUILD_DOXYGEN_DOCS "Include `doc` make target in all")
+  mark_as_advanced(BUILD_DOXYGEN_DOCS)
 endif()
 
 include(CMakeDependentOption)
@@ -34,8 +33,8 @@ if(DOXYGEN_DOCS)
     endif()
 
     # GraphViz dot program is used to build call graphs, caller graphs, class graphs
-    find_program(GRAPHVIZ_DOT_PATH
-                 dot)
+    find_program(GRAPHVIZ_DOT_PATH dot)
+    mark_as_advanced(GRAPHVIZ_DOT_PATH)
 
     if("${GRAPHVIZ_DOT_PATH}" STREQUAL "GRAPHVIZ_DOT_PATH-NOTFOUND")
         set(DOXYGEN_DOT_FOUND NO)
@@ -80,7 +79,6 @@ if(DOXYGEN_DOCS)
 
 
     if(DOXYGEN_DOT_FOUND)
-
         set(DOXYGEN_DOT_GRAPH_TYPES CLASS CALL CALLER)
         # options to turn generation of class, call, and caller graphs
         foreach(_graph_type ${DOXYGEN_DOT_GRAPH_TYPES})
@@ -97,7 +95,6 @@ if(DOXYGEN_DOCS)
                 set(GENERATE_DOXYGEN_${_graph_type}_GRAPH NO)
             endif()
         endforeach()
-
     endif()
 
     # get the buildtree directories
@@ -139,7 +136,7 @@ if(DOXYGEN_DOCS)
     if(NOT "${SUBPROJECT}" STREQUAL "")
         string(TOUPPER ${SUBPROJECT} SUBPROJECT_U)
         option(INCLUDE_${SUBPROJECT_U}_IN_DOCS "Include ${SUBPROJECT} source files in documentation" OFF)
-        add_subfeature(DOXYGEN_DOCS INCLUDE_${SUBPROJECT_U}_IN_DOCS "Include ${SUBPROJECT} source files in documentation")
+        mark_as_advanced(INCLUDE_${SUBPROJECT_U}_IN_DOCS)
 
         if(INCLUDE_${SUBPROJECT_U}_IN_DOCS)
             set(_${SUBPROJECT}_DIRS
@@ -181,7 +178,8 @@ if(DOXYGEN_DOCS)
     )
 
     if(ENABLE_DOXYGEN_HTML_DOCS)
-      FILE(WRITE ${PROJECT_BINARY_DIR}/doc/${PROJECT_NAME}_Documentation.html "<meta http-equiv=\"refresh\" content=\"1;url=html/index.html\">")
+      FILE(WRITE ${PROJECT_BINARY_DIR}/doc/${PROJECT_NAME}_Documentation.html
+          "<meta http-equiv=\"refresh\" content=\"1;url=html/index.html\">")
     endif()
 
 endif() # DOXYGEN_DOCS
@@ -212,31 +210,6 @@ MACRO(GENERATE_DOCUMENTATION DOXYGEN_CONFIG_FILE)
                 ADD_CUSTOM_TARGET(doc ${DOXYGEN_EXECUTABLE}
                                   "${PROJECT_BINARY_DIR}/doc/${DOXYGEN_CONFIG_FILE}" )
             endif()
-
-            # Add .tag file and generated documentation to the list of files we
-            # must erase when distcleaning
-
-            # Read doxygen configuration file
-            #FILE( READ ${PROJECT_BINARY_DIR}/doc/${DOXYGEN_CONFIG_FILE} DOXYFILE_CONTENTS )
-            #STRING( REGEX REPLACE "\n" ";" DOXYFILE_LINES ${DOXYFILE_CONTENTS} )
-
-            # Parse .tag filename and add to list of files to delete if it exists
-            #FOREACH( DOXYLINE ${DOXYFILE_CONTENTS} )
-            #    STRING( REGEX REPLACE ".*GENERATE_TAGFILE *= *([^ ^\n]+).*"
-            #            "\\1" DOXYGEN_TAG_FILE ${DOXYLINE} )
-            #ENDFOREACH( DOXYLINE )
-
-            #ADD_TO_DISTCLEAN( ${PROJECT_BINARY_DIR}/${DOXYGEN_TAG_FILE} )
-
-            # Parse doxygen output doc dir and add to list of files to delete if
-            # it exists
-            #FOREACH( DOXYLINE ${DOXYFILE_CONTENTS} )
-            #    STRING( REGEX REPLACE ".*OUTPUT_DIRECTORY *= *([^ ^\n]+).*" "\\1"
-            #            DOXYGEN_DOC_DIR ${DOXYLINE} )
-            #ENDFOREACH( DOXYLINE )
-
-            #ADD_TO_DISTCLEAN( ${PROJECT_BINARY_DIR}/${DOXYGEN_DOC_DIR} )
-            #ADD_TO_DISTCLEAN( ${PROJECT_BINARY_DIR}/${DOXYGEN_DOC_DIR}.dir )
 
             install(DIRECTORY   ${PROJECT_BINARY_DIR}/doc/man/
                     DESTINATION ${CMAKE_INSTALL_MANDIR}
@@ -304,9 +277,3 @@ MACRO(GENERATE_MANUAL MANUAL_TEX MANUAL_BUILD_PATH EXTRA_FILES_TO_COPY)
         )
     endif()
 ENDMACRO()
-
-
-
-
-
-

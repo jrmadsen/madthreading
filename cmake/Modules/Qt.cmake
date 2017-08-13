@@ -58,11 +58,12 @@ if(ALLOW_QT4)
     ConfigureRootSearchPath(QT4)
 endif()
 ConfigureRootSearchPath(QT5)
+mark_as_advanced(QT_ROOT Qt_ROOT QT4_ROOT QT5_ROOT)
 
 #------------------------------------------------------------------------------#
 # use QMake option
 option(USE_QT_QMAKE "Use qmake" OFF)
-add_feature(USE_QT_QMAKE "Use qmake")
+mark_as_advanced(USE_QT_QMAKE)
 
 #------------------------------------------------------------------------------#
 # define default EXTERNAL_LIBRARIES_VARIABLE if not provided
@@ -82,6 +83,7 @@ set(QtPackagePaths )
 set(QtComponents )
 foreach(package ${QtPackages})
     list(APPEND QtComponents Qt${package})
+    mark_as_advanced(Qt5${package}_DIR)
 endforeach()
 
 #------------------------------------------------------------------------------#
@@ -118,11 +120,6 @@ if(NOT USE_QT_QMAKE AND NOT CMAKE_VERSION VERSION_LESS 3.0)
                 set(Qt5_PACKAGES_FOUND OFF)
             else()
                 set(Qt_${package}_FOUND ON)
-                #string(TOUPPER ${package} UPP_PACK)
-                #if(NOT "${UPP_PACK}" STREQUAL "CORE" AND
-                #   NOT "${UPP_PACK}" STREQUAL "WIDGETS")
-                #    add_definitions(-DUSE_QT_${UPP_PACK})
-                #endif()
             endif()
         endforeach()
     endif()
@@ -192,3 +189,4 @@ else()
 
 endif()
 
+mark_as_advanced(QT_QMAKE_EXECUTABLE)

@@ -44,6 +44,10 @@ thread_manager* thread_manager::Instance() { return fgInstance; }
 
 //============================================================================//
 
+thread_manager* thread_manager::instance() { return fgInstance; }
+
+//============================================================================//
+
 task_group* thread_manager::m_default_group = new task_group(NULL);
 
 //============================================================================//
@@ -63,6 +67,35 @@ void thread_manager::check_instance(thread_manager* local_instance)
         fgInstance = local_instance;
 
     m_default_group->set_pool(fgInstance->m_data->tp());
+}
+
+//============================================================================//
+
+thread_manager* thread_manager::get_thread_manager(const uint32_t& nthreads,
+                                                   const int& verbose)
+{
+    mad::thread_manager* tm = mad::thread_manager::instance();
+    if(!tm)
+    {
+        if(verbose > 0)
+            tmcout << "Allocating thread manager with " << nthreads
+                   << " thread(s)..." << std::endl;
+        tm = new thread_manager(nthreads);
+    }
+    else if(tm->size() != nthreads)
+    {
+        if(verbose > 0)
+            tmcout << "thread_manager exists - Allocating " << nthreads
+                   << "..." << std::endl;
+        tm->allocate_threads(nthreads);
+    }
+    else
+    {
+        if(verbose > 0)
+            tmcout << "Using existing thread_manager with "
+                   << tm->size() << " thread(s)..." << std::endl;
+    }
+    return tm;
 }
 
 //============================================================================//

@@ -157,8 +157,7 @@ endif()
 #
 ################################################################################
 
-option(USE_TBB "Enable Intel Thread Building Blocks (TBB)" OFF)
-add_feature(USE_TBB "Intel Thread Building Blocks library")
+add_option(USE_TBB "Enable Intel Thread Building Blocks (TBB)" OFF)
 
 if(USE_TBB)
     if(NOT CMAKE_COMPILER_IS_INTEL_ICC AND NOT CMAKE_COMPILER_IS_INTEL_ICPC)
@@ -171,11 +170,45 @@ if(USE_TBB)
             list(APPEND EXTERNAL_INCLUDE_DIRS ${TBB_INCLUDE_DIRS})
         endif()
 
-        add_feature(TBB_ROOT "Root directory of TBB install")
+        add_subfeature(USE_TBB TBB_ROOT "Root directory of TBB install")
+    elseif(CMAKE_COMPILER_IS_INTEL_ICC OR CMAKE_COMPILER_IS_INTEL_ICPC)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -tbb")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -tbb")
     endif()
     add_package_definitions(TBB)
 endif()
 
+
+################################################################################
+#
+#        MKL - Intel Math Kernel Library
+#
+################################################################################
+
+add_option(USE_MKL "Enable Intel Math Kernel Library (MKL)" OFF)
+if(USE_MKL)
+    if(NOT CMAKE_COMPILER_IS_INTEL_ICC AND NOT CMAKE_COMPILER_IS_INTEL_ICPC)
+        ConfigureRootSearchPath(MKL)
+
+        set(MKL_THREADING "Sequential")
+        find_package(MKL REQUIRED)
+        if(MKL_FOUND)
+            include_directories(${MKL_INCLUDE_DIRS})
+            list(APPEND EXTERNAL_LIBRARIES ${MKL_LIBRARIES})
+            list(APPEND EXTERNAL_INCLUDE_DIRS ${MKL_INCLUDE_DIRS})
+        endif()
+
+        add_subfeature(USE_MKL MKL_ROOT "Root directory of MKL install")
+        foreach(_def ${MKL_DEFINITIONS})
+            add_definitions(-D${_def})
+        endforeach()
+        list(APPEND EXTERNAL_LINK_FLAGS "${MKL_CXX_LINK_FLAGS}")
+    elseif(CMAKE_COMPILER_IS_INTEL_ICC OR CMAKE_COMPILER_IS_INTEL_ICPC)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mkl")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mkl")
+    endif()
+    add_package_definitions(MKL)
+endif()
 
 
 ################################################################################

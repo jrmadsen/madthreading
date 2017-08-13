@@ -58,7 +58,6 @@ void fast_log(int n, const double* in, double* out);
 void fast_erfinv(int n, const double* in, double* out);
 
 //----------------------------------------------------------------------------//
-
 } // namespace func
 
 } // namespace mad

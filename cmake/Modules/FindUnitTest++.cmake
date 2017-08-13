@@ -113,4 +113,6 @@ if(UnitTest++_FOUND)
         ${UnitTest++_LIBRARY} REALPATH)
 endif()
 
+mark_as_advanced(UnitTest++_INCLUDE_DIR UnitTest++_LIBRARY)
+
 #------------------------------------------------------------------------------#
