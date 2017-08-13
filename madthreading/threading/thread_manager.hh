@@ -46,12 +46,16 @@
 %module thread_manager
 %{
     #define SWIG_FILE_WITH_INIT
+    #include "madthreading/threading/tls.hh"
     #include "madthreading/allocator/allocator.hh"
     #include "madthreading/threading/thread_pool.hh"
     #include "madthreading/threading/task/task_tree.hh"
     #include "madthreading/threading/task/task_group.hh"
     #include "madthreading/threading/thread_manager.hh"
 %}
+
+#define ThreadLocalStatic static thread_local
+#define ThreadLocal thread_local
 
 %import "madthreading/threading/thread_pool.hh"
 %import "madthreading/threading/task/task_tree.hh"
@@ -154,6 +158,23 @@ public:
     const mad::thread_pool* tp() const { return m_tp; }
 
     //------------------------------------------------------------------------//
+
+private:
+    thread_manager_data& operator=(const thread_manager_data& rhs)
+    {
+        if(this == &rhs)
+            return *this;
+
+        m_size = rhs.m_size;
+        m_tp = rhs.m_tp;
+
+        return *this;
+    }
+
+    thread_manager_data(const thread_manager_data& rhs)
+    : m_size(rhs.m_size),
+      m_tp(rhs.m_tp)
+    { }
 
 protected:
     size_type m_size;
@@ -910,7 +931,8 @@ public:
     {
         typedef task<_Ret, _Arg> task_type;
 
-        task_type* t = new task_type(m_current_group,
+        mad::task_group* tg = set_task_group(0);
+        task_type* t = new task_type(tg,
                                      function, argument);
         m_data->tp()->add_background_task(_id, t);
     }
@@ -922,7 +944,8 @@ public:
     {
         typedef task<void, _Arg> task_type;
 
-        task_type* t = new task_type(m_current_group,
+        mad::task_group* tg = set_task_group(0);
+        task_type* t = new task_type(tg,
                                      function, argument);
         m_data->tp()->add_background_task(_id, t);
     }
@@ -940,7 +963,8 @@ public:
 
         for(size_type i = 0; i < size(); ++i)
         {
-            task_type* t = new task_type(m_current_group,
+            mad::task_group* tg = set_task_group(0);
+            task_type* t = new task_type(tg,
                                          function);
             m_data->tp()->add_background_task(_id, t);
         }
@@ -1067,14 +1091,13 @@ public:
         return std::accumulate(_data.begin(), _data.end(), _def);
     }
 
-
 protected:
     // Protected variables
-    static size_type        max_threads;
-    static mad::task_group* m_default_group;
-    data_type*              m_data;
-    mad::task_group*        m_current_group;
-    bool                    m_is_clone;
+    static size_type                    max_threads;
+    static mad::task_group*             m_default_group;
+    bool                                m_is_clone;
+    data_type*                          m_data;
+    mad::task_group*                    m_current_group;
 };
 
 //============================================================================//

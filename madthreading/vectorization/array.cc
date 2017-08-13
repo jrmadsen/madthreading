@@ -915,5 +915,3 @@ void mad::array::to_angles(size_t n, const double* quat, double* theta,
 }
 
 //============================================================================//
-
-

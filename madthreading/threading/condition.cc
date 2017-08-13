@@ -37,6 +37,13 @@ namespace mad
 
 //============================================================================//
 
+void condition::wait(mad::CoreMutex& cmutex)
+{
+    CORECONDITIONWAIT(&m_cond_var, &cmutex);
+}
+
+//============================================================================//
+
 void condition::wait(mad::mutex& mutex)
 {
     wait(mutex.base_mutex_ptr());
@@ -47,6 +54,14 @@ void condition::wait(mad::mutex& mutex)
 void condition::wait(mad::mutex* mutex)
 {
     wait(mutex->base_mutex_ptr());
+}
+
+//============================================================================//
+
+void condition::timed_wait(mad::CoreMutex& cmutex, const float& tseconds)
+{
+    timespec reltime = get_time(tseconds);
+    CORECONDITIONTIMEWAIT(&m_cond_var, &cmutex, &reltime);
 }
 
 //============================================================================//

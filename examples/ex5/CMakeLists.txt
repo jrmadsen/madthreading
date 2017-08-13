@@ -7,6 +7,10 @@ configure_example()
 set(CMAKE_CXX_STANDARD "11")
 
 find_package(Madthreading REQUIRED)
+if(Madthreading_FOUND AND Madthreading_CMAKE_CONFIG_FILE)
+    add_madthreading_cxx_flags()
+    add_madthreading_definitions()
+endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX)
     set(VEC_FLAGS "${VEC_FLAGS} -Wopenmp-simd")

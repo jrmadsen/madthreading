@@ -80,9 +80,13 @@ macro(define_module)
     cmake_parse_arguments(DEFMOD
                           "NO_SOURCE_GROUP"
                           "NAME;HEADER_DIR;SOURCE_DIR"
-                          "HEADER_EXT;SOURCE_EXT;HEADERS;SOURCES;EXCLUDE;LINK_LIBRARIES"
+                          "HEADER_EXT;SOURCE_EXT;HEADERS;SOURCES;EXCLUDE;LINK_LIBRARIES;NOTIFY_EXCLUDE"
                           ${ARGN}
                          )
+    list(APPEND DEFMOD_EXCLUDE ${DEFMOD_NOTIFY_EXCLUDE})
+    if(DEFMOD_EXCLUDE)
+      list(REMOVE_DUPLICATES DEFMOD_EXCLUDE)
+    endif()
     # set the filename
     set(MODULE_NAME ${DEFMOD_NAME})
     # get the path
@@ -103,7 +107,6 @@ macro(define_module)
     # list of files
     set(${MODULE_NAME}_HEADERS ${DEFMOD_HEADERS})
     set(${MODULE_NAME}_SOURCES ${DEFMOD_SOURCES})
-    #message(STATUS "MODULE ${MODULE_NAME} INCLUDE DIR : ${${MODULE_NAME}_INCDIR}")
     # GLOB the headers with provided extensions
     foreach(_ext ${DEFMOD_HEADER_EXT})
         file(GLOB _headers ${${MODULE_NAME}_INCDIR}/*${_ext})
@@ -118,19 +121,58 @@ macro(define_module)
     foreach(_lib ${DEFMOD_LINK_LIBRARIES})
         list(APPEND ${MODULE_NAME}_LINK_LIBRARIES _lib)
     endforeach()
+    set(_custom_header_list )
+    set(_custom_source_list )
+    # Check for files in custom target list
+    foreach(_custom ${CUSTOM_TARGET_LIST})
+        get_filename_component(_custom "${_custom}" NAME_WE)
+        foreach(_ext ${DEFMOD_HEADER_EXT})
+            set(_file "${${MODULE_NAME}_INCDIR}/${_custom}${_ext}")
+            list(FIND ${MODULE_NAME}_HEADERS "${_file}" _found)
+            if(NOT _found LESS 0)
+                list(APPEND _custom_header_list ${_file})
+                list(APPEND DEFMOD_EXCLUDE ${_custom})
+            endif()
+        endforeach()
+        foreach(_ext ${DEFMOD_SOURCE_EXT})
+            set(_file "${${MODULE_NAME}_SRCDIR}/${_custom}${_ext}")
+            list(FIND ${MODULE_NAME}_SOURCES "${_file}" _found)
+            if(NOT _found LESS 0)
+                list(APPEND _custom_source_list ${_file})
+                list(APPEND DEFMOD_EXCLUDE ${_custom})
+            endif()
+        endforeach()
+    endforeach()
+    if(NOT "${_custom_header_list}" STREQUAL "")
+        set_property(GLOBAL APPEND PROPERTY
+                     CUSTOM_TARGET_HEADER_FILES ${_custom_header_list})
+    endif()
+    if(NOT "${_custom_source_list}" STREQUAL "")
+        set_property(GLOBAL APPEND PROPERTY
+                     CUSTOM_TARGET_SOURCE_FILES ${_custom_source_list})
+    endif()
+
     # Remove the explicitly excluded files
     foreach(_ignore ${DEFMOD_EXCLUDE})
         # loop over the header extensions
-        #message(STATUS "Removing ${_ignore} from ${MODULE_NAME}_HEADERS -- ${${MODULE_NAME}_HEADERS}")
-        foreach(_ext ${DEFMOD_HEADER_EXT})
-            list(REMOVE_ITEM ${MODULE_NAME}_HEADERS ${${MODULE_NAME}_INCDIR}/${_ignore}${_ext})
-        endforeach()
+        if(${MODULE_NAME}_HEADERS)
+            foreach(_ext ${DEFMOD_HEADER_EXT})
+                list(REMOVE_ITEM ${MODULE_NAME}_HEADERS
+                    ${${MODULE_NAME}_INCDIR}/${_ignore}${_ext})
+            endforeach()
+        endif()
         # loop over the source extensions
-        foreach(_ext ${DEFMOD_SOURCE_EXT})
-            list(REMOVE_ITEM ${MODULE_NAME}_SOURCES ${${MODULE_NAME}_SRCDIR}/${_ignore}${_ext})
-        endforeach()
-        # Tell the user this file is not being compiled
-        message(STATUS "\t${MODULE_NAME} is not compiling : ${${MODULE_NAME}_BASEDIR}/${_ignore}")
+        if(${MODULE_NAME}_SOURCES)
+            foreach(_ext ${DEFMOD_SOURCE_EXT})
+                list(REMOVE_ITEM ${MODULE_NAME}_SOURCES
+                    ${${MODULE_NAME}_SRCDIR}/${_ignore}${_ext})
+            endforeach()
+        endif()
+        list(FIND DEFMOD_NOTIFY_EXCLUDE ${_ignore} _notify)
+        if(NOT _notify LESS 0)
+           # Tell the user this file is not being compiled
+           message(STATUS "${MODULE_NAME} module is not compiling : ${${MODULE_NAME}_BASEDIR}/${_ignore}")
+         endif(NOT _notify LESS 0)
     endforeach()
     # include the directory
     include_directories(${${MODULE_NAME}_INCDIR})

@@ -36,7 +36,7 @@ class vtask;
 
 //----------------------------------------------------------------------------//
 
-class task_group : public Allocator_t(task_group)
+class task_group
 {
 public:
     typedef long                                            long_type;
@@ -44,8 +44,7 @@ public:
     typedef mad::vtask                                      task_type;
     typedef std::size_t                                     size_type;
     typedef std::deque<task_type*, Allocator_t(task_type*)> TaskContainer_t;
-    typedef std::vector<bool, Allocator_t(bool)>            JoinContainer_t;
-    typedef mutex                                           Lock_t;
+    typedef mad::mutex                                      Lock_t;
     typedef long_ts                                         task_count_type;
     typedef volatile int                                    pool_state_type;
     typedef mad::condition                                  Condition_t;
@@ -68,9 +67,13 @@ public:
     const task_count_type& task_count() const { return m_task_count; }
 
     // get the locks/conditions
-    Lock_t& join_lock() { return m_join_lock; }
-    Lock_t& save_task() { return m_save_lock; }
+    Lock_t& join_lock()      { return m_join_lock; }
+    Lock_t& save_task()      { return m_save_lock; }
     Condition_t& join_cond() { return m_join_cond; }
+
+    const Lock_t& join_lock() const      { return m_join_lock; }
+    const Lock_t& save_task() const      { return m_save_lock; }
+    const Condition_t& join_cond() const { return m_join_cond; }
 
     // Get tasks with non-void return types
     TaskContainer_t& get_saved_tasks() { return m_save_tasks; }
@@ -88,24 +91,24 @@ public:
     int save_task(task_type* task);
 
     const ulong_type& id() const { return m_id; }
-
     void set_pool(thread_pool* tp) { m_pool = tp; }
+
+    thread_pool*& pool()       { return m_pool; }
+    thread_pool*  pool() const { return m_pool; }
 
 protected:
     // check if any tasks are still pending
     int pending() { return m_task_count; }
-    static ulong_ts m_group_count;
 
 private:
     // Private variables
-    thread_pool*        m_pool;
     task_count_type     m_task_count;
+    ulong_type          m_id;
+    thread_pool*        m_pool;
+    Condition_t         m_join_cond;
     Lock_t              m_save_lock;
     Lock_t              m_join_lock;
-    Condition_t         m_join_cond;
     TaskContainer_t     m_save_tasks;
-    JoinContainer_t     m_is_joined;
-    ulong_type          m_id;
 
 };
 

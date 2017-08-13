@@ -16,7 +16,16 @@ else()
     set(BATCH_OPTION )
 endif()
 
+include(Compilers)
+if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX OR
+        CMAKE_COMPILER_IS_INTEL_ICC OR CMAKE_COMPILER_IS_INTEL_ICPC)
+    set(TEST_COMPILE_FLAGS "-Wno-unknown-pragmas")
+else()
+    set(TEST_COMPILE_FLAGS "")
+endif()
+
 Add_Unit_Test(${BATCH_OPTION}
     NAME "madthreading_tester"
+    COMPILE_FLAGS "${TEST_COMPILE_FLAGS}"
     LINK_LIBRARIES ${EXTERNAL_LIBRARIES} madthreading-shared)
 

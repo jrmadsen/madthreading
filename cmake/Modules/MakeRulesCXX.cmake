@@ -219,8 +219,6 @@ if(CMAKE_CXX_COMPILER MATCHES "icpc.*|icc.*")
     set(CMAKE_CXX_FLAGS_TESTRELEASE_INIT "-g -DEBUG_VERBOSE")
     set(CMAKE_CXX_FLAGS_MAINTAINER_INIT "-g")
 
-    # Linker flags
-    #set(CMAKE_EXE_LINKER_FLAGS "-i-dynamic -limf")
 endif()
 
 

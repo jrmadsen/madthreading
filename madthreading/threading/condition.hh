@@ -64,13 +64,20 @@ class mutex;
 class condition
 {
 public:
-    // Constructor and Destructors
-    condition()
+    /// If shared == true then the condition is initialized with
+    /// PTHREAD_PROCESS_SHARED set, meaning  it does not have
+    /// to be called with "mutex" locked by the calling thread
+    /// If shared == false then when a wait/timed_wait function
+    /// is called with "mutex" NOT locked by the calling thread,
+    /// an undefined behavior results
+    condition(bool shared = true)
     {
-        CORECONDITIONINIT(&m_cond_var);
+        if(shared)
+        { CORECONDITIONSHAREDINIT(&m_cond_var); }
+        else
+        { CORECONDITIONINIT(&m_cond_var); }
     }
-    // Virtual destructors are required by abstract classes
-    // so add it by default, just in case
+    // destructor
     virtual ~condition()
     {
         CORECONDITIONDESTROY(&m_cond_var);
@@ -85,19 +92,23 @@ public:
     // interface directly with pthread_mutex_t
     void wait(mad::CoreMutex* mutex);
     // indirectly interface with mad::mutex
-    void wait(mad::mutex&);
-#ifndef SWIG
-    // indirectly interface with mad::mutex
     void wait(mad::mutex*);
+#ifndef SWIG
+    // interface directly with pthread_mutex_t
+    void wait(mad::CoreMutex& mutex);
+    // indirectly interface with mad::mutex
+    void wait(mad::mutex&);
 #endif
 
     // interface directly with pthread_mutex_t
     void timed_wait(mad::CoreMutex* mutex, const float& tseconds);
     // indirectly interface with mad::mutex
-    void timed_wait(mad::mutex&, const float& tseconds);
-#ifndef SWIG
-    // indirectly interface with mad::mutex
     void timed_wait(mad::mutex*, const float& tseconds);
+#ifndef SWIG
+    // interface directly with pthread_mutex_t
+    void timed_wait(mad::CoreMutex& mutex, const float& tseconds);
+    // indirectly interface with mad::mutex
+    void timed_wait(mad::mutex&, const float& tseconds);
 #endif
 
 protected:

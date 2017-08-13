@@ -13,6 +13,7 @@
 #include "madthreading/threading/task/task_group.hh"
 #include "madthreading/threading/thread_pool.hh"
 #include "madthreading/threading/task/task.hh"
+#include "madthreading/threading/thread_manager.hh"
 #include "madthreading/utility/fpe_detection.hh"
 
 namespace mad
@@ -29,16 +30,16 @@ static const int NONINIT = 2;
 
 //============================================================================//
 
-ulong_ts task_group::m_group_count = 0;
+static ulong_ts m_group_count = 0;
 
 //============================================================================//
 
 task_group::task_group(thread_pool* tp)
-: m_pool(tp),
-  m_task_count(0),
+: m_task_count(0),
+  m_id(m_group_count++),
+  m_pool(tp),
   m_save_lock(true),
-  m_join_lock(true),
-  m_id(m_group_count++)
+  m_join_lock(true)
 {
     m_save_lock.unlock();
     m_join_lock.unlock();
@@ -78,8 +79,20 @@ void task_group::join()
 
         while(pending() > 0 && m_pool->state() != state::STOPPED)
         {
+            #if defined(DEBUG)
+            long_type ntasks = pending();
+            if(false)
+            {
+                static mad::mutex _mutex;
+                mad::auto_lock l(_mutex);
+                tmcout << "# of tasks: " << ntasks << std::endl;
+            }
+            #endif
+            // if not locked, we need to lock it
+            /*m_join_lock.lock();
             // Wait until signaled that a task has been competed
             // Unlock mutex while wait, then lock it back when signaled
+            m_join_cond.timed_wait(m_join_lock, 5.0);*/
             m_join_cond.wait(m_join_lock.base_mutex_ptr());
         }
 

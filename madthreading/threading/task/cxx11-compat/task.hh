@@ -20,10 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-
-//
-//
-//
 //
 //
 // created by jrmadsen on Wed Jul 22 09:15:04 2015
@@ -36,6 +32,7 @@
 #ifndef task_hh_
 #define task_hh_
 
+#include "madthreading/macros.hh"
 #include "madthreading/threading/threading.hh"
 #include "madthreading/threading/auto_lock.hh"
 #include "madthreading/allocator/allocator.hh"
@@ -225,7 +222,8 @@ public:
     void set_result(void* val) { m_result = val; }
 
     // get the task group
-    task_group* group() const { return m_group; }
+    task_group*&      group()       { return m_group; }
+    const task_group* group() const { return m_group; }
 
 protected:
     void _check_group();
@@ -250,55 +248,14 @@ public:
 public:
     // pass a free function pointer
     task(task_group* tg, function_type fn_ptr, _Args... args)
-    : vtask(tg), m_fn_ptr(fn_ptr),
+    : vtask(tg, (void*)(new _Ret)),
+      m_fn_ptr(fn_ptr),
       m_args(std::forward<_Args>(std::move(args))...)
     {
-        allocate();
         _check_group();
     }
 
     virtual ~task()
-    {
-        if(m_result)
-            destroy();
-    }
-
-public:
-    #define is_same_t(_Tp, _Up) std::is_same<_Tp, _Up>::value
-    template <bool _Bp, typename _Tp = void>
-    using enable_if_t = typename std::enable_if<_Bp, _Tp>::type;
-
-    virtual void operator()()
-    {
-        func();
-    }
-
-protected:
-    template <typename U = _Ret, enable_if_t<!is_same_t(U, void), int> = 0>
-    void func()
-    {
-        *(_Ret*)(m_result) = details::call_ret<U>(m_fn_ptr, m_args);
-    }
-
-    template <typename U = _Ret, enable_if_t<is_same_t(U, void), int> = 0>
-    void func()
-    {
-        details::call_void(m_fn_ptr, m_args);
-    }
-
-    template <typename U = _Ret, enable_if_t<!is_same_t(U, void), int> = 0>
-    void allocate()
-    {
-        m_result = (void*) new _Ret();
-    }
-
-    template <typename U = _Ret, enable_if_t<is_same_t(U, void), int> = 0>
-    void allocate()
-    { }
-
-public:
-    template <typename U = _Ret, enable_if_t<!is_same_t(U, void), int> = 0>
-    void destroy()
     {
         if(m_result)
         {
@@ -307,16 +264,52 @@ public:
         }
     }
 
-    template <typename U = _Ret, enable_if_t<is_same_t(U, void), int> = 0>
-    void destroy()
-    { }
-
-protected:
-    using vtask::m_group;
+public:
+    //#define is_same_t(_Tp, _Up) std::is_same<_Tp, _Up>::value
+    //template <bool _Bp, typename _Tp = void>
+    //using enable_if_t = typename std::enable_if<_Bp, _Tp>::type;
+    virtual void operator()()
+    {
+        *((_Ret*)(m_result)) = details::call_ret<_Ret>(m_fn_ptr, m_args);
+    }
 
 private:
     function_type           m_fn_ptr;
-    std::tuple<_Args...>   m_args;
+    std::tuple<_Args...>    m_args;
+};
+
+//============================================================================//
+
+/// \brief The task class is supplied to thread_pool.
+template <typename... _Args>
+class task<void, _Args...> : public vtask
+{
+public:
+    typedef void _Ret;
+    typedef _Ret result_type;
+    typedef mad::function<_Ret(_Args...)> function_type;
+
+public:
+    // pass a free function pointer
+    task(task_group* tg, function_type fn_ptr, _Args... args)
+    : vtask(tg),
+      m_fn_ptr(fn_ptr),
+      m_args(std::forward<_Args>(std::move(args))...)
+    {
+        _check_group();
+    }
+
+    virtual ~task() { }
+
+public:
+    virtual void operator()()
+    {
+        details::call_void(m_fn_ptr, m_args);
+    }
+
+private:
+    function_type           m_fn_ptr;
+    std::tuple<_Args...>    m_args;
 };
 
 //============================================================================//
@@ -333,7 +326,8 @@ public:
 public:
     // pass a free function pointer
     task(task_group* tg, function_type fn_ptr)
-    : vtask(tg), m_fn_ptr(fn_ptr)
+    : vtask(tg),
+      m_fn_ptr(fn_ptr)
     {
         _check_group();
     }
@@ -341,17 +335,10 @@ public:
     virtual ~task() { }
 
 public:
-    #define is_same_t(_Tp, _Up) std::is_same<_Tp, _Up>::value
-    template <bool _Bp, typename _Tp = void>
-    using enable_if_t = typename std::enable_if<_Bp, _Tp>::type;
-
     virtual void operator()()
     {
         m_fn_ptr();
     }
-
-protected:
-    using vtask::m_group;
 
 private:
     function_type           m_fn_ptr;

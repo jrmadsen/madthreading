@@ -176,6 +176,7 @@ if(USE_TBB)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -tbb")
     endif()
     add_package_definitions(TBB)
+    add_package_definitions(TBB_MALLOC)
 endif()
 
 
@@ -226,6 +227,7 @@ if(USE_SSE)
         mark_as_advanced(${type}_FOUND)
     endforeach()
 
+    STRING(TOUPPER "${CMAKE_BUILD_TYPE}" UPPER_BUILD_TYPE)
     if(CMAKE_COMPILER_IS_INTEL_ICC OR CMAKE_COMPILER_IS_INTEL_ICPC)
         find_program(INTEL_LINKER xild HINTS ENV PATH PATH_SUFFIXES bin bin/intel64 bin/ia32)
         find_program(INTEL_AR     xiar HINTS ENV PATH PATH_SUFFIXES bin bin/intel64 bin/ia32)
@@ -251,7 +253,7 @@ if(USE_SSE)
             set(_FLAGS "${_FLAGS} -tbb")
         endif()
 
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${_FLAGS}")
+        set(SSE_CXX_FLAGS "${_FLAGS}")
 
     elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
 
@@ -260,12 +262,15 @@ if(USE_SSE)
             string(REPLACE "_" "." _flag "${_flag}")
             set(${type}_FLAGS "-m${_flag}")
             if(${type}_FOUND)
-                set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${${type}_FLAGS}")
+                set(SSE_CXX_FLAGS "${SSE_CXX_FLAGS} ${${type}_FLAGS}")
                 add_definitions(-DHAS_${type})
             endif()
         endforeach()
 
     endif(CMAKE_COMPILER_IS_INTEL_ICC OR CMAKE_COMPILER_IS_INTEL_ICPC)
+
+    set(CMAKE_CXX_FLAGS_EXTRA "${SSE_CXX_FLAGS}")
+
 else()
     foreach(type SSE2 SSE3 SSSE3 SSE4_1 AVX AVX2)
         remove_definitions(-DHAS_${type})

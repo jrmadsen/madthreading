@@ -89,8 +89,8 @@ public:
     }
     //------------------------------------------------------------------------//
 
-    _Mutex& base_mutex() { return *m_mtx; }
-    _Mutex* base_mutex_ptr() { return m_mtx; }
+    _Mutex& base_mutex()     { return *m_mtx; }
+    _Mutex* base_mutex_ptr() { return  m_mtx; }
 
     //------------------------------------------------------------------------//
 

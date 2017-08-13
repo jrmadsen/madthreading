@@ -163,6 +163,12 @@ namespace mad
     typedef pthread_cond_t CoreCondition;
 #   define CORE_CONDITION_INITIALIZER PTHREAD_COND_INITIALIZER
 #   define CORECONDITIONINIT(cond) pthread_cond_init(cond, NULL)
+#   define CORECONDITIONSHAREDINIT(cond) { \
+            pthread_condattr_t attr; \
+            pthread_condattr_init(&attr); \
+            pthread_condattr_setpshared(&attr, PTHREAD_PROCESS_SHARED); \
+            pthread_cond_init(cond, &attr); \
+    }
 #   define CORECONDITIONDESTROY(cond) pthread_cond_destroy(cond)
 #   define CORECONDITIONWAIT(cond, mutex) pthread_cond_wait(cond, mutex)
 #   define CORECONDITIONTIMEWAIT(cond, mutex, atime) pthread_cond_timedwait(cond, mutex, atime)
@@ -268,6 +274,7 @@ namespace mad
     typedef int CoreCondition;
 #   define CORE_CONDITION_INITIALIZER 1
 #   define CORECONDITIONINIT(cond) ;;
+#   define CORECONDITIONSHAREDINIT(cond) ;;
 #   define CORECONDITIONDESTROY(cond) ;;
 #   define CORECONDITIONWAIT( cond, mutex ) ;;
 #   define CORECONDITIONTIMEWAIT( cond, mutex, atime ) ;;

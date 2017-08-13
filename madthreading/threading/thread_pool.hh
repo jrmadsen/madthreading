@@ -62,6 +62,7 @@
 #include "madthreading/atomics/atomic.hh"
 #include "madthreading/threading/task/task.hh"
 #include "madthreading/threading/task/task_tree.hh"
+#include "madthreading/types.hh"
 
 #include <iostream>
 #include <deque>
@@ -69,8 +70,6 @@
 #include <map>
 #include <queue>
 #include <stack>
-
-#include "madthreading/types.hh"
 
 namespace mad
 {
@@ -198,6 +197,28 @@ private:
 
     static tid_type tids;
     static volatile bool is_alive_flag;
+
+private:
+    thread_pool(const thread_pool&)
+    : m_use_affinity(false),
+      m_pool_size(0),
+      m_pool_state(0),
+      m_task_lock(true), // recursive
+      m_back_lock(true),
+      m_task_cond(Condition_t()),
+      m_back_cond(Condition_t()),
+      m_main_threads(ThreadContainer_t()),
+      m_back_threads(ThreadContainer_t()),
+      m_main_tasks(TaskContainer_t()),
+      m_is_joined(JoinContainer_t()),
+      m_back_done(JoinMap_t()),
+      m_back_pointer(NULL),
+      m_back_task_to_do(NULL),
+      m_back_tasks(TaskMap_t())
+    { }
+
+    thread_pool& operator=(const thread_pool&) { return *this; }
+
 };
 
 //----------------------------------------------------------------------------//
@@ -259,12 +280,13 @@ int thread_pool::add_tasks(task_tree_node<_Tp, _A1, _A2, _TpJ>* node)
 
     // do outside of lock because is thread-safe and needs to be updated as
     // soon as possible
+    node->group()->task_count() += 1;
 
     m_task_lock.lock();
-    node->group()->task_count() += 1;
     // if the thread pool hasn't been initialize, initialize it
     if(!is_initialized())
         initialize_threadpool();
+
     m_main_tasks.push_back(node);
     m_task_lock.unlock();
 
@@ -288,7 +310,9 @@ void thread_pool::signal_background(void* ptr, T _arg)
     // task-to-do, and then set task-to-do pointer to NULL
     m_back_lock.lock();
     m_back_task_to_do = m_back_tasks[ptr];
-    //m_back_task_to_do->set(_arg);
+#ifdef MAD_USE_CXX98
+    m_back_task_to_do->set(_arg);
+#endif
     m_back_pointer = ptr;
     m_back_done[ptr] = false;
     m_back_cond.signal();

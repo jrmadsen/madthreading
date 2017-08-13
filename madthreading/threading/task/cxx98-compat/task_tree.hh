@@ -20,7 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-//  this class is for a binary tree node
 //
 //
 //
@@ -28,6 +27,8 @@
 
 #ifndef task_tree_hh_
 #define task_tree_hh_
+
+//----------------------------------------------------------------------------//
 
 #include "madthreading/types.hh"
 #include "madthreading/threading/mutex.hh"
@@ -73,9 +74,7 @@ public:
     }
 
     virtual ~task_tree_node()
-    {
-        delete m_task;
-    }
+    { }
 
 public:
     __always_inline__

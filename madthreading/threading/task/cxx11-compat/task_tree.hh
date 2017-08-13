@@ -20,11 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-
-//
-//
-//
-//  this class is for a binary tree node
 //
 //
 //
@@ -80,10 +75,7 @@ public:
     }
 
     virtual ~task_tree_node()
-    {
-        //m_task->destroy();
-        //m_task->set_result(nullptr);
-    }
+    { }
 
 public:
     __always_inline__

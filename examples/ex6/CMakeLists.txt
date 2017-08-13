@@ -7,22 +7,33 @@ configure_example()
 set(CMAKE_CXX_STANDARD "11")
 
 find_package(Madthreading REQUIRED)
+if(Madthreading_FOUND AND Madthreading_CMAKE_CONFIG_FILE)
+    add_madthreading_cxx_flags()
+    add_madthreading_definitions()
+endif()
 
 ConfigureRootSearchPath(TBB)
-find_package(TBB COMPONENTS malloc QUIET)
+set(TBB_QUIET )
+if(USE_TBB)
+    set(TBB_QUIET QUIET)
+endif()
+find_package(TBB COMPONENTS malloc ${TBB_QUIET})
 if(TBB_FOUND)
     include_directories(${TBB_INCLUDE_DIRS})
     list(APPEND EXTERNAL_LIBRARIES ${TBB_LIBRARIES})
     list(APPEND EXTERNAL_INCLUDE_DIRS ${TBB_INCLUDE_DIRS})
-    add_definitions(-DUSE_TBB)
+    list(APPEND TARGET_DEFINITIONS USE_TBB USE_TBB_MALLOC)
 endif()
 
-find_package(OpenMP QUIET)
+if(USE_OPENMP)
+    set(OMP_QUIET QUIET)
+endif()
+find_package(OpenMP ${OMP_QUIET})
 if(OpenMP_FOUND)
     # Add the OpenMP-specific compiler and linker flags
     set(TARGET_CXX_FLAGS "${OpenMP_CXX_FLAGS}")
-    set(TARGET_EXE_LINKER_FLAGS "${OpenMP_EXE_LINKER_FLAGS}")
-    add_definitions(-DUSE_OPENMP)
+    set(TARGET_LINK_FLAGS "${OpenMP_CXX_FLAGS}")
+    list(APPEND TARGET_DEFINITIONS USE_OPENMP)
 endif()
 
 #------------------------------------------------------------------------------#
@@ -52,8 +63,9 @@ foreach(executable ${executables})
     target_link_libraries(${executable} ${Madthreading_LIBRARIES}
         ${TBB_LIBRARY} ${TBB_MALLOC_LIBRARY})
     set_target_properties(${executable} PROPERTIES
-        COMPILE_FLAGS "${TARGET_CXX_FLAGS}"
-        LINK_FLAGS "${TARGET_EXE_LINKER_FLAGS}")
+        COMPILE_FLAGS "-Wno-unknown-pragmas ${TARGET_CXX_FLAGS}"
+        LINK_FLAGS "${TARGET_LINK_FLAGS}"
+        COMPILE_DEFINITIONS "${TARGET_DEFINITIONS}")
 endforeach()
 #------------------------------------------------------------------------------#
 

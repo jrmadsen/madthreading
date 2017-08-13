@@ -95,6 +95,7 @@ get_directory_property(compile_defs COMPILE_DEFINITIONS)
 
 #------------------------------------------------------------------------------#
 
+STRING(TOLOWER "${PROJECT_NAME}" LOWER_PROJECT_NAME)
 # write a build specific config.hh header file
 write_config_file("config.hh" ${PROJECT_BINARY_DIR}/InstallTreeFiles
     ${CMAKE_INSTALL_CMAKEDIR}/${CMAKE_BUILD_TYPE}/${LOWER_PROJECT_NAME})
@@ -166,3 +167,10 @@ install(EXPORT ${CPROJECT_NAME}LibraryDepends
 
 # export the packages
 export(PACKAGE ${PROJECT_NAME})
+
+foreach(_cmake_file Compilers FindMKL FindSSE MacroUtilities FindTBB)
+    # Install CMake files
+    install(FILES ${PROJECT_SOURCE_DIR}/cmake/Modules/${_cmake_file}.cmake
+        DESTINATION ${CMAKE_INSTALL_CMAKEDIR}
+        COMPONENT dev)
+endforeach()

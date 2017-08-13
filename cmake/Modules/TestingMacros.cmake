@@ -125,7 +125,7 @@ endforeach()
 # This will cause it to run once after building (for all but nightlies!)
 if( NOT nightly AND NOT Test_BATCH )
     set( CmdTag "${Cyan}Testing ${testname}[ ${TestDirName} ]...${ColorReset}" )
-    set( CmdTagSuccess "${CmdTag}${Cyan} PASS${ColorReset}" )
+    set( CmdTagSuccess "${Cyan}Testing ${testname}[ ${TestDirName} ]... PASS${ColorReset}" )
     
     add_custom_command(
         TARGET ${appName} POST_BUILD

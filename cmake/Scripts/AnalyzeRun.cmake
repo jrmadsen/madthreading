@@ -4,7 +4,7 @@
 ################################################################################
 include("${CMAKE_CURRENT_LIST_DIR}/../Modules/DefineColors.cmake")
 
-set( FailTag "${TAG}  ${Red}FAIL${ColorReset}" )
+set( FailTag "${TAG}${Red} FAIL${ColorReset}" )
 
 execute_process( COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${APP}
                  TIMEOUT 60
@@ -26,7 +26,7 @@ file( WRITE ${APP}.read.err "${errFile}" )
 STRING(STRIP "${errFile}" errFile)
 
 if( errFile )
-    execute_process( COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red --bold ${FailTag} )
+    execute_process( COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --bold ${FailTag} )
     message( SEND_ERROR "Problem running ${APP}.  Error: ${result}.  See details in ${CMAKE_CURRENT_BINARY_DIR}/${APP}.err" )
 endif()
 
@@ -34,7 +34,7 @@ file( STRINGS ${APP}.out output )
 
 # If the file ran, but didn't produce output, something strange has happened and should be analyzed
 if( NOT output )
-    execute_process( COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red --bold ${FailTag} )
+    execute_process( COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --bold ${FailTag} )
     message( SEND_ERROR "${APP} [ UNKNOWN ]" )
 endif()
 
@@ -57,7 +57,7 @@ if( wasSuccess )
     return()
 
 else()
-    execute_process( COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red --bold ${FailTag} )
+    execute_process( COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --bold ${FailTag} )
     message( SEND_ERROR "ERROR: *** ${result} ***" )
 
 endif()

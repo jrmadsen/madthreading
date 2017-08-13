@@ -46,9 +46,6 @@ if(NOT CMAKE_VERSION VERSION_LESS 3.1)
     cmake_policy(SET CMP0054 NEW)
 endif()
 
-include(MacroDefineModule)
-include(MacroLibraryTargets)
-
 #-----------------------------------------------------------------------
 # CMAKE EXTENSIONS
 #-----------------------------------------------------------------------

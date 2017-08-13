@@ -139,7 +139,8 @@ public:
     }
 
     // get the task group
-    task_group* group() const { return m_group; }
+    task_group*&      group()       { return m_group; }
+    const task_group* group() const { return m_group; }
 
 protected:
     void _check_group();

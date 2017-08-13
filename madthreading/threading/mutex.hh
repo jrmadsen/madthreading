@@ -70,9 +70,9 @@ public:
     : m_is_locked(false)
     {
         if(recursive)
-            { CORERECURSIVEMUTEXINIT(m_mutex); }
+        { CORERECURSIVEMUTEXINIT(m_mutex); }
         else
-            { COREMUTEXINIT(m_mutex); }
+        { COREMUTEXINIT(m_mutex); }
     }
     //------------------------------------------------------------------------//
     virtual ~mutex()
@@ -106,15 +106,15 @@ public:
     }
     //------------------------------------------------------------------------//
 
-    base_mutex_type& base_mutex() { return m_mutex; }
-    base_mutex_type* base_mutex_ptr() { return &m_mutex; }
+    base_mutex_type& base_mutex()       { return m_mutex; }
+    base_mutex_type* base_mutex_ptr()   { return &m_mutex; }
 
     //------------------------------------------------------------------------//
 
 private:
-    base_mutex_type m_mutex;
-    volatile bool m_is_locked;
-    condition_type m_condition;
+    volatile bool       m_is_locked;
+    base_mutex_type     m_mutex;
+    condition_type      m_condition;
 };
 
 //----------------------------------------------------------------------------//
