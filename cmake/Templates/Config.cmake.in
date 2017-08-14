@@ -88,3 +88,9 @@ macro(ADD_@CPROJECT_NAME@_CXX_FLAGS)
 endmacro()
 
 set(@CPROJECT_NAME@_CMAKE_CONFIG_FILE ON)
+
+# if we are in the build tree, call above macro
+if(@PROJECT_NAME@_BINARY_DIR)
+    ADD_@CPROJECT_NAME@_CXX_FLAGS()
+endif(@PROJECT_NAME@_BINARY_DIR)
+

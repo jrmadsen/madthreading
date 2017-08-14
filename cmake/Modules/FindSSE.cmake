@@ -57,7 +57,7 @@ IF(CMAKE_SYSTEM_NAME MATCHES "Linux")
    ELSE (AVX_TRUE)
       set(AVX_FOUND OFF CACHE BOOL "AVX available on host")
    ENDIF (AVX_TRUE)
- 
+
    STRING(REGEX REPLACE "^.*(avx2).*$" "\\1" SSE_THERE ${CPUINFO})
    STRING(COMPARE EQUAL "avx2" "${SSE_THERE}" AVX2_TRUE)
    IF (AVX2_TRUE)
@@ -146,11 +146,55 @@ ELSE(CMAKE_SYSTEM_NAME MATCHES "Linux")
 ENDIF(CMAKE_SYSTEM_NAME MATCHES "Linux")
 
 foreach(type SSE2 SSE3 SSSE3 SSE4_1 SSE4_2 AVX AVX2)
-	if(NOT ${type}_FOUND)
-		  MESSAGE(STATUS "Could not find hardware support for ${type} on this machine.")
-	endif(NOT ${type}_FOUND)
+    if(NOT ${type}_FOUND)
+          MESSAGE(STATUS "Could not find hardware support for ${type} on this machine.")
+    endif(NOT ${type}_FOUND)
 endforeach()
 
-mark_as_advanced(SSE2_FOUND SSE3_FOUND SSSE3_FOUND 
-	SSE4_1_FOUND SSE4_2_FOUND AVX_FOUND AVX2_FOUND)
+mark_as_advanced(SSE2_FOUND SSE3_FOUND SSSE3_FOUND
+    SSE4_1_FOUND SSE4_2_FOUND AVX_FOUND AVX2_FOUND)
 
+include(Compilers)
+
+FUNCTION(GET_SSE_COMPILE_FLAGS _FLAGS_VAR _DEFS_VAR)
+
+    if(CMAKE_COMPILER_IS_INTEL_ICC OR CMAKE_COMPILER_IS_INTEL_ICPC)
+        find_program(INTEL_LINKER xild HINTS ENV PATH PATH_SUFFIXES bin bin/intel64 bin/ia32)
+        find_program(INTEL_AR     xiar HINTS ENV PATH PATH_SUFFIXES bin bin/intel64 bin/ia32)
+        #set(CMAKE_LINKER ${INTEL_LINKER} CACHE FILEPATH "Intel C++ linker" FORCE)
+        #set(CMAKE_AR ${INTEL_AR} CACHE FILEPATH "Intel C++ archiver" FORCE)
+        set(_FLAGS )
+        foreach(type SSE2 SSE3 SSSE3 SSE4_1 AVX)
+            string(TOLOWER "${type}" _flag)
+            string(REPLACE "_" "." _flag "${_flag}")
+            set(${type}_FLAGS "-m${_flag}")
+            if(${type}_FOUND)
+                set(_FLAGS "${${type}_FLAGS}")
+                list(APPEND SSE_DEFINITIONS HAS_${type})
+            endif()
+        endforeach()
+
+        if(AVX2_FOUND)
+            set(_FLAGS "-march=core-avx2 -axCOMMON-AVX512")
+            list(APPEND SSE_DEFINITIONS HAS_AVX2)
+        endif()
+
+        set(SSE_CXX_FLAGS "${_FLAGS}")
+
+    elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+
+        foreach(type SSE2 SSE3 SSSE3 SSE4_1 AVX AVX2)
+            string(TOLOWER "${type}" _flag)
+            string(REPLACE "_" "." _flag "${_flag}")
+            set(${type}_FLAGS "-m${_flag}")
+            if(${type}_FOUND)
+                set(SSE_CXX_FLAGS "${SSE_CXX_FLAGS} ${${type}_FLAGS}")
+                list(APPEND SSE_DEFINITIONS HAS_${type})
+            endif()
+        endforeach()
+
+    endif(CMAKE_COMPILER_IS_INTEL_ICC OR CMAKE_COMPILER_IS_INTEL_ICPC)
+
+    set(${_FLAGS_VAR} "${SSE_CXX_FLAGS}" PARENT_SCOPE)
+    set(${_DEFS_VAR} ${SSE_DEFINITIONS} PARENT_SCOPE)
+ENDFUNCTION(GET_SSE_COMPILE_FLAGS _FLAGS_VAR _DEFS_VAR)

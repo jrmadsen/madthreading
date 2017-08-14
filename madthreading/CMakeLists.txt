@@ -139,10 +139,10 @@ configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/ConfigHeader.cmake.in
 # =============================================================================#
 # Create the Config.cmake and ConfigHeader-${CMAKE_BUILD_TYPE}.cmake for the install tree
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/Config.cmake.in
-    "${PROJECT_BINARY_DIR}/${CPROJECT_NAME}Config.cmake"
+    "${PROJECT_BINARY_DIR}/InstallTreeFiles/${CPROJECT_NAME}Config.cmake"
     @ONLY)
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/ConfigHeader.cmake.in
-    "${PROJECT_BINARY_DIR}/${CPROJECT_NAME}ConfigHeader-${CMAKE_BUILD_TYPE}.cmake"
+    "${PROJECT_BINARY_DIR}/InstallTreeFiles/${CPROJECT_NAME}ConfigHeader-${CMAKE_BUILD_TYPE}.cmake"
     @ONLY)
 
 # Create the ConfigVersion.cmake for both
@@ -151,9 +151,9 @@ configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/ConfigVersion.cmake.in
 
 # Install the ${PROJECT_NAME}Config*.cmake files
 install(FILES
-    "${PROJECT_BINARY_DIR}/${CPROJECT_NAME}Config.cmake"
+    "${PROJECT_BINARY_DIR}/InstallTreeFiles/${CPROJECT_NAME}Config.cmake"
+    "${PROJECT_BINARY_DIR}/InstallTreeFiles/${CPROJECT_NAME}ConfigHeader-${CMAKE_BUILD_TYPE}.cmake"
     "${PROJECT_BINARY_DIR}/${CPROJECT_NAME}ConfigVersion.cmake"
-    "${PROJECT_BINARY_DIR}/${CPROJECT_NAME}ConfigHeader-${CMAKE_BUILD_TYPE}.cmake"
     DESTINATION ${CMAKE_INSTALL_CMAKEDIR}
     COMPONENT dev)
 # install the libraries

@@ -7,10 +7,6 @@ configure_example()
 set(CMAKE_CXX_STANDARD "11")
 
 find_package(Madthreading REQUIRED)
-if(Madthreading_FOUND AND Madthreading_CMAKE_CONFIG_FILE)
-    add_madthreading_cxx_flags()
-    add_madthreading_definitions()
-endif()
 
 include_directories(${Madthreading_INCLUDE_DIRS})
 

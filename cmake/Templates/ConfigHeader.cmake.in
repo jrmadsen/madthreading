@@ -16,3 +16,8 @@ macro(ADD_@CPROJECT_NAME@_DEFINITIONS)
         add_definitions(-D${_def})
     endforeach()
 endmacro()
+
+# if we are in the build tree, call above macro
+if(@PROJECT_NAME@_BINARY_DIR)
+    ADD_@CPROJECT_NAME@_DEFINITIONS()
+endif(@PROJECT_NAME@_BINARY_DIR)

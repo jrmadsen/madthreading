@@ -7,7 +7,8 @@ configure_example()
 set(CMAKE_CXX_STANDARD "11")
 
 find_package(Madthreading REQUIRED)
-if(Madthreading_FOUND AND Madthreading_CMAKE_CONFIG_FILE)
+# if we are not in build tree
+if("${CMAKE_BINARY_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
     add_madthreading_cxx_flags()
     add_madthreading_definitions()
 endif()
