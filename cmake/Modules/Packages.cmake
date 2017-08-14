@@ -230,7 +230,7 @@ if(USE_SSE)
     foreach(_DEF ${SSE_DEFINITIONS})
         add_definitions(-D${_DEF})
     endforeach()
-    unset(SEE_DEFINITIONS)
+    unset(SSE_DEFINITIONS)
 
 else()
     foreach(type SSE2 SSE3 SSSE3 SSE4_1 AVX AVX2)
