@@ -217,8 +217,7 @@ endif()
 #        SSE
 #
 ################################################################################
-option(USE_SSE "Enable SSE support" OFF)
-add_feature(USE_SSE "Enable SSE/AVX support")
+add_option(USE_SSE "Enable SSE support" OFF)
 
 if(USE_SSE)
     include(FindSSE)

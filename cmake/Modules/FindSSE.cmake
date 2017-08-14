@@ -147,7 +147,7 @@ ENDIF(CMAKE_SYSTEM_NAME MATCHES "Linux")
 
 foreach(type SSE2 SSE3 SSSE3 SSE4_1 SSE4_2 AVX AVX2)
     if(NOT ${type}_FOUND)
-          MESSAGE(STATUS "Could not find hardware support for ${type} on this machine.")
+        MESSAGE(STATUS "Could not find hardware support for ${type} on this machine.")
     endif(NOT ${type}_FOUND)
 endforeach()
 
