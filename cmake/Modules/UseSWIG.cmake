@@ -247,7 +247,7 @@ macro(SWIG_ADD_MODULE name language main_file)
   get_target_property(_COMPILE_FLAGS ${SWIG_MODULE_${name}_REAL_NAME} COMPILE_FLAGS)
   set_target_properties(${SWIG_MODULE_${name}_REAL_NAME} PROPERTIES
       NO_SONAME ON
-      COMPILE_FLAGS "-Wno-shadow")
+      COMPILE_FLAGS "-Wno-shadow -Wno-effc++")
 
   # If CMAKE_SWIG_OUTDIR was specified then pass it to -outdir
   if(CMAKE_SWIG_OUTDIR)

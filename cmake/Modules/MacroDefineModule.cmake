@@ -104,23 +104,28 @@ macro(define_module)
     else()
         set(${MODULE_NAME}_SRCDIR "${${MODULE_NAME}_BASEDIR}/${DEFMOD_SOURCE_DIR}")
     endif()
+
     # list of files
     set(${MODULE_NAME}_HEADERS ${DEFMOD_HEADERS})
     set(${MODULE_NAME}_SOURCES ${DEFMOD_SOURCES})
+
     # GLOB the headers with provided extensions
     foreach(_ext ${DEFMOD_HEADER_EXT})
         file(GLOB _headers ${${MODULE_NAME}_INCDIR}/*${_ext})
         list(APPEND ${MODULE_NAME}_HEADERS ${_headers})
     endforeach()
+
     # GLOB the sources with provided extensions
     foreach(_ext ${DEFMOD_SOURCE_EXT})
         file(GLOB _sources ${${MODULE_NAME}_SRCDIR}/*${_ext})
         list(APPEND ${MODULE_NAME}_SOURCES ${_sources})
     endforeach()
+
     # Append the linked libraries
     foreach(_lib ${DEFMOD_LINK_LIBRARIES})
         list(APPEND ${MODULE_NAME}_LINK_LIBRARIES _lib)
     endforeach()
+
     set(_custom_header_list )
     set(_custom_source_list )
     # Check for files in custom target list
@@ -134,6 +139,7 @@ macro(define_module)
                 list(APPEND DEFMOD_EXCLUDE ${_custom})
             endif()
         endforeach()
+        # loop over the source extensions
         foreach(_ext ${DEFMOD_SOURCE_EXT})
             set(_file "${${MODULE_NAME}_SRCDIR}/${_custom}${_ext}")
             list(FIND ${MODULE_NAME}_SOURCES "${_file}" _found)

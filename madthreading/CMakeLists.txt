@@ -8,15 +8,16 @@ endif()
 set(LIBRARIES ${EXTERNAL_LIBRARIES})
 
 GLOBAL_OBJECT_TARGET(NAME ${PROJECT_NAME}-OBJECT
-                     COMPONENTS
-                        sources.cmake
-                        allocator/sources.cmake
-                        atomics/sources.cmake
-                        atomics/details/sources.cmake
-                        threading/sources.cmake
-                        threading/task/sources.cmake
-                        vectorization/sources.cmake
-                        utility/sources.cmake)
+    COMPONENTS
+        sources.cmake
+        allocator/sources.cmake
+        atomics/sources.cmake
+        atomics/details/sources.cmake
+        threading/sources.cmake
+        threading/task/sources.cmake
+        vectorization/sources.cmake
+        utility/sources.cmake
+)
 
 get_property(GLOBAL_OBJECT_TARGETS GLOBAL PROPERTY GLOBAL_OBJECT_TARGETS)
 
@@ -65,7 +66,6 @@ if(BUILD_SHARED_LIBS)
         PROPERTIES OUTPUT_NAME      "${PROJECT_NAME}"
                    VERSION          "${${PROJECT_NAME}_SHORT_VERSION}"
                    SOVERSION        "${${PROJECT_NAME}_MAJOR_VERSION}"
-                   SUFFIX           "${_SUFFIX}${CMAKE_SHARED_LIBRARY_SUFFIX}"
                    LINK_FLAGS       "${EXTERNAL_CXX_LINK_FLAGS}"
                    LINKER_LANGUAGE  CXX)
 
@@ -82,7 +82,6 @@ if(BUILD_STATIC_LIBS)
         PROPERTIES OUTPUT_NAME     "${PROJECT_NAME}"
                    VERSION         "${${PROJECT_NAME}_SHORT_VERSION}"
                    POSITION_INDEPENDENT_CODE ON
-                   SUFFIX           "${_SUFFIX}${CMAKE_STATIC_LIBRARY_SUFFIX}"
                    LINK_FLAGS       "${EXTERNAL_CXX_LINK_FLAGS}"
                    LINKER_LANGUAGE CXX)
 

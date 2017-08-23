@@ -101,7 +101,7 @@ set(CONFIG_TYPES Debug Release RelWithDebInfo MinSizeRel TestRelease Maintainer 
 foreach(type ${CONFIG_TYPES})
     string(TOUPPER "${type}" UTYPE)
     unset(CMAKE_CXX_FLAGS_${UTYPE} CACHE)
-    set(CMAKE_CXX_FLAGS_${UTYPE} "${CMAKE_CXX_FLAGS_${UTYPE}_INIT}")
+    set(CMAKE_CXX_FLAGS_${UTYPE} "${CMAKE_CXX_FLAGS_${UTYPE}_INIT} ${CMAKE_CXX_FLAGS_EXTRA}")
 endforeach()
 
 unset(CMAKE_CXX_FLAGS CACHE)
