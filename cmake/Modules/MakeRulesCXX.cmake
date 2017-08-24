@@ -1,9 +1,5 @@
 #
-# Modified/Copied from example in Geant4 version 9.6.2:
-#
-# http://geant4.web.cern.ch/geant4/
-#
-# - MakeRules_cxx
+# - MakeRulesCXX
 # Sets the default make rules for a CXX build, specifically the
 # initialization of the compiler flags on a platform and compiler
 # dependent basis
@@ -13,7 +9,7 @@
 # different in the required flags that individual handling is needed.
 #
 
-
+include(Compilers)
 
 #------------------------------------------------------------------------------#
 # macro for adding flags to variable
@@ -21,6 +17,13 @@
 macro(add _VAR _FLAG)
     set(${_VAR} "${${_VAR}} ${_FLAG}")
 endmacro()
+
+#------------------------------------------------------------------------------#
+# MSVC
+#------------------------------------------------------------------------------#
+if(MSVC)
+    message(FATAL_ERROR "${PROJECT_NAME} does not support Windows")
+endif()
 
 #------------------------------------------------------------------------------#
 # macro for finding the x86intrin.h header path that needs to be explicitly
@@ -101,172 +104,162 @@ macro(get_intel_intrinsic_include_dir)
 endmacro()
 
 #------------------------------------------------------------------------------#
-# DEFAULT FLAG SETTING
-#------------------------------------------------------------------------------#
 # GNU C++ or LLVM/Clang Compiler on all(?) platforms
-# NB: At present, only identifies clang correctly on CMake > 2.8.1
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+#
+if(CMAKE_CXX_COMPILER_IS_GNU OR CMAKE_CXX_COMPILER_IS_CLANG)
 
-    set(_def_cxx            "-Wno-deprecated -Wno-unused-function")
-    set(_verbose_cxx_flags  "-Wwrite-strings -Wpointer-arith -Woverloaded-virtual -Wshadow -pipe")
-    set(_extra_cxx_flags    "-pedantic -Wno-non-virtual-dtor -Wno-long-long -Wno-variadic-macros")
-    set(_fast_flags         "")
-    set(_fast_verb_flags    "")
+    set(_def_cxx        "-Wno-deprecated -Wno-unused-function -Wno-unused-variable")
+    add(_def_cxx        "-Wno-sign-compare -Wno-unused-but-set-variable -Wno-unused-parameter")
+    set(_verb_cxx_flags "-Wwrite-strings -Wpointer-arith -Woverloaded-virtual -Wshadow -pipe -pedantic")
     if(CMAKE_COMPILER_IS_GNUCXX)
         add(_def_cxx      "-Wno-unused-local-typedefs")
-        add(_rwdi_flags   "-fno-expensive-optimizations")
         add(_fast_flags   "-ftree-vectorize -ftree-loop-vectorize")
-        #add(_fast_flags   "-fopt-info-vec-optimized")
     else()
         add(_def_cxx "-Qunused-arguments")
     endif()
 
-    set(CMAKE_CXX_FLAGS_INIT                "-Wall ${_def_cxx}")
+    set(CMAKE_CXX_FLAGS_INIT                "-W -Wall ${_def_cxx}")
     set(CMAKE_CXX_FLAGS_DEBUG_INIT          "-g -DDEBUG")
-    set(CMAKE_CXX_FLAGS_VERBOSEDEBUG_INIT   "-g -DDEBUG ${_verbose_cxx_flags}")
-    set(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG ${_fast_flags}")
     set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "-Os -DNDEBUG")
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g ${_fast_flags}")
-    set(CMAKE_CXX_FLAGS_TESTRELEASE_INIT    "-g -DDEBUG_VERBOSE -DFPE_DEBUG")
-    set(CMAKE_CXX_FLAGS_MAINTAINER_INIT     "-g ${_verbose_cxx_flags} ${_extra_cxx_flags}")
-
-    foreach(_init DEBUG VERBOSEDEBUG RELEASE MINSIZEREL RELWITHDEBINFO TESTRELEASE MAINTAINER)
-        string(REPLACE "  " " " CMAKE_CXX_FLAGS_${_init}_INIT "${CMAKE_CXX_FLAGS_${_init}_INIT}")
-    endforeach()
-
-endif()
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-g -O2 ${_fast_flags}")
+    set(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG ${_fast_flags}")
+    set(CMAKE_CXX_FLAGS_VERBOSEDEBUG_INIT   "-g3 -DDEBUG ${_verb_cxx_flags}")
 
 
 #------------------------------------------------------------------------------#
-# MSVC
-#------------------------------------------------------------------------------#
-if(MSVC)
-    message(FATAL_ERROR "${PROJECT_NAME} does not support Windows")
-endif()
-
-
-#------------------------------------------------------------------------------#
-# Intel C++ Compilers - all (?) platforms
-#------------------------------------------------------------------------------#
-# Sufficient id on all platforms?
-if(CMAKE_CXX_COMPILER MATCHES "icpc.*|icc.*")
+# Intel C++ Compilers
+#
+elseif(CMAKE_CXX_COMPILER_IS_INTEL)
 
     set(_def_cxx "-Wno-unknown-pragmas -Wno-deprecated")
     set(_extra_cxx_flags "-Wno-non-virtual-dtor -Wpointer-arith -Wwrite-strings -fp-model precise")
 
-    add(_def_cxx "-xHOST")
-    #add(_def_cxx "-cxxlib-nostd")
-    #add(_def_cxx "-vecabi=intel")
-    add(_def_cxx "-ipo")
-    #add(_def_cxx "-no-gcc-include-dir")
-    #add(_def_cxx "-gcc-sys")
-    #add(_def_cxx "-no-icc")
-    #add(_def_cxx "-no-gcc")
-    #add(_def_cxx "-nostdinc++")
-    #add(_def_cxx "-X")
-
-    #add(_def_cxx "-march=core-avx-i")
-    #add(_def_cxx "-m64")
-    #add(_def_cxx "-m32")
-    #add(_def_cxx "-mmmx")
-    #add(_def_cxx "-mdspr2")
-    #add(_def_cxx "-mpaired-single")
-    #add(_def_cxx "-maes")
-    #add(_def_cxx "-mpclmul")
-    #add(_def_cxx "-mfsgsbase")
-    #add(_def_cxx "-mrdrnd")
-    #add(_def_cxx "-msse4a")
-    #add(_def_cxx "-mxop")
-    #add(_def_cxx "-mfma4")
-    #add(_def_cxx "-mlwp")
-    #add(_def_cxx "-mbmi")
-    #add(_def_cxx "-mbmi2")
-    #add(_def_cxx "-mlzcnt")
-    #add(_def_cxx "-mtbm")
-    #add(_def_cxx "-m3dnow")
-    #add(_def_cxx "-mrtm")
-    #add(_def_cxx "-mavx")
-    #add(_def_cxx "-H")
-    add(_def_cxx "-w0")
-    #add(_def_cxx "-v")
-    add(_def_cxx "-qno-offload")
-    add(_def_cxx "-use-intel-optimized-headers")
+    add(_def_cxx "-xHOST -ipo -w0 -qno-offload")
+    if(USE_SSE)
+        add(_def_cxx "-use-intel-optimized-headers")
+    endif()
 
     get_intel_intrinsic_include_dir()
 
     # -cxxlib -gcc-name -gxx-name -fabi-version -no-gcc
-    set(GCC $ENV{GCC})
-    if("${GCC}" STREQUAL "")
-        set(_msg "\nPlease specify the GCC and GXX environment variables")
-        add(_msg "(GCC C and C++ compilers to use with the Intel compiler)\n")
-        message(FATAL_ERROR "${_msg}")
-    endif()
+    set(_def_cxx )
+    foreach(TYPE GCC GXX)
 
-    get_filename_component(GDIR "${GCC}" DIRECTORY)
-    get_filename_component(GDIR "${GDIR}" DIRECTORY)
-    get_filename_component(GCC "${GCC}" NAME)
-    set(GXX $ENV{GXX})
-    get_filename_component(GXX "${GXX}" NAME)
-    add(_def_cxx "-cxxlib=${GDIR} -gcc-name=${GCC} -gxx-name=${GXX}")
+        # executable default name
+        set(EXE "gcc")
+        if("${TYPE}" STREQUAL "GXX")
+            set(EXE "g++")
+        endif()
 
-    set(CMAKE_CXX_FLAGS_INIT "${_def_cxx}")
-    set(CMAKE_CXX_FLAGS_DEBUG_INIT "-g")
-    set(CMAKE_CXX_FLAGS_RELEASE_INIT "-Ofast -DNDEBUG")
-    set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT "-Os -DNDEBUG")
+        if(NOT ${TYPE} AND NOT "$ENV{${TYPE}}" STREQUAL "")
+            set(${TYPE} $ENV{${TYPE}} CACHE PATH "Intel ${TYPE} path")
+        endif()
+
+        if("${${TYPE}}" STREQUAL "")
+            set(_msg "\nPlease specify the ${TYPE} environment variable")
+            add(_msg "(GCC C/C++ compiler to use with the Intel compiler)\n")
+            message(AUTHOR_WARNING "${_msg}")
+            unset(_msg)
+        endif()
+
+        if("${${TYPE}}" STREQUAL "")
+
+            # find gcc/g++
+            find_program(${TYPE}_PATH ${EXE})
+
+            if(NOT ${TYPE}_PATH)
+                # kill if not found
+                message(FATAL_ERROR "Failure finding \"${LTYPE}\"")
+            else()
+                # warning them is not explicitly defined but not if -Wno-dev
+                message(AUTHOR_WARNING "Using \"${${TYPE}_PATH}\" for ${TYPE}")
+            endif()
+
+            # don't cache
+            set(${TYPE} ${${TYPE}_PATH})
+
+        else()
+
+            # make sure it is cached
+            set(${TYPE} ${TYPE} CACHE PATH "Intel ${TYPE} compiler path")
+
+        endif()
+
+        # only guaranteed on GNU standard bin layout (e.g. /usr/bin/gcc)
+        if(UNIX AND NOT ${TYPE}_ROOT)
+            get_filename_component(${TYPE}_ROOT "${${TYPE}}"        DIRECTORY)
+            get_filename_component(${TYPE}_ROOT "${${TYPE}_ROOT}"   DIRECTORY)
+        else()
+            if("${TYPE}" STREQUAL "GXX")
+                set(_msg "\nPlease specify the ${TYPE}_ROOT environment variable")
+                add(_msg "(GCC C/C++ compiler root directory to use with the Intel compiler)\n")
+                message(FATAL_ERROR "${_msg}")
+            endif()
+        endif()
+
+        get_filename_component(GCCN "${${TYPE}}" NAME)
+
+        if("${TYPE}" STREQUAL "GCC")
+            add(_def_cxx "-gcc-name=${GCCN}")
+        else()
+            add(_def_cxx "-cxxlib=${${TYPE}_ROOT} -gxx-name=${GCCN}")
+        endif()
+
+        unset(${TYPE}_ROOT) # won't affect cache version
+        unset(GCCN)
+
+    endforeach()
+
+    set(CMAKE_CXX_FLAGS_INIT                "${_def_cxx}")
+    set(CMAKE_CXX_FLAGS_DEBUG_INIT          "-g -DDEBUG")
+    set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "-Os -DNDEBUG")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
-
-    # Extra modes
-    set(CMAKE_CXX_FLAGS_TESTRELEASE_INIT "-g -DEBUG_VERBOSE")
-    set(CMAKE_CXX_FLAGS_MAINTAINER_INIT "-g")
-
-endif()
-
+    set(CMAKE_CXX_FLAGS_RELEASE_INIT        "-Ofast -DNDEBUG")
+    set(CMAKE_CXX_FLAGS_VERBOSEDEBUG_INIT   "${CMAKE_CXX_FLAGS_VERBOSEDEBUG_INIT}")
 
 #-----------------------------------------------------------------------
-# Ye Olde *NIX/Compiler Systems
-# NB: *NOT* Supported... Only provided as legacy.
-# None are tested...
-# Whilst these use flags taken from existing  setup, may want to see if
-# CMake defaults on these platforms are good enough...
+# IBM xlC compiler
 #
-#------------------------------------------------------------------------------#
-if(UNIX AND NOT CMAKE_COMPILER_IS_GNUCXX)
+elseif(CMAKE_CXX_COMPILER_IS_XLC)
 
-    #---------------------------------------------------------------------
-    # IBM xlC compiler
-    #
-    if(CMAKE_CXX_COMPILER MATCHES "xlC")
     set(CMAKE_CXX_FLAGS_INIT "")
-    set(CMAKE_CXX_FLAGS_DEBUG_INIT "-g -qdbextra -qcheck=all -qfullpath -qtwolink -+")
-    set(CMAKE_CXX_FLAGS_RELEASE_INIT "-O2 -qtwolink -+")
-    set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT "-O2 -qtwolink -+")
+    set(CMAKE_CXX_FLAGS_DEBUG_INIT          "-g -qdbextra -qcheck=all -qfullpath -qtwolink -+")
+    set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "-O2 -qtwolink -+")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g -qdbextra -qcheck=all -qfullpath -qtwolink -+")
-    endif()
+    set(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O2 -qtwolink -+")
+    set(CMAKE_CXX_FLAGS_VERBOSEDEBUG_INIT   "${CMAKE_CXX_FLAGS_VERBOSEDEBUG_INIT}")
 
-    #---------------------------------------------------------------------
-    # HP aC++ Compiler
-    #
-    if(CMAKE_CXX_COMPILER MATCHES "aCC")
-    set(CMAKE_CXX_FLAGS_INIT "+DAportable +W823")
-    set(CMAKE_CXX_FLAGS_DEBUG_INIT "-g")
-    set(CMAKE_CXX_FLAGS_RELEASE_INIT "+O2 +Onolimit")
-    set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT "-O3 +Onolimit")
+#---------------------------------------------------------------------
+# HP aC++ Compiler
+#
+elseif(CMAKE_CXX_COMPILER_IS_XLC)
+
+    set(CMAKE_CXX_FLAGS_INIT                "+DAportable +W823")
+    set(CMAKE_CXX_FLAGS_DEBUG_INIT          "-g")
+    set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "-O3 +Onolimit")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O3 +Onolimit -g")
-    endif()
+    set(CMAKE_CXX_FLAGS_RELEASE_INIT        "+O2 +Onolimit")
+    set(CMAKE_CXX_FLAGS_VERBOSEDEBUG_INIT   "${CMAKE_CXX_FLAGS_VERBOSEDEBUG_INIT}")
 
-    #---------------------------------------------------------------------
-    # IRIX MIPSpro CC Compiler
-    #
-    if(CMAKE_CXX_COMPILER MATCHES "CC" AND CMAKE_SYSTEM_NAME MATCHES "IRIX")
-    set(CMAKE_CXX_FLAGS_INIT "-ptused -DSOCKET_IRIX_SOLARIS")
-    set(CMAKE_CXX_FLAGS_DEBUG_INIT "-g")
-    set(CMAKE_CXX_FLAGS_RELEASE_INIT "-O -OPT:Olimit=5000")
-    set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT "-O -OPT:Olimit=5000")
+#---------------------------------------------------------------------
+# IRIX MIPSpro CC Compiler
+#
+elseif(CMAKE_CXX_COMPILER_IS_MIPS)
+
+    set(CMAKE_CXX_FLAGS_INIT                "-ptused -DSOCKET_IRIX_SOLARIS")
+    set(CMAKE_CXX_FLAGS_DEBUG_INIT          "-g")
+    set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "-O -OPT:Olimit=5000")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O -OPT:Olimit=5000 -g")
-    endif()
+    set(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O -OPT:Olimit=5000")
+    set(CMAKE_CXX_FLAGS_VERBOSEDEBUG_INIT   "${CMAKE_CXX_FLAGS_VERBOSEDEBUG_INIT}")
 
-    #---------------------------------------------------------------------
-    # SunOS CC Compiler
-    # - CMake may do a reasonable job on its own here...
 endif()
+
+
+foreach(_init DEBUG VERBOSEDEBUG RELEASE MINSIZEREL RELWITHDEBINFO)
+    if(NOT "${CMAKE_CXX_FLAGS_${_init}_INIT}" STREQUAL "")
+        string(REPLACE "  " " " CMAKE_CXX_FLAGS_${_init}_INIT "${CMAKE_CXX_FLAGS_${_init}_INIT}")
+    endif()
+endforeach()
+
 

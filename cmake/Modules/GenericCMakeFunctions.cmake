@@ -31,6 +31,24 @@ function(ParseCommandLineOptions)
 endfunction()
 
 ################################################################################
+# function - capitalize - make a string capitalized (first letter is capital)
+#   usage:
+#       capitalize("SHARED" CShared)
+#   message(STATUS "-- CShared is \"${CShared}\"")
+#   $ -- CShared is "Shared"
+################################################################################
+function(capitalize str var)
+    # make string lower
+    string(TOLOWER "${str}" str)
+    string(SUBSTRING "${str}" 0 1 _first)
+    string(TOUPPER "${_first}" _first)
+    string(SUBSTRING "${str}" 1 -1 _remainder)
+    string(CONCAT str "${_first}" "${_remainder}")
+    set(${var} "${str}" PARENT_SCOPE)
+endfunction()
+
+
+################################################################################
 #   Propagate to parent scope
 ################################################################################
 macro(Propagate SET_VARIABLE)
@@ -63,6 +81,28 @@ macro(SET_PROJECT_VERSION _MAJOR _MINOR _PATCH _DESCRIPTION)
         "${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION}")
     set(${PROJECT_NAME}_DESCRIPTION "${_DESCRIPTION}")
 endmacro()
+
+
+################################################################################
+#    Get version components
+################################################################################
+function(GET_VERSION_COMPONENTS OUTPUT_VAR VARIABLE)
+    string(REPLACE "." ";" VARIABLE_LIST "${VARIABLE}")
+    list(LENGTH VARIABLE_LIST VAR_LENGTH)
+    if(VAR_LENGTH GREATER 0)
+        list(GET VARIABLE_LIST 0 MAJOR)
+        set(${OUTPUT_VAR}_MAJOR_VERSION "${MAJOR}" PARENT_SCOPE)
+    endif()
+    if(VAR_LENGTH GREATER 1)
+        list(GET VARIABLE_LIST 1 MINOR)
+        set(${OUTPUT_VAR}_MINOR_VERSION "${MINOR}" PARENT_SCOPE)
+        set(${OUTPUT_VAR}_SHORT_VERSION "${MAJOR}.${MINOR}" PARENT_SCOPE)
+    endif()
+    if(VAR_LENGTH GREATER 2)
+        list(GET VARIABLE_LIST 2 PATCH)
+        set(${OUTPUT_VAR}_PATCH_VERSION "${PATCH}" PARENT_SCOPE)
+    endif()
+endfunction()
 
 
 ################################################################################

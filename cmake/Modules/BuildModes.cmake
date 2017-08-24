@@ -102,6 +102,8 @@ foreach(type ${CONFIG_TYPES})
     string(TOUPPER "${type}" UTYPE)
     unset(CMAKE_CXX_FLAGS_${UTYPE} CACHE)
     set(CMAKE_CXX_FLAGS_${UTYPE} "${CMAKE_CXX_FLAGS_${UTYPE}_INIT} ${CMAKE_CXX_FLAGS_EXTRA}")
+    string(REPLACE "  " " " CMAKE_CXX_FLAGS_${UTYPE} "${CMAKE_CXX_FLAGS_${UTYPE}}")
+    string(REPLACE "  " " " CMAKE_CXX_FLAGS_${UTYPE} "${CMAKE_CXX_FLAGS_${UTYPE}}")
 endforeach()
 
 unset(CMAKE_CXX_FLAGS CACHE)

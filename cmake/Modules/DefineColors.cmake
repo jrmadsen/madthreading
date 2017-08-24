@@ -1,23 +1,13 @@
 
 # - Include guard
 if(__definecolors_isloaded)
-    mark_as_advanced(ColorReset ColorBold __definecolors_isloaded)
+    mark_as_advanced(ColorReset ColorBold)
     foreach(_f Red Green Yellow Blue Magenta Cyan White)
         mark_as_advanced(${_f} Bold${_f})
     endforeach()
-
     return()
 endif()
-set(__definecolors_isloaded ON CACHE BOOL "Colors have been defined" FORCE)
-
-foreach(_f Red Green Yellow Blue Magenta Cyan White)
-    if(DEFINED ${_f})
-        unset(${_f} CACHE)
-    endif()
-    if(DEFINED Bold${_f})
-        unset(Bold${_f} CACHE)
-    endif()
-endforeach()
+set(__definecolors_isloaded ON)
 
 if(NOT WIN32)
   string(ASCII 27 Esc)

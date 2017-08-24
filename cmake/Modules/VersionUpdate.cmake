@@ -8,4 +8,3 @@ execute_process(COMMAND ${CMAKE_COMMAND}
                         -DOUTPUT_DIR=${CMAKE_SOURCE_DIR}/madthreading
                         -P ${CMAKE_SOURCE_DIR}/cmake/Scripts/Version.cmake
 )
-

@@ -112,4 +112,3 @@
 #define @PROJECT_NAME@_VERSION_STRING "@VERSION_STRING@"
 
 #endif
-

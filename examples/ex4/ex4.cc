@@ -146,8 +146,8 @@ public:
         return *this;
     }
 
-    double&      operator[](const uint32& i)       { return m_data[i/4].d[i%3]; }
-    const double operator[](const uint32& i) const { return m_data[i/4].d[i%3]; }
+    double&       operator[](const uint32& i)       { return m_data[i/4].d[i%3]; }
+    const double& operator[](const uint32& i) const { return m_data[i/4].d[i%3]; }
 
     std::string str() const
     {
@@ -220,6 +220,9 @@ public:
             m_data[i].pd += val.m_data[i].pd;
         return *this;
     }
+
+    double&       operator[](const uint32& i)       { return m_data[i].d; }
+    const double& operator[](const uint32& i) const { return m_data[i].d; }
 
     std::string str() const
     {

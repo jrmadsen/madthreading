@@ -46,6 +46,9 @@
 
 //============================================================================//
 
+namespace mad
+{
+
 #ifdef CXX11
 enum class fpe
 {
@@ -109,6 +112,8 @@ private:
 
 //============================================================================//
 
+} // namespace mad
+
 #if !(defined(__bgq__))
 
 # if (defined(__GNUC__) && !defined(__clang__))
@@ -119,6 +124,9 @@ private:
 #     include <csignal>
 #     include <execinfo.h> // for StackBacktrace()
 #     include <cxxabi.h>
+
+namespace mad
+{
 
 //============================================================================//
 
@@ -312,6 +320,10 @@ inline void DisableInvalidOperationDetection()
 }
 
 //============================================================================//
+
+} // namespace mad
+
+//============================================================================//
 #   elif defined(__MACH__)      /* MacOSX */
 #     include <fenv.h>
 #     include <signal.h>
@@ -323,6 +335,11 @@ inline void DisableInvalidOperationDetection()
 
 #       define FE_EXCEPT_SHIFT 22  // shift flags right to get masks
 #       define FM_ALL_EXCEPT    FE_ALL_EXCEPT >> FE_EXCEPT_SHIFT
+
+//============================================================================//
+
+namespace mad
+{
 
 //============================================================================//
 
@@ -524,13 +541,26 @@ static void DisableInvalidOperationDetection() { }
 
 //============================================================================//
 
+} // namespace mad
+
+//============================================================================//
+
 #   endif /* Linux or MacOSX */
 # else  /* Not GCC */
 
 //============================================================================//
 
+namespace mad
+{
+
+//============================================================================//
+
 static bool EnableInvalidOperationDetection() { return false; }
 static void DisableInvalidOperationDetection() { }
+
+//============================================================================//
+
+} // namespace mad
 
 //============================================================================//
 
@@ -539,8 +569,17 @@ static void DisableInvalidOperationDetection() { }
 
 //============================================================================//
 
+namespace mad
+{
+
+//============================================================================//
+
 static bool EnableInvalidOperationDetection() { return false; }
 static void DisableInvalidOperationDetection() { }
+
+//============================================================================//
+
+} // namespace mad
 
 //============================================================================//
 

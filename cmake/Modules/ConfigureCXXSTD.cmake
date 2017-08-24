@@ -8,11 +8,7 @@ set(__configurecxxstd_isloaded YES)
 include(MacroUtilities)
 
 # make C++11 required for compilers that recognise standards
-if(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
-    set(CMAKE_CXX_STANDARD "98")
-else()
-    set(CMAKE_CXX_STANDARD "11")
-endif()
+set(CMAKE_CXX_STANDARD "11")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # - Rough n'Ready setup of CXX compile features for Intel
@@ -138,7 +134,8 @@ endif()
 #-----------------------------------------------------------------------
 # Configure/Select C++ Standard
 # Require at least C++11 with no extensions and the following features
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_EXTENSIONS ON)
+
 set(${PROJECT_NAME}_TARGET_COMPILE_FEATURES
   cxx_alias_templates
   cxx_auto_type

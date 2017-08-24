@@ -38,11 +38,11 @@ include(CMakeMacroParseArguments)
 #
 macro(add_compile_definitions)
     cmake_parse_arguments(ADDDEF
-                          ""
-                          ""
-                          "SOURCES;COMPILE_DEFINITIONS"
-                          ${ARGN}
-                         )
+        ""
+        ""
+        "SOURCES;COMPILE_DEFINITIONS"
+        ${ARGN}
+    )
 
     # We assume that the sources have been added at the level of a
     # a sources.cmake, so are inside the src subdir of the sources.cmake
@@ -78,11 +78,17 @@ endmacro()
 #
 macro(define_module)
     cmake_parse_arguments(DEFMOD
-                          "NO_SOURCE_GROUP"
-                          "NAME;HEADER_DIR;SOURCE_DIR"
-                          "HEADER_EXT;SOURCE_EXT;HEADERS;SOURCES;EXCLUDE;LINK_LIBRARIES;NOTIFY_EXCLUDE"
-                          ${ARGN}
-                         )
+        "NO_SOURCE_GROUP"
+        "NAME;HEADER_DIR;SOURCE_DIR;LANG"
+        "HEADER_EXT;SOURCE_EXT;HEADERS;SOURCES;EXCLUDE;LINK_LIBRARIES;NOTIFY_EXCLUDE"
+        ${ARGN}
+        )
+
+    set(_LANG CXX)
+    if(DEFMOD_LANG)
+        set(_LANG ${DEFMOD_LANG})
+    endif()
+
     list(APPEND DEFMOD_EXCLUDE ${DEFMOD_NOTIFY_EXCLUDE})
     if(DEFMOD_EXCLUDE)
       list(REMOVE_DUPLICATES DEFMOD_EXCLUDE)
@@ -183,7 +189,7 @@ macro(define_module)
     # include the directory
     include_directories(${${MODULE_NAME}_INCDIR})
 
-    set_source_files_properties(${${MODULE_NAME}_SOURCES} PROPERTIES LANGUAGE CXX )
+    set_source_files_properties(${${MODULE_NAME}_SOURCES} PROPERTIES LANGUAGE ${_LANG})
 
     set(${MODULE_NAME}_LINK_LIBRARIES ${DEFMOD_LINK_LIBRARIES})
 
