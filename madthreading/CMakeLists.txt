@@ -59,6 +59,7 @@ endif()
 
 
 #------------------------------------------------------------------------------#
+
 if(BUILD_SHARED_LIBS)
 
     add_library(${PROJECT_NAME}-shared SHARED ${GLOBAL_OBJECT_TARGETS})
@@ -71,9 +72,13 @@ if(BUILD_SHARED_LIBS)
                    LINKER_LANGUAGE  CXX)
 
     target_link_libraries(${PROJECT_NAME}-shared
-                          ${EXTRA_LIBS} ${EXTERNAL_LIBRARIES})
+        ${EXTRA_LIBS} ${EXTERNAL_LIBRARIES})
+
+    set(PROJECT_SHARED_LIBRARY ${PROJECT_NAME}-shared)
 
 endif()
+
+#------------------------------------------------------------------------------#
 
 if(BUILD_STATIC_LIBS)
 
@@ -87,7 +92,9 @@ if(BUILD_STATIC_LIBS)
                    LINKER_LANGUAGE CXX)
 
     target_link_libraries(${PROJECT_NAME}-static
-                          ${EXTRA_LIBS} ${EXTERNAL_LIBRARIES})
+        ${EXTRA_LIBS} ${EXTERNAL_LIBRARIES})
+
+    set(PROJECT_STATIC_LIBRARY ${PROJECT_NAME}-static)
 
 endif()
 
@@ -101,8 +108,6 @@ write_config_file("config.hh" ${PROJECT_BINARY_DIR}/InstallTreeFiles
     ${CMAKE_INSTALL_CMAKEDIR}/${CMAKE_BUILD_TYPE}/${LOWER_PROJECT_NAME})
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS OFF)
-set(PROJECT_SHARED_LIBRARY ${PROJECT_NAME}-shared)
-set(PROJECT_STATIC_LIBRARY ${PROJECT_NAME}-static)
 set(PACKAGE_VERSION "${${PROJECT_NAME}_VERSION}")
 set(config_target ${PROJECT_NAME}LibraryDepends)
 
