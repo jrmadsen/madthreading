@@ -49,12 +49,17 @@
 #   define THREADSLEEP( tick ) { sleep(tick); }
 #endif
 
+#if defined(__GNUC__) && \
+    (((__GNUC__ == 4) && (__GNUC_MINOR__ >= 7)) || (__GNUC__ > 4))
+#   define GNU_CPP11_COMPILER
+#endif
+
 //----------------------------------------------------------------------------//
 
 #if defined(ENABLE_THREADING)
 
 #if ( defined(__MACH__) && defined(__clang__) && defined(__x86_64__) ) || \
-    ( defined(__MACH__) && defined(__GNUC__) && __GNUC__>=4 && __GNUC_MINOR__>=7 ) || \
+    ( defined(__MACH__) && defined(GNU_CPP11_COMPILER) ) || \
     defined(__linux__) || defined(_AIX) || defined(__bg__) || defined(__bgq__)
     //
     // Multi-threaded build: for POSIX systems

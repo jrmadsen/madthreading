@@ -14,6 +14,11 @@ SET_PROJECT_VERSION("1" "1" "0" "Multithreading API using pthreads. Task-based w
 SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
 SET(CMAKE_INSTALL_MESSAGE LAZY)
 
+message("")
+message(STATUS "Project: ${PROJECT_NAME}")
+message(STATUS "Version: ${${PROJECT_NAME}_VERSION}")
+message("")
+
 include(VersionUpdate)
 include(InstallDirs)
 include(GenericCMakeOptions)

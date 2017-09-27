@@ -372,7 +372,16 @@ static inline int fedisableexcept (unsigned int excepts)
 }
 
 //============================================================================//
+
+} // namespace mad
+
+//============================================================================//
 #     elif DEFINED_INTEL
+//============================================================================//
+
+namespace mad
+{
+
 //============================================================================//
 
 static inline int feenableexcept (unsigned int excepts)
@@ -462,7 +471,7 @@ static void TerminationSignalHandler(int sig, siginfo_t* sinfo, void* /* context
 
 //============================================================================//
 
-inline bool EnableInvalidOperationDetection(fpe_settings::fpe_set operations
+static bool EnableInvalidOperationDetection(fpe_settings::fpe_set operations
                                             = fpe_settings::fpe_set())
 {
     // initialize only once
@@ -531,6 +540,12 @@ static void DisableInvalidOperationDetection()
     sigaction(SIGFPE,  &fpe_termaction, 0);
     sigaction(SIGSEGV, &fpe_termaction, 0);
 }
+
+//============================================================================//
+
+} // namespace mad
+
+//============================================================================//
 
 #   else  /* Not Linux, nor MacOSX ... */
 

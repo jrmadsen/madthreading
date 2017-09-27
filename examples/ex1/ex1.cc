@@ -11,15 +11,18 @@
 #include <functional>
 #include <random>
 
+#include <madthreading/types.hh>
+#include <madthreading/utility/timer.hh>
 #include <madthreading/threading/thread_manager.hh>
 #include <madthreading/threading/auto_lock.hh>
 #include <madthreading/threading/threading.hh>
 
 using namespace std::placeholders;
+using mad::ulong_type;
 
 typedef std::mt19937_64 engine_type;
 
-static ulong rseed = time(NULL);
+static ulong_type rseed = time(NULL);
 static engine_type random_engine = engine_type(rseed);
 
 //============================================================================//

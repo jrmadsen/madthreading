@@ -77,6 +77,7 @@ MACRO(_tid_)
 //----------------------------------------------------------------------------//
 
 #include "madthreading/macros.hh"
+#include "madthreading/threading/threading.hh"
 #include "madthreading/threading/thread_pool.hh"
 #include "madthreading/threading/task/task.hh"
 #include "madthreading/threading/task/task_tree.hh"

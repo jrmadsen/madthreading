@@ -175,7 +175,9 @@ namespace memory
 
         return pss;
     }
-}
+} // namespace memory
+
+} // namespace mad
 
 /*
  * Author:  David Robert Nadeau
@@ -211,6 +213,8 @@ namespace memory
 #error "Cannot define getPeakRSS( ) or getCurrentRSS( ) for an unknown OS."
 #endif
 
+namespace mad
+{
 
 // RSS - Resident set size (physical memory use)
 

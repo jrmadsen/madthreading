@@ -49,6 +49,9 @@ namespace mad { namespace cache { static size_t cache_line_size(); } }
 
 #if defined(__APPLE__)
 
+#include <cstdbool>
+#include <stdbool.h>
+#include <sys/types.h>
 #include <sys/sysctl.h>
 
 static size_t mad::cache::cache_line_size()
