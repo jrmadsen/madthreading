@@ -9,7 +9,7 @@ if(__MACROLIBRARYTARGETS_ISLOADED)
 endif()
 set(__MACROLIBRARYTARGETS_ISLOADED TRUE)
 
-include(CMakeMacroParseArguments)
+include(CMakeParseArguments)
 include(MacroDefineModule)
 
 #-----------------------------------------------------------------------

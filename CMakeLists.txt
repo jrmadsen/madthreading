@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.1.3 FATAL_ERROR)
 
 project(madthreading C CXX)
 
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules
+                      ${PROJECT_SOURCE_DIR}/cmake/Packages
+                      ${CMAKE_MODULE_PATH})
 
 set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX
     ${CMAKE_SOURCE_DIR}/cmake/Modules/MakeRulesCXX.cmake)

@@ -85,7 +85,7 @@ macro(get_intel_intrinsic_include_dir)
         set(_msg "INTEL_ICC_CPATH was not found! Please specify the path to \"x86intrin.h\"")
         add(_msg "in the Intel ICC compiler path. Using the GNU header for this file")
         add(_msg "typically results in a failure to compile.\nExample:\n")
-        add(_msg "\t-D${_expath}")
+        add(_msg "\t-DINTEL_ICC_CPATH=${_expath}")
         add(_msg "\nfor \"${_expath}/x86intrin.h\"\n")
         message(WARNING "${_msg}")
     else()
@@ -108,23 +108,32 @@ endmacro()
 #
 if(CMAKE_CXX_COMPILER_IS_GNU OR CMAKE_CXX_COMPILER_IS_CLANG)
 
-    set(_def_cxx        "-Wno-deprecated -Wno-unused-function -Wno-unused-variable")
-    add(_def_cxx        "-Wno-sign-compare -Wno-unused-but-set-variable -Wno-unused-parameter")
-    set(_verb_cxx_flags "-Wwrite-strings -Wpointer-arith -Woverloaded-virtual -Wshadow -pipe -pedantic")
-    if(CMAKE_COMPILER_IS_GNUCXX)
-        add(_def_cxx      "-Wno-unused-local-typedefs")
+    set(_def_cxx     "-Wno-deprecated")
+    add(_def_cxx     "-Wno-unused-parameter -fdiagnostics-color=always")
+    set(_verb_flags  "-Wwrite-strings -Wpointer-arith -Woverloaded-virtual")
+    add(_verb_flags  "-pedantic")
+    set(_loud_flags  "-Wshadow -Wextra")
+    set(_quiet_flags "-Wno-unused-function -Wno-unused-variable")
+    if(CMAKE_CXX_COMPILER_IS_GNU)
+        add(_def_cxx      "-Wno-unused-but-set-variable -Wno-unused-local-typedefs")
         add(_fast_flags   "-ftree-vectorize -ftree-loop-vectorize")
     else()
         add(_def_cxx "-Qunused-arguments")
+        INCLUDE_DIRECTORIES("/usr/include/libcxxabi")
     endif()
 
-    set(CMAKE_CXX_FLAGS_INIT                "-W -Wall ${_def_cxx}")
-    set(CMAKE_CXX_FLAGS_DEBUG_INIT          "-g -DDEBUG")
-    set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "-Os -DNDEBUG")
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-g -O2 ${_fast_flags}")
-    set(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG ${_fast_flags}")
-    set(CMAKE_CXX_FLAGS_VERBOSEDEBUG_INIT   "-g3 -DDEBUG ${_verb_cxx_flags}")
+    option(ENABLE_GCOV "Enable compilation flags for GNU coverage tool (gcov)" OFF)
+    mark_as_advanced(ENABLE_GCOV)
+    if(ENABLE_GCOV)
+        add(_def_cxx "-fprofile-arcs -ftest-coverage")
+    endif(ENABLE_GCOV)
 
+    set(CMAKE_CXX_FLAGS_INIT                "-W -Wall ${_def_cxx}")
+    set(CMAKE_CXX_FLAGS_DEBUG_INIT          "-g -DDEBUG ${_loud_flags}")
+    set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "-Os -DNDEBUG ${_quiet_flags}")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-g -O2 ${_fast_flags}")
+    set(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG ${_fast_flags} ${_quiet_flags}")
+    set(CMAKE_CXX_FLAGS_VERBOSEDEBUG_INIT   "-g3 -DDEBUG ${_verb_flags} ${_loud_flags}")
 
 #------------------------------------------------------------------------------#
 # Intel C++ Compilers
@@ -134,81 +143,12 @@ elseif(CMAKE_CXX_COMPILER_IS_INTEL)
     set(_def_cxx "-Wno-unknown-pragmas -Wno-deprecated")
     set(_extra_cxx_flags "-Wno-non-virtual-dtor -Wpointer-arith -Wwrite-strings -fp-model precise")
 
-    add(_def_cxx "-xHOST -ipo -w0 -qno-offload")
+    add(_def_cxx "-ipo -w0")
     if(USE_SSE)
         add(_def_cxx "-use-intel-optimized-headers")
     endif()
 
     get_intel_intrinsic_include_dir()
-
-    # -cxxlib -gcc-name -gxx-name -fabi-version -no-gcc
-    set(_def_cxx )
-    foreach(TYPE GCC GXX)
-
-        # executable default name
-        set(EXE "gcc")
-        if("${TYPE}" STREQUAL "GXX")
-            set(EXE "g++")
-        endif()
-
-        if(NOT ${TYPE} AND NOT "$ENV{${TYPE}}" STREQUAL "")
-            set(${TYPE} $ENV{${TYPE}} CACHE PATH "Intel ${TYPE} path")
-        endif()
-
-        if("${${TYPE}}" STREQUAL "")
-            set(_msg "\nPlease specify the ${TYPE} environment variable")
-            add(_msg "(GCC C/C++ compiler to use with the Intel compiler)\n")
-            message(AUTHOR_WARNING "${_msg}")
-            unset(_msg)
-        endif()
-
-        if("${${TYPE}}" STREQUAL "")
-
-            # find gcc/g++
-            find_program(${TYPE}_PATH ${EXE})
-
-            if(NOT ${TYPE}_PATH)
-                # kill if not found
-                message(FATAL_ERROR "Failure finding \"${LTYPE}\"")
-            else()
-                # warning them is not explicitly defined but not if -Wno-dev
-                message(AUTHOR_WARNING "Using \"${${TYPE}_PATH}\" for ${TYPE}")
-            endif()
-
-            # don't cache
-            set(${TYPE} ${${TYPE}_PATH})
-
-        else()
-
-            # make sure it is cached
-            set(${TYPE} ${TYPE} CACHE PATH "Intel ${TYPE} compiler path")
-
-        endif()
-
-        # only guaranteed on GNU standard bin layout (e.g. /usr/bin/gcc)
-        if(UNIX AND NOT ${TYPE}_ROOT)
-            get_filename_component(${TYPE}_ROOT "${${TYPE}}"        DIRECTORY)
-            get_filename_component(${TYPE}_ROOT "${${TYPE}_ROOT}"   DIRECTORY)
-        else()
-            if("${TYPE}" STREQUAL "GXX")
-                set(_msg "\nPlease specify the ${TYPE}_ROOT environment variable")
-                add(_msg "(GCC C/C++ compiler root directory to use with the Intel compiler)\n")
-                message(FATAL_ERROR "${_msg}")
-            endif()
-        endif()
-
-        get_filename_component(GCCN "${${TYPE}}" NAME)
-
-        if("${TYPE}" STREQUAL "GCC")
-            add(_def_cxx "-gcc-name=${GCCN}")
-        else()
-            add(_def_cxx "-cxxlib=${${TYPE}_ROOT} -gxx-name=${GCCN}")
-        endif()
-
-        unset(${TYPE}_ROOT) # won't affect cache version
-        unset(GCCN)
-
-    endforeach()
 
     set(CMAKE_CXX_FLAGS_INIT                "${_def_cxx}")
     set(CMAKE_CXX_FLAGS_DEBUG_INIT          "-g -DDEBUG")

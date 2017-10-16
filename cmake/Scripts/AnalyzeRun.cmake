@@ -51,7 +51,7 @@ foreach( elem ${output} )
 endforeach()
 
 # Check for success
-string( REGEX MATCH "Success" wasSuccess ${output} )
+string( REGEX MATCH "Success" wasSuccess "${output}" )
 
 if( wasSuccess )
     return()

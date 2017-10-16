@@ -1,10 +1,6 @@
 
 # - Include guard
 if(__definecolors_isloaded)
-    mark_as_advanced(ColorReset ColorBold)
-    foreach(_f Red Green Yellow Blue Magenta Cyan White)
-        mark_as_advanced(${_f} Bold${_f})
-    endforeach()
     return()
 endif()
 set(__definecolors_isloaded ON)
@@ -29,7 +25,7 @@ if(NOT WIN32)
   set(BoldWhite   "${Esc}[1;37m" CACHE STRING "bold white color code")
 endif()
 
-mark_as_advanced(ColorReset ColorBold __definecolors_isloaded)
+mark_as_advanced(ColorReset ColorBold)
 foreach(_f Red Green Yellow Blue Magenta Cyan White)
     mark_as_advanced(${_f} Bold${_f})
 endforeach()

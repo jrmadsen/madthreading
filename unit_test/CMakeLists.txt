@@ -27,5 +27,5 @@ endif()
 Add_Unit_Test(${BATCH_OPTION}
     NAME "madthreading_tester"
     COMPILE_FLAGS "${TEST_COMPILE_FLAGS}"
-    LINK_LIBRARIES ${EXTERNAL_LIBRARIES} madthreading-shared)
+    LINK_LIBRARIES ${LIBRARIES} madthreading-shared)
 

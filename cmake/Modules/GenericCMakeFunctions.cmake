@@ -1,6 +1,6 @@
 
 
-include(CMakeMacroParseArguments)
+include(CMakeParseArguments)
 
 cmake_policy(PUSH)
 if(NOT CMAKE_VERSION VERSION_LESS 3.1)
@@ -10,7 +10,7 @@ endif()
 ################################################################################
 #   OPTIONS TAKING STRING
 ################################################################################
-function(ParseCommandLineOptions)
+function(parse_command_line_options)
 
     get_cmake_property(CACHE_VARS CACHE_VARIABLES)
     foreach(CACHE_VAR ${CACHE_VARS})
@@ -26,9 +26,10 @@ function(ParseCommandLineOptions)
             set(CMAKE_ARGS "${CMAKE_ARGS} -D${CACHE_VAR}${CACHE_VAR_TYPE}=\"${${CACHE_VAR}}\"")
         endif()
     endforeach()
-    message("CMAKE_ARGS: ${CMAKE_ARGS}")
+    set(CMAKE_ARGS "${CMAKE_ARGS}" PARENT_SCOPE)
 
 endfunction()
+
 
 ################################################################################
 # function - capitalize - make a string capitalized (first letter is capital)
@@ -80,6 +81,7 @@ macro(SET_PROJECT_VERSION _MAJOR _MINOR _PATCH _DESCRIPTION)
     set(${PROJECT_NAME}_SHORT_VERSION
         "${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION}")
     set(${PROJECT_NAME}_DESCRIPTION "${_DESCRIPTION}")
+    set(PROJECT_VERSION ${${PROJECT_NAME}_VERSION})
 endmacro()
 
 
@@ -130,6 +132,7 @@ macro(REMOVE_PACKAGE_DEFINITIONS PKG)
     remove_definitions(-DUSE_${PKG})
 endmacro()
 
+
 ################################################################################
 #    Add definitions if <OPTION> is true
 ################################################################################
@@ -145,6 +148,7 @@ macro(ADD_DEFINITIONS_IF OPT)
     endif(${OPT})
 endmacro()
 
+
 ################################################################################
 #    Remove duplicates if string exists
 ################################################################################
@@ -153,6 +157,7 @@ macro(REMOVE_DUPLICATES _ARG)
         list(REMOVE_DUPLICATES ${_ARG})
     endif()
 endmacro()
+
 
 ################################################################################
 #    List subdirectories
@@ -180,103 +185,6 @@ function(list_subdirectories return_val current_dir return_relative)
     set(${return_val} ${list_of_dirs} PARENT_SCOPE)
 endfunction()
 
-################################################################################
-#   Load source files
-################################################################################
-macro(AddSubdirectoryFiles   NAME
-                             NAME_ABBREV
-                             SUB_DIR
-                             CURRENT_DIR
-                             GLOB_HEADER_DIR
-                             HEADER_EXT
-                             SOURCE_EXT
-                             GLOB_HEADERS GLOB_SOURCES
-                        )
-    set(TOP_DIR ${${PROJECT_NAME}_SOURCE_DIR})
-    set(DIR_PATH ${SUB_DIR})
-    get_filename_component(TOP_DIR_NAME ${TOP_DIR} NAME)
-    get_filename_component(PARENT_DIR ${CURRENT_DIR} PATH)
-    #get_filename_component(PARENT_DIR ${PARENT_DIR} NAME)
-    string(REPLACE "${TOP_DIR}/" "" PARENT_DIR ${PARENT_DIR})
-    message(STATUS "\tAdding ${PARENT_DIR}/${SUB_DIR}")
-
-    # Include the directory
-    include_directories(${PROJECT_SOURCE_DIR}/${SUB_DIR} ${${GLOB_HEADER_DIR}})
-    # Link the directory for object files
-    link_directories(${PROJECT_BINARY_DIR}/${SUB_DIR})
-
-    # Get files
-    file(GLOB ${PROJECT_NAME}_${NAME}_HEADERS ${CURRENT_DIR}/*.${HEADER_EXT})
-    file(GLOB ${PROJECT_NAME}_${NAME}_SOURCES ${CURRENT_DIR}/*.${SOURCE_EXT})
-
-    #message("\n\t${PROJECT_NAME}_${NAME}_HEADERS are : ${${PROJECT_NAME}_${NAME}_HEADERS}\n")
-    #message("\n\t${PROJECT_NAME}_${NAME}_SOURCES are : ${${PROJECT_NAME}_${NAME}_SOURCES}\n")
-
-    # Append files to global set
-    set(${GLOB_HEADERS} ${${GLOB_HEADERS}} ${${PROJECT_NAME}_${NAME}_HEADERS} PARENT_SCOPE)
-    set(${GLOB_SOURCES} ${${GLOB_SOURCES}} ${${PROJECT_NAME}_${NAME}_SOURCES} PARENT_SCOPE)
-
-    #message("\n\tGLOBAL Headers are : ${${GLOB_HEADERS}}\n")
-    #message("\n\tGLOBAL Sources are : ${${GLOB_SOURCES}}\n")
-
-    # set the source group
-    set(SG_${NAME_ABBREV}_H ${${PROJECT_NAME}_${NAME}_HEADERS} PARENT_SCOPE)
-    set(SG_${NAME_ABBREV}_I ${${PROJECT_NAME}_${NAME}_SOURCES} PARENT_SCOPE)
-
-    #set(${SG_HEADER_SETS} ${${SG_HEADER_SETS}} ${SG_${NAME_ABBREV}_H} PARENT_SCOPE)
-    #set(${SG_SOURCE_SETS} ${${SG_SOURCE_SETS}} ${SG_${NAME_ABBREV}_I} PARENT_SCOPE)
-
-    #list(APPEND ${SG_HEADER_NAMES} "${SUB_DIR}/include")
-    #list(APPEND ${SG_SOURCE_NAMES} "${SUB_DIR}/src")
-
-    set(${GLOB_HEADER_DIR} ${${GLOB_HEADER_DIR}} ${CURRENT_DIR} PARENT_SCOPE)
-
-endmacro()
-
-
-################################################################################
-#   Load source files
-################################################################################
-macro(AddSubdirectorySourceSorted  NAME
-                             NAME_ABBREV
-                             SUB_DIR
-                             CURRENT_DIR
-                             GLOB_HEADER_DIR
-                             HEADER_FOLDER
-                             SOURCE_FOLDER
-                             HEADER_EXT
-                             SOURCE_EXT
-                             GLOB_HEADERS GLOB_SOURCES
-                             #SG_HEADER_SETS SG_SOURCE_SETS
-                             #SG_HEADER_NAMES SG_SOURCE_NAMES
-                        )
-
-    message(STATUS "\tAdding ${NAME}")
-
-    # Include the directory
-    include_directories(${PROJECT_SOURCE_DIR}/${SUB_DIR}/${HEADER_FOLDER} ${${GLOB_HEADER_DIR}})
-    # Link the directory for object files
-    link_directories(${PROJECT_BINARY_DIR}/${SUB_DIR}/${SOURCE_FOLDER})
-
-    # Get files
-    file(GLOB ${PROJECT_NAME}_${NAME}_HEADERS ${CURRENT_DIR}/${HEADER_FOLDER}/*.${HEADER_EXT})
-    file(GLOB ${PROJECT_NAME}_${NAME}_SOURCES ${CURRENT_DIR}/${SOURCE_FOLDER}/*.${SOURCE_EXT})
-
-    message("\n\tHeaders are : ${${PROJECT_NAME}_${NAME}_HEADERS}\n")
-    message("\n\tSources are : ${${PROJECT_NAME}_${NAME}_SOURCES}\n")
-
-    # Append files to global set
-    set(${GLOB_HEADERS} ${${GLOB_HEADERS}} ${${PROJECT_NAME}_${NAME}_HEADERS} PARENT_SCOPE)
-    set(${GLOB_SOURCES} ${${GLOB_SOURCES}} ${${PROJECT_NAME}_${NAME}_SOURCES} PARENT_SCOPE)
-
-    #message("\n\tGLOBAL Headers are : ${${GLOB_HEADERS}}\n")
-    #message("\n\tGLOBAL Sources are : ${${GLOB_SOURCES}}\n")
-
-    # set the source group
-    set(SG_${NAME_ABBREV}_H ${${PROJECT_NAME}_${NAME}_HEADERS} PARENT_SCOPE)
-    set(SG_${NAME_ABBREV}_I ${${PROJECT_NAME}_${NAME}_SOURCES} PARENT_SCOPE)
-
-endmacro()
 
 ################################################################################
 #   Generate Source Grouping for list of files
@@ -320,6 +228,7 @@ macro(GenerateSourceGroupTree STRIP)
 
 endmacro()
 
+
 ################################################################################
 #   Find a static library
 ################################################################################
@@ -342,6 +251,7 @@ function(find_static_library OUT LIB_NAME)
 
 endfunction()
 
+
 ################################################################################
 #   set the two digit version
 ################################################################################
@@ -359,6 +269,7 @@ function(define_version_00 PREFIX POSTFIX)
     endif()
 
 endfunction()
+
 
 ################################################################################
 #   Write a config file for installation (writes preprocessor definitions)
@@ -473,7 +384,6 @@ function(write_config_file FILE_NAME WRITE_PATH)
 
     if(NOT "${ARGN}" STREQUAL "")
         list(GET ARGN 0 INSTALL_PATH)
-        #message(STATUS "Installing ${WRITE_PATH}/${_fname} to ${INSTALL_PATH}...")
         install(FILES ${WRITE_PATH}/${_fname} DESTINATION ${INSTALL_PATH})
     endif()
 

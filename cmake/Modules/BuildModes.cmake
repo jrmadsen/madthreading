@@ -96,8 +96,9 @@ endif()
 #-----------------------------------------------------------------------
 # Update build flags for each build type
 #
-set(CONFIG_TYPES Debug Release RelWithDebInfo MinSizeRel TestRelease Maintainer VerboseDebug
+set(CONFIG_TYPES Debug Release RelWithDebInfo MinSizeRel VerboseDebug
     CACHE STRING "Configuration types")
+mark_as_advanced(CONFIG_TYPES)
 foreach(type ${CONFIG_TYPES})
     string(TOUPPER "${type}" UTYPE)
     unset(CMAKE_CXX_FLAGS_${UTYPE} CACHE)

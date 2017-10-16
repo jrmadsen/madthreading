@@ -254,19 +254,57 @@ ENDMACRO(GENERATE_DISTCLEAN_TARGET)
 
 
 #-----------------------------------------------------------------------
-# Resolve symbolic links and remove duplicates in CMAKE_PREFIX_PATH
+# Determine if two paths are the same
+#
+#-----------------------------------------------------------------------
+function(equal_paths VAR PATH1 PATH2)
+    get_filename_component(PATH1 ${PATH1} ABSOLUTE)
+    get_filename_component(PATH2 ${PATH2} ABSOLUTE)
+
+    if ("${PATH1}" STREQUAL "${PATH2}")
+        set(${VAR} ON PARENT_SCOPE)
+    else()
+        set(${VAR} OFF PARENT_SCOPE)
+    endif()
+endfunction(equal_paths VAR PATH1 PATH2)
+
+
+#-----------------------------------------------------------------------
+# Resolve symbolic links, remove duplicates, and remove system paths
+#   in CMAKE_PREFIX_PATH
 #
 #-----------------------------------------------------------------------
 function(clean_prefix_path)
     set(_prefix_path )
     foreach(_path ${CMAKE_PREFIX_PATH})
         get_filename_component(_path ${_path} REALPATH)
-        list(APPEND _prefix_path ${_path})
+        set(IS_SYS_PATH OFF)
+        # loop over system path types
+        foreach(_type PREFIX INCLUDE LIBRARY APPBUNDLE FRAMEWORK PROGRAM)
+            # loop over system paths
+            foreach(_syspath ${CMAKE_SYSTEM_${_type}_PATH})
+                # check if equal
+                equal_paths(IS_SYS_PATH ${_path} ${_syspath})
+                # exit loop if equal
+                if(IS_SYS_PATH)
+                    break()
+                endif(IS_SYS_PATH)
+            endforeach(_syspath ${CMAKE_SYSTEM_${_type}_PATH})
+            # exit loop if equal
+            if(IS_SYS_PATH)
+                break()
+            endif(IS_SYS_PATH)
+        endforeach(_type PREFIX INCLUDE LIBRARY APPBUNDLE FRAMEWORK PROGRAM)
+        # if not a system path
+        if(NOT IS_SYS_PATH)
+            list(APPEND _prefix_path ${_path})
+        endif(NOT IS_SYS_PATH)
     endforeach()
-
+    # remove any duplicates
     if(NOT "${_prefix_path}" STREQUAL "")
         list(REMOVE_DUPLICATES _prefix_path)
     endif()
+    # force the new prefix path
     set(CMAKE_PREFIX_PATH ${_prefix_path} CACHE PATH
         "Prefix path for finding packages" FORCE)
 endfunction()
@@ -330,36 +368,36 @@ function(subConfigureRootSearchPath _package_name _search_other)
         endif()
         # root changed so we want to refind the package
         if(UNCACHE_PACKAGE_VARS)
-          string(TOLOWER "${_package_name}" CAP_PACKAGE_NAME)
-          string(SUBSTRING "${CAP_PACKAGE_NAME}" 0 1 FIRST)
-          string(SUBSTRING "${CAP_PACKAGE_NAME}" 1 -1 REST)
-          string(TOUPPER "${FIRST}" FIRST)
-          string(CONCAT CAP_PACKAGE_NAME "${FIRST}" "${REST}")
-          string(TOUPPER "${_package_name}" UPP_PACKAGE_NAME)
-          string(TOLOWER "${_package_name}" LOW_PACKAGE_NAME)
+            string(TOLOWER "${_package_name}" CAP_PACKAGE_NAME)
+            string(SUBSTRING "${CAP_PACKAGE_NAME}" 0 1 FIRST)
+            string(SUBSTRING "${CAP_PACKAGE_NAME}" 1 -1 REST)
+            string(TOUPPER "${FIRST}" FIRST)
+            string(CONCAT CAP_PACKAGE_NAME "${FIRST}" "${REST}")
+            string(TOUPPER "${_package_name}" UPP_PACKAGE_NAME)
+            string(TOLOWER "${_package_name}" LOW_PACKAGE_NAME)
 
-          get_cmake_property(CACHED_VARIABLES CACHE_VARIABLES)
-          foreach(_name ${_package_name} ${CAP_PACKAGE_NAME}
-                  ${UPP_PACKAGE_NAME} ${LOW_PACKAGE_NAME})
-              # skip maintain
-              if(NOT MAINTAIN_${_name}_CACHE)
-                  # loop over cached variables
-                  foreach(_var ${CACHED_VARIABLES})
-                      if("${_var}_" MATCHES "${_name}")
-                          if(NOT "${_var}" STREQUAL "${_name}_ROOT" AND
-                             NOT "${_var}" STREQUAL "PREVIOUS_${_name}_ROOT" AND
-                             NOT "${_var}" STREQUAL "MAINTAIN_${_name}_CACHE")
-                              unset(${_var} CACHE)
-                              list(REMOVE_ITEM CACHED_VARIABLES "${_var}")
-                          endif()
-                      endif()
-                  endforeach(_var ${CACHE_VARIABLES})
-              endif()
-          endforeach()
+            get_cmake_property(CACHED_VARIABLES CACHE_VARIABLES)
+            foreach(_name ${_package_name} ${CAP_PACKAGE_NAME}
+                    ${UPP_PACKAGE_NAME} ${LOW_PACKAGE_NAME})
+                # skip maintain
+                if(NOT MAINTAIN_${_name}_CACHE)
+                    # loop over cached variables
+                    foreach(_var ${CACHED_VARIABLES})
+                        if("${_var}_" MATCHES "${_name}")
+                            if(NOT "${_var}" STREQUAL "${_name}_ROOT" AND
+                                    NOT "${_var}" STREQUAL "PREVIOUS_${_name}_ROOT" AND
+                                    NOT "${_var}" STREQUAL "MAINTAIN_${_name}_CACHE")
+                                unset(${_var} CACHE)
+                                list(REMOVE_ITEM CACHED_VARIABLES "${_var}")
+                            endif()
+                        endif()
+                    endforeach(_var ${CACHE_VARIABLES})
+                endif()
+            endforeach()
         endif()
     else()
         if(EXISTS "${${_package_name}_ROOT}" AND
-           IS_DIRECTORY "${${_package_name}_ROOT}")
+                IS_DIRECTORY "${${_package_name}_ROOT}")
             set(_add ON)
             foreach(_path ${CMAKE_PREFIX_PATH})
                 if("${_path}" STREQUAL "${${_package_name}_ROOT}")
@@ -608,18 +646,43 @@ macro(DETERMINE_LIBDIR_DEFAULT)
   # reason is: amd64 ABI: http://www.x86-64.org/documentation/abi.pdf
   # Note that the future of multi-arch handling may be even
   # more complicated than that: http://wiki.debian.org/Multiarch
-  if(CMAKE_SYSTEM_NAME MATCHES "Linux"
-      AND NOT CMAKE_CROSSCOMPILING
-      AND NOT EXISTS "/etc/debian_version")
-    if(NOT DEFINED CMAKE_SIZEOF_VOID_P)
-      message(AUTHOR_WARNING
-        "Unable to determine default library directory because no target architecture is known. "
-        "Please enable at least one language.")
-    else()
-      if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
-        set(LIBDIR_DEFAULT "lib64")
+  if(DEFINED _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX)
+      set(__LAST_LIBDIR_DEFAULT "lib")
+      # __LAST_LIBDIR_DEFAULT is the default value that we compute from
+      # _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX, not a cache entry for
+      # the value that was last used as the default.
+      # This value is used to figure out whether the user changed the
+      # CMAKE_INSTALL_LIBDIR value manually, or if the value was the
+      # default one. When CMAKE_INSTALL_PREFIX changes, the value is
+      # updated to the new default, unless the user explicitly changed it.
+  endif()
+  if(CMAKE_SYSTEM_NAME MATCHES "^(Linux|kFreeBSD|GNU)$"
+      AND NOT CMAKE_CROSSCOMPILING)
+      if (EXISTS "/etc/debian_version") # is this a debian system ?
+          if(CMAKE_LIBRARY_ARCHITECTURE)
+              if("${CMAKE_INSTALL_PREFIX}" MATCHES "^/usr/?$")
+                  set(_LIBDIR_DEFAULT "lib/${CMAKE_LIBRARY_ARCHITECTURE}")
+              endif()
+              if(DEFINED _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX
+                 AND "${_GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX}" MATCHES "^/usr/?$")
+                  set(__LAST_LIBDIR_DEFAULT "lib/${CMAKE_LIBRARY_ARCHITECTURE}")
+              endif()
+          endif()
+      else() # not debian, rely on CMAKE_SIZEOF_VOID_P:
+          if(NOT DEFINED CMAKE_SIZEOF_VOID_P)
+              message(AUTHOR_WARNING
+                  "Unable to determine default CMAKE_INSTALL_LIBDIR directory "
+                  "because no target architecture is known. "
+                  "Please enable at least one language before including GNUInstallDirs.")
+          else()
+              if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
+                  set(_LIBDIR_DEFAULT "lib64")
+                  if(DEFINED _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX)
+                      set(__LAST_LIBDIR_DEFAULT "lib64")
+                  endif()
+              endif()
+          endif()
       endif()
-    endif()
   endif()
 endmacro()
 

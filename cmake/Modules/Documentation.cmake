@@ -10,7 +10,7 @@ include(MacroUtilities)
 
 #-----------------------------------------------------------------------
 
-option(DOXYGEN_DOCS "Make a `doc` make target" ON)
+add_option(DOXYGEN_DOCS "Make a `doc` make target" OFF)
 
 if(DOXYGEN_DOCS)
   option(BUILD_DOXYGEN_DOCS "Include `doc` make target in all" OFF)
@@ -191,7 +191,11 @@ endif() # DOXYGEN_DOCS
 #   http://www.cmake.org/pipermail/cmake/2007-May/014174.html
 MACRO(GENERATE_DOCUMENTATION DOXYGEN_CONFIG_FILE)
 
-    FIND_PACKAGE(Doxygen REQUIRED)
+    FIND_PACKAGE(Doxygen)
+    if(NOT Doxygen_FOUND)
+	 message(STATUS "Doxygen executable cannot be found. Unable to generate doxygen doc. Disable DOXYGEN_DOCS to remove this message")
+	 return()
+    endif()
     SET(DOXYFILE_FOUND false)
 
     IF(EXISTS ${PROJECT_BINARY_DIR}/doc/${DOXYGEN_CONFIG_FILE})

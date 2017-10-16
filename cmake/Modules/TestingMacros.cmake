@@ -8,7 +8,7 @@ cmake_policy(SET CMP0011 NEW)
 #
 ################################################################################
 
-include(CMakeMacroParseArguments)
+include(CMakeParseArguments)
 include(DefineColors)
 
 # use full path to libraries

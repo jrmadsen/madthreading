@@ -165,7 +165,7 @@ set(${PROJECT_NAME}_TARGET_COMPILE_FEATURES
 # Mark as advanced because most users will not need it
 enum_option(BUILD_CXXSTD
   DOC "C++ Standard to compile against"
-  VALUES 98 0x 11 14 c++98 c++0x c++11 c++14
+  VALUES 98 0x 11 14 17 c++98 c++0x c++11 c++14 c++17
   CASE_INSENSITIVE
 )
 

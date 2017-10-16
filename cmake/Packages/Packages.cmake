@@ -63,8 +63,7 @@ list(APPEND EXTERNAL_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
 #
 ################################################################################
 
-option(ENABLE_UNIT_TEST "Enable unit testing" OFF)
-add_feature(ENABLE_UNIT_TEST "Enable unit testing")
+add_option(ENABLE_UNIT_TEST "Enable unit testing" OFF)
 
 if(ENABLE_UNIT_TEST)
   find_package(UnitTest++ REQUIRED)
@@ -78,8 +77,7 @@ endif()
 #
 ################################################################################
 
-option(USE_TCMALLOC "Enable gperftools TCMALLOC - an efficient thread-caching malloc" ON)
-add_feature(USE_TCMALLOC "Enable gperftools TCMALLOC - an efficient thread-caching malloc")
+add_option(USE_TCMALLOC "Enable gperftools TCMALLOC - an efficient thread-caching malloc" OFF)
 
 if(USE_TCMALLOC)
     ConfigureRootSearchPath(TCMALLOC)
@@ -108,8 +106,7 @@ endif()
 #
 ################################################################################
 
-option(USE_BOOST "Enable BOOST Libraries" OFF)
-add_feature(USE_BOOST "Enable Boost libraries")
+add_option(USE_BOOST "Enable BOOST Libraries" OFF)
 
 foreach(_component chrono python serialization signals system thread timer)
     STRING(TOUPPER ${_component} _COMPONENT)
@@ -220,12 +217,10 @@ endif()
 add_option(USE_SSE "Enable SSE support" OFF)
 
 if(USE_SSE)
-    include(FindSSE)
-    foreach(type SSE2 SSE3 SSSE3 SSE4_1 AVX AVX2)
-        add_subfeature(USE_SSE ${type}_FOUND "Hardware support for ${type}")
-    endforeach()
 
-    GET_SSE_COMPILE_FLAGS(SSE_FLAGS SSE_DEFINITIONS)
+    include(FindSSE)
+
+    GET_SSE_COMPILE_FLAGS(_CXX_FLAGS_EXTRA SSE_DEFINITIONS)
     foreach(_DEF ${SSE_DEFINITIONS})
         add_definitions(-D${_DEF})
     endforeach()

@@ -75,11 +75,13 @@ unset(_LIBDIR_DEFAULT)
 
 # ---------------------------------------------------------------------------- #
 #   Add one for cmake export
-GET_VERSION_COMPONENTS(PYTHON "${PYTHON_VERSION_STRING}")
+if(NOT "${PYTHON_VERSION_STRING}" STREQUAL "")
+    GET_VERSION_COMPONENTS(PYTHON "${PYTHON_VERSION_STRING}")
+endif(NOT "${PYTHON_VERSION_STRING}" STREQUAL "")
 STRING(TOLOWER "${CMAKE_PROJECT_NAME}" LPROJECT_NAME)
 set(CMAKE_INSTALL_PYTHONDIR
     "${CMAKE_INSTALL_LIBDIR_DEFAULT}/python${PYTHON_SHORT_VERSION}/site-packages/${LPROJECT_NAME}"
-    CACHE PATH "CMake python install directory")
+    CACHE PATH "CMake python install directory" FORCE)
 
 # ---------------------------------------------------------------------------- #
 #   Add the cmake full directory variable

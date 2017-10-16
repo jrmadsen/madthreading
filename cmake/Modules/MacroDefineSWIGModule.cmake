@@ -25,7 +25,7 @@ if(__macrodefineswigmodule_isloaded)
 endif()
 set(__macrodefineswigmodule_isloaded YES)
 
-include(CMakeMacroParseArguments)
+include(CMakeParseArguments)
 
 #-----------------------------------------------------------------------
 # macro define_module(NAME <name>

@@ -25,7 +25,7 @@ if(__macrodefinemodule_isloaded)
 endif()
 set(__macrodefinemodule_isloaded YES)
 
-include(CMakeMacroParseArguments)
+include(CMakeParseArguments)
 
 
 
