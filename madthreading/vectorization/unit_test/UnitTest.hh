@@ -35,8 +35,8 @@
 #ifndef unittest_hh_
 #define unittest_hh_
 
-#include <UnitTest++/UnitTest++.h>
-#include <UnitTest++/TestReporterStdout.h>
+#include <UnitTest++.h>
+#include <TestReporterStdout.h>
 
 //----------------------------------------------------------------------------//
 
