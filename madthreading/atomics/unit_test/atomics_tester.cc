@@ -99,7 +99,7 @@ SUITE( Atomic_Tests )
         while(mydata->wait()) { }
 
         static Mutex_t mtx;
-        auto_lock lock(&mtx);
+        auto_lock lock(mtx);
         mydata->value += 1;
         return (void*) mydata;
     }
@@ -166,7 +166,7 @@ SUITE( Atomic_Tests )
         while(mydata->wait()) { }
 
         static Mutex_t mtx;
-        auto_lock lock(&mtx);
+        auto_lock lock(mtx);
         mydata->value += 1.0;
         return (void*) mydata;
     }

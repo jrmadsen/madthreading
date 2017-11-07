@@ -1,6 +1,6 @@
 //
 //
-//	Multithreading example using C++98-compatible custom MT API
+//	Multithreading example using custom MT API
 //		- API uses a thread-pool
 //		- compute_block function is wrapped into a TBB-parallel-reduce-like
 //		  "joining_task" class that does not require an explicit "join" call
@@ -48,7 +48,7 @@ int main(int argc, char** argv)
     //========================================================================//
     timer::timer t;
 
-    tm->run_loop<double_type>(compute_block, 0, num_steps, num_threads,
+    tm->run_loop<double_type>(compute_block, 0, num_steps, num_threads*4,
                               join, 0.0);
 
     report(num_steps, step*sum, t.stop_and_return(), argv[0]);

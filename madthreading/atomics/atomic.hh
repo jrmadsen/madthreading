@@ -57,18 +57,12 @@
 
 #include "madthreading/atomics/atomic_typedefs.hh"
 
-#if defined(_MUTEXED_POD_ATOMICS_)
-#   include "threading/mutex.hh"
-#endif
-
 #if defined(USE_BOOST_SERIALIZATION)
 #   include <boost/serialization/split_member.hpp>
 #   include <boost/serialization/version.hpp>
 #   include <boost/serialization/access.hpp>
 #   include <boost/serialization/serialization.hpp>
 #endif
-
-#if defined(_HAS_ATOMICS_)
 
 //----------------------------------------------------------------------------//
 
@@ -98,13 +92,7 @@ public:
 
     this_type& operator=(const value_type& rhs)
     {
-#if defined(_MUTEXED_POD_ATOMICS_)
-        static mad::mutex mutex;
-        auto_lock lock(&mutex);
-        _value = rhs;
-#else
         atomics::set(&_value, rhs);
-#endif
         return *this;
     }
 
@@ -459,30 +447,6 @@ namespace atomics
 } // namespace atomics
 
 } // namespace mad
-
-#else // defined(_HAS_ATOMICS_)
-
-namespace mad
-{
-
-    #include "mutexed_pod.hh"
-    #ifdef ENABLE_THREADING
-
-        template<typename _Tp>
-        class atomic : public mutexed_pod<_Tp>
-        { };
-
-    #else // ENABLE_THREADING
-        // <_Tp, int, int> : int, int template parameters make mutexes/locks
-        // non-existant
-        class atomic : public mutexed_pod<_Tp, int, int>
-        { };
-
-    #endif // ENABLE_THREADING
-
-} // namespace mad
-
-#endif // defined(_HAS_ATOMICS_)
 
 //----------------------------------------------------------------------------//
 

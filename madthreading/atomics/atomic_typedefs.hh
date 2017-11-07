@@ -46,170 +46,17 @@
 
 //============================================================================//
 
-// easier definitions for C++11
-#if __cplusplus > 199711L || __cplusplus >= 201103L // C++11
-  #ifndef CXX11
-  #define CXX11
-  #endif
-
-  #ifndef cpp11
-  #define cpp11
-  #endif
-
-  #ifndef _CXX11_
-  #define _CXX11_
-  #endif
-
-  #ifndef _cpp11_
-  #define _cpp11_
-  #endif
-#endif
-
-
-// easier definitions for C++0x
-#if __cplusplus >= 199711L // C++0x
-  #ifndef CXX0X
-  #define CXX0X
-  #endif
-
-  #ifndef cpp0x
-  #define cpp0x
-  #endif
-
-  #ifndef _CXX0X_
-  #define _CXX0X_
-  #endif
-
-  #ifndef _cpp0x_
-  #define _cpp0x_
-  #endif
-#endif
-
-//============================================================================//
-
 #include <functional>
+#include <atomic>
 #include "../threading/threading.hh"
-#define _ATTRIB_(attrib) __attribute__((attrib))
+#include "../macros.hh"
 
-#ifndef __inline__
-#   ifdef SWIG
-#       define __inline__ inline
-#   else
-#       define __inline__ inline __attribute__ ((always_inline))
-#   endif
-#endif
-
-//============================================================================//
-// This defines what kind of atomic library being used. Note: the definitions
-// USE_BOOST_ATOMICS, FORCE_BOOST_ATOMICS, and/or FORCE_MUTEX_POD are
-// custom definitions that must be passed to the compiler. CXX11 is
-// automatically determined
-#if defined(_CXX11_) && !defined(FORCE_BOOST_ATOMICS) && !defined(FORCE_MUTEX_POD)
-  #ifndef _CXX_ATOMICS_
-  #define _CXX_ATOMICS_
-  #endif
-
-  #ifndef _CXX11_ATOMICS_
-  #define _CXX11_ATOMICS_
-  #endif
-#elif (defined(USE_BOOST_ATOMICS) || defined(FORCE_BOOST_ATOMICS)) && \
-      !defined(FORCE_MUTEX_POD)
-  #ifdef USE_BOOST_ATOMICS
-    #include <boost/version.hpp>
-  #endif
-  // Boost 1.53 first version with atomics
-  #if (BOOST_VERSION / 100000 > 0) && (BOOST_VERSION / 100 % 1000 > 52)
-    #ifndef _BOOST_ATOMICS_
-    #define _BOOST_ATOMICS_
-    #endif
-  #else
-    #warning Boost Atomics are only support in Boost v1.53 or higher
-    #warning Enable C++11 or define FORCE_MUTEX_POD
-    #warning Current Boost version is: BOOST_VERSION
-  #endif
-#else
-    #ifndef _MUTEXED_POD_ATOMICS_
-    #define _MUTEXED_POD_ATOMICS_
-    #endif
-//    #warning ATOMICS NOT SUPPORTED! ONLY SUPPORT FOR C++11, Boost, TBB atomics
-//    #warning To enable, compile with C++11 or definitions:
-//    #warning     USE_BOOST
-//    #warning Order of atomic selection is C++11 > Boost
-#endif
-
-//============================================================================//
-
-#if defined(_CXX11_ATOMICS_)
-    #include <atomic>
-#elif defined(_BOOST_ATOMICS_)
-    #include <boost/atomic.hpp>
-#endif
-
-//============================================================================//
-
-//============================================================================//
-// We want to use the STL atomics if first and foremost (portability)
-// If not C++11, use Boost atomics since C++11 atomics are essentially
-// equivalent
-// If not C++11 or Boost, mutexed PODs are used
-#if defined(_CXX11_ATOMICS_)
-    namespace base_atomic = std;
-#elif defined(_BOOST_ATOMICS_)
-    namespace base_atomic = boost;
-#else
-    #include "mutexed_pod.hh"
-
-    namespace mad
-    {
-    namespace base_atomic
-    {
-        template <typename _Tp>
-        class atomic : public mutexed_pod<_Tp>
-        {
-        public:
-            typedef typename mutexed_pod<_Tp>::Mutex_t Mutex_t;
-            typedef typename mutexed_pod<_Tp>::Lock_t Lock_t;
-            typedef mutexed_pod<_Tp> Base_t;
-            typedef _Tp value_type;
-
-        public:
-            atomic() : Base_t() { }
-            atomic(const _Tp& val) : Base_t(val) { }
-            atomic(const Base_t& val) : Base_t(val) { }
-        };
-        // memory order defined in mutexed_pod.hh
-    }
-    namespace base_atomic
-    {
-        enum memory_order
-        {
-            memory_order_relaxed,
-            memory_order_consume,
-            memory_order_acquire,
-            memory_order_release,
-            memory_order_acq_rel,
-            memory_order_seq_cst
-        };
-
-    }
-    } // namespace mad
-#endif
-
-//============================================================================//
-
-#if defined(_CXX_ATOMICS_) || defined(_BOOST_ATOMICS_) ||\
-    defined(_MUTEXED_POD_ATOMICS_)
-  #ifndef _HAS_ATOMICS_
-  #define _HAS_ATOMICS_
-  #endif
-#endif
+namespace base_atomic = std;
 
 //============================================================================//
 
 namespace mad
 {
-
-#if defined(_HAS_ATOMICS_)
 
 namespace atomics
 {
@@ -246,7 +93,7 @@ namespace atomics
             typedef typename base_binary<_Tp>
             ::second_argument_type second_argument_type;
 
-            __inline__
+            _inline_
             result_type operator()(first_argument_type _val1,
                                    second_argument_type) const
             { return _val1; }
@@ -262,7 +109,7 @@ namespace atomics
             typedef typename base_binary<_Tp>
             ::second_argument_type second_argument_type;
 
-            __inline__
+            _inline_
             result_type operator()(first_argument_type,
                                    second_argument_type _val2) const
             { return _val2; }
@@ -278,7 +125,7 @@ namespace atomics
             typedef typename base_binary<_Tp>
             ::second_argument_type second_argument_type;
 
-            __inline__
+            _inline_
             result_type operator()(first_argument_type _val1,
                                    second_argument_type _val2) const
             { return _val1 + _val2; }
@@ -294,7 +141,7 @@ namespace atomics
             typedef typename base_binary<_Tp>
             ::second_argument_type second_argument_type;
 
-            __inline__
+            _inline_
             result_type operator()(first_argument_type _val1,
                                    second_argument_type _val2) const
             { return _val1 - _val2; }
@@ -310,7 +157,7 @@ namespace atomics
             typedef typename base_binary<_Tp>
             ::second_argument_type second_argument_type;
 
-            __inline__
+            _inline_
             result_type operator()(first_argument_type _val1,
                                    second_argument_type _val2) const
             { return _val1 * _val2; }
@@ -326,7 +173,7 @@ namespace atomics
             typedef typename base_binary<_Tp>
             ::second_argument_type second_argument_type;
 
-            __inline__
+            _inline_
             result_type operator()(first_argument_type _val1,
                                    second_argument_type _val2) const
             { return _val1 / _val2; }
@@ -401,17 +248,6 @@ namespace atomics
                           base_atomic::memory_order mem_odr_1,
                           base_atomic::memory_order mem_odr_2)
         {
-              /*bool performed = false;
-              _Tp _expected = _Tp();
-              do {
-                  _expected = _atomic->load();
-                  performed
-                  = _atomic->compare_exchange_weak(_expected,
-                                                   _operator(_expected, _value),
-                                                   mem_odr_1,
-                                                   mem_odr_2);
-
-              } while (!performed);*/
             _Tp _expected = _Tp();
             do {
                 _expected = _atomic->load();
@@ -587,7 +423,7 @@ namespace atomics
     }
 
     //------------------------------------------------------------------------//
-    //               STANDARD OVERLOAD                //
+    //               STANDARD OVERLOAD                                        //
     //------------------------------------------------------------------------//
     template <typename T>
     inline void set(T* _non_atomic, const T& _desired)
@@ -779,42 +615,6 @@ namespace atomics
 
 }
 
-#else
-// so that codes using atomics::get and atomics::set work without
-// atomics being available. Other operators +=, -=, *=, /= should be fine
-namespace atomics
-{
-    //------------------------------------------------------------------------//
-    //        SET OVERLOADS
-    //------------------------------------------------------------------------//
-    template <typename T>
-    inline void set(T* _non_atomic, const T& _desired)
-    {
-        *_non_atomic = _desired;
-    }
-    //------------------------------------------------------------------------//
-    template <typename T>
-    inline void set(T& _non_atomic, const T& _desired)
-    {
-        set(&_non_atomic, _desired);
-    }
-    //------------------------------------------------------------------------//
-    //         GET OVERLOADS
-    //------------------------------------------------------------------------//
-    template <typename T>
-    inline T get(const T& _non_atomic)
-    {
-        return _non_atomic;
-    }
-    //------------------------------------------------------------------------//
-    template <typename T>
-    inline T get(const T* _non_atomic)
-    {
-        return get(*_non_atomic);
-    }
-    //------------------------------------------------------------------------//
-}
-#endif // defined(_HAS_ATOMICS_)
 //============================================================================//
 
 } // namespace mad

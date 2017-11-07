@@ -81,7 +81,7 @@ public:
     typedef unsigned long                                   ulong_type;
     typedef mad::vtask                                      task_type;
     typedef std::size_t                                     size_type;
-    typedef std::vector<CoreThread>                         ThreadContainer_t;
+    typedef std::vector<std::thread*>                       ThreadContainer_t;
     typedef std::deque<task_type*, Allocator_t(task_type*)> TaskContainer_t;
     typedef std::vector<bool, Allocator_t(bool)>            JoinContainer_t;
     typedef mutex                                           Lock_t;
@@ -90,7 +90,7 @@ public:
     typedef mad::condition                                  Condition_t;
     typedef std::map<void*, task_type*>                     TaskMap_t;
     typedef std::map<void*, volatile bool>                  JoinMap_t;
-    typedef std::map<ulong_type, ulong_type>                tid_type;
+    typedef std::map<std::thread::id, ulong_type>           tid_type;
 
 public:
     // Constructor and Destructors
@@ -113,7 +113,7 @@ public:
     //int fast_add_tasks(task_type* task);
     // add a generic container with iterator
     template <typename Container_t>
-    int add_tasks(const Container_t&);
+    int add_tasks(Container_t&);
     // add a queue of tasks
     template <typename _Tp>
     int add_tasks(std::queue<_Tp*>);
@@ -135,8 +135,8 @@ public:
     void signal_background(void*);
     // set the task argument to a value and signal a thread to wake up
     // and execute
-    template <typename T>
-    void signal_background(void*, T);
+    template <typename... _Tp>
+    void signal_background(void*, _Tp...);
     // check is a background task is finished computing
     volatile bool& is_done(void* ptr) { return m_back_done.find(ptr)->second; }
     // get the pool state
@@ -203,10 +203,10 @@ private:
     : m_use_affinity(false),
       m_pool_size(0),
       m_pool_state(0),
-      m_task_lock(true), // recursive
-      m_back_lock(true),
-      m_task_cond(Condition_t()),
-      m_back_cond(Condition_t()),
+      m_task_lock(), // recursive
+      m_back_lock(),
+      m_task_cond(),
+      m_back_cond(),
       m_main_threads(ThreadContainer_t()),
       m_back_threads(ThreadContainer_t()),
       m_main_tasks(TaskContainer_t()),
@@ -225,11 +225,41 @@ private:
 #include "task/task_group.hh"
 //----------------------------------------------------------------------------//
 template <typename Container_t>
-int thread_pool::add_tasks(const Container_t& c)
+int thread_pool::add_tasks(Container_t& c)
 {
-    typedef typename Container_t::const_iterator citerator;
-    for(citerator itr = c.begin(); itr != c.end(); ++itr)
-        this->add_task(*itr);
+
+    if(!is_alive_flag) // if we haven't built thread-pool, just execute
+    {
+        for(auto& itr : c)
+            run(itr);
+        return 0;
+    }
+
+    m_task_lock.lock();
+
+    // if the thread pool hasn't been initialize, initialize it
+    if(!is_initialized())
+        initialize_threadpool();
+
+    // TODO: put a limit on how many tasks can be added at most
+    for(auto& itr : c)
+    {
+        itr->group()->task_count() += 1;
+        m_main_tasks.push_back(std::move(itr));
+    }
+    c.clear();
+
+    // wake up one thread that is waiting for a task to be available
+    if(c.size() < this->size())
+    {
+        for(size_type i = 0; i < c.size(); ++i)
+            m_task_cond.notify_one();
+    }
+    else
+        m_task_cond.notify_all();
+
+    m_task_lock.unlock();
+
     return c.size();
 }
 //----------------------------------------------------------------------------//
@@ -293,13 +323,13 @@ int thread_pool::add_tasks(task_tree_node<_Tp, _A1, _A2, _TpJ>* node)
     if(node->right())
         add_tasks(node->right());
 
-    m_task_cond.broadcast();
+    m_task_cond.notify_all();
 
     return 1;
 }
 //----------------------------------------------------------------------------//
-template <typename T>
-void thread_pool::signal_background(void* ptr, T _arg)
+template <typename... _Tp>
+void thread_pool::signal_background(void* ptr, _Tp... _args)
 {
     if(m_back_tasks.find(ptr) == m_back_tasks.end())
         return;
@@ -310,12 +340,10 @@ void thread_pool::signal_background(void* ptr, T _arg)
     // task-to-do, and then set task-to-do pointer to NULL
     m_back_lock.lock();
     m_back_task_to_do = m_back_tasks[ptr];
-#ifdef MAD_USE_CXX98
-    m_back_task_to_do->set(_arg);
-#endif
+    m_back_task_to_do->set(_args...);
     m_back_pointer = ptr;
     m_back_done[ptr] = false;
-    m_back_cond.signal();
+    m_back_cond.notify_one();
     m_back_lock.unlock();
 }
 //----------------------------------------------------------------------------//

@@ -1,6 +1,6 @@
 //
 //
-//	Multithreading example using C++98-compatible custom MT API
+//	Multithreading example using custom MT API
 //		- API uses a thread-pool
 //		- compute_block function is wrapped into simple "task" classes
 //		  distributing work equally among threads

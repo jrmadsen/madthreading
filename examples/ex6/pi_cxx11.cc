@@ -11,7 +11,6 @@
 #include <madthreading/types.hh>
 #include <madthreading/utility/timer.hh>
 #include <madthreading/threading/thread_manager.hh>
-#include <madthreading/atomics/omp_atomic.hh>
 #include "../Common.hh"
 
 using namespace mad;

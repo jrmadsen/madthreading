@@ -1,6 +1,6 @@
 //
 //
-//	Multithreading example using TBB with C++98
+//	Multithreading example using custom MT API
 //		- TBB with C++98 requires writing functor classes/structs
 //		  which are must more tedious to implement than C++11 versions
 //		  using lambdas

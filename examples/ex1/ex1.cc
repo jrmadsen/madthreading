@@ -45,7 +45,7 @@ template <typename _Tp>
 void _run_itr(_Tp itr)
 {
     static mad::mutex mutex;
-    mad::auto_lock l(&mutex);
+    mad::auto_lock l(mutex);
     tmcout << "Hello World! - iteration #" << *itr << std::endl;
 }
 
@@ -54,7 +54,7 @@ void _run_itr(_Tp itr)
 void full_func(int a1, double a2, long a3, short a4, float a5, unsigned a6)
 {
     static mad::mutex mutex;
-    mad::auto_lock l(&mutex);
+    mad::auto_lock l(mutex);
     tmcout << "Hello World! - " << a1 << ", " << a2 << ", "
            << a3 << ", " << a4 << ", " << a5 << ", " << a6 << std::endl;
 }
@@ -79,7 +79,7 @@ int main(int argc, char** argv)
     //========================================================================//
     auto _run1 = [] (int n)
     {
-        mad::auto_lock l(&mutex);
+        mad::auto_lock l(mutex);
         tmcout << "Hello World! - iteration #" << n << std::endl;
     };
     //------------------------------------------------------------------------//
@@ -97,7 +97,7 @@ int main(int argc, char** argv)
     auto _run2 = [&] ()
     {
         int _n = ++n;
-        mad::auto_lock l(&mutex);
+        mad::auto_lock l(mutex);
         tmcout << "Hello World! - iteration #" << _n << std::endl;
     };
     //------------------------------------------------------------------------//
@@ -145,8 +145,6 @@ int main(int argc, char** argv)
     tm->join();
 
 
-#if defined(MAD_USE_CXX98)
-#else
     //========================================================================//
     // RUN #6
     //========================================================================//
@@ -178,7 +176,6 @@ int main(int argc, char** argv)
     tm->join();
     std::cout.precision(prec);
     std::cout.unsetf(std::ios::fixed);
-#endif
 
     return 0;
 }

@@ -217,9 +217,8 @@ template <typename _Tp, typename _Alloc>
 void
 atomic_deque<_Tp, _Alloc>::_new_elements_at_front(size_type __new_elems)
 {
-  if (this->max_size() - this->size() < __new_elems)
-    //__throw_length_error(__N("deque::_new_elements_at_front"));
-    throw std::length_error("atomic_deque::_new_elements_at_front");
+    if (this->max_size() - this->size() < __new_elems)
+        throw std::length_error("atomic_deque::_new_elements_at_front");
 
     const size_type __new_nodes = ((__new_elems + _S_buffer_size() - 1)
              / _S_buffer_size());
@@ -231,7 +230,7 @@ atomic_deque<_Tp, _Alloc>::_new_elements_at_front(size_type __new_elems)
         *(this->_impl._start._node - __i) = this->_allocate_node();
     } catch(...) {
         for (size_type __j = 1; __j < __i; ++__j)
-          _deallocate_node(*(this->_impl._start._node - __j));
+            _deallocate_node(*(this->_impl._start._node - __j));
           //__throw_exception_again;
           throw std::bad_alloc();
     }
@@ -243,7 +242,6 @@ void
 atomic_deque<_Tp, _Alloc>::_new_elements_at_back(size_type __new_elems)
 {
   if (this->max_size() - this->size() < __new_elems)
-    //__throw_length_error(__N("deque::_new_elements_at_back"));
     throw std::length_error("atomic_deque::_new_elements_at_back");
 
   const size_type __new_nodes = ((__new_elems + _S_buffer_size() - 1)
@@ -345,20 +343,16 @@ void
 atomic_deque<_Tp, _Alloc>::_destroy_data_aux(iterator __first, iterator __last)
 {
   for (_map_pointer __node = __first._node + 1;
-      __node < __last._node; ++__node)
-    this->_impl.destroy(*__node, *__node + _S_buffer_size());//,
-              //_get_Tp_allocator());
+       __node < __last._node; ++__node)
+      this->_impl.destroy(*__node, *__node + _S_buffer_size());
 
-    if (__first._node != __last._node)
+  if (__first._node != __last._node)
   {
-      this->_impl.destroy(__first._curr, __first._last);//,
-                //_get_Tp_allocator());
-      this->_impl.destroy(__last._first, __last._curr);//,
-                //_get_Tp_allocator());
-   }
-    else
-      this->_impl.destroy(__first._curr, __last._curr);//,
-                //_get_Tp_allocator());
+      this->_impl.destroy(__first._curr, __first._last);
+      this->_impl.destroy(__last._first, __last._curr);
+  }
+  else
+      this->_impl.destroy(__first._curr, __last._curr);
 }
 
 //============================================================================//

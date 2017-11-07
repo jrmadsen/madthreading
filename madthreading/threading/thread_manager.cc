@@ -31,10 +31,6 @@
 
 #include "madthreading/threading/thread_manager.hh"
 
-#ifdef CXX98
-#   define nullptr NULL;
-#endif
-
 namespace mad
 {
 
@@ -108,7 +104,7 @@ thread_manager* thread_manager::get_thread_manager(const uint32_t& nthreads,
 //============================================================================//
 
 thread_manager::size_type
-thread_manager::max_threads = Threading::GetNumberOfCores();
+thread_manager::max_threads = 4*std::thread::hardware_concurrency();
 
 //============================================================================//
 

@@ -51,9 +51,6 @@ endif()
 
 set(CMAKE_THREAD_PREFER_PTHREADS ON)
 find_package(Threads REQUIRED)
-if(Threads_FOUND)
-    add_definitions(-DENABLE_THREADING)
-endif()
 list(APPEND EXTERNAL_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
 
 
