@@ -21,41 +21,33 @@ using namespace mad;
 using namespace std;
 
 #define CheckTol    1.0e-7
-#define NUM_STEPS   500000UL
+#define NUM_STEPS   500000000UL
 
 //============================================================================//
 // T1
 TEST(Test_1_pi_pool)
 {
-    std::cout << "Running Test_1_pi_pool..." << std::endl;
-    std::cout << "@ " << __LINE__ << " of \"" << __FILE__ << "\"..." << std::endl;
+    //std::cout << "Running Test_1_pi_pool..." << std::endl;
     ulong_type num_steps = NUM_STEPS;
     double_type step = 1.0/static_cast<double_type>(num_steps);
     double_ts sum = 0.0;
     ulong_type num_threads = 4;
-    std::cout << "@ " << __LINE__ << " of \"" << __FILE__ << "\"..." << std::endl;
-    thread_manager* tm = thread_manager::get_thread_manager(num_threads);
+    thread_manager* tm = new thread_manager(num_threads);
 
     //------------------------------------------------------------------------//
     auto compute_block = [&sum, step] (const ulong_type& s, const ulong_type& e)
     {
-        std::cout << "@ " << __LINE__ << " of \"" << __FILE__ << "\"..." << std::endl;
         auto x = [step] (const ulong_type& i) { return (i-0.5)*step; };
         double_type tl_sum = 0.0;
         pragma_simd
         for(ulong_type i = s; i < e; ++i)
             tl_sum += 4.0/(1.0 + x(i)*x(i));
-        std::cout << "@ " << __LINE__ << " of \"" << __FILE__ << "\"..." << std::endl;
         sum += tl_sum;
-        std::cout << "@ " << __LINE__ << " of \"" << __FILE__ << "\"..." << std::endl;
     };
     //------------------------------------------------------------------------//
 
-    std::cout << "@ " << __LINE__ << " of \"" << __FILE__ << "\"..." << std::endl;
     tm->run_loop(compute_block, 0, num_steps, num_threads);
-    std::cout << "@ " << __LINE__ << " of \"" << __FILE__ << "\"..." << std::endl;
     tm->join();
-    std::cout << "@ " << __LINE__ << " of \"" << __FILE__ << "\"..." << std::endl;
 
     CHECK_CLOSE(step*sum, dat::PI, CheckTol);
 }
@@ -64,7 +56,7 @@ TEST(Test_1_pi_pool)
 // T2
 TEST(Test_2_pi_pool_joiner_A)
 {
-    std::cout << "Running Test_2_pi_pool_joiner (A)..." << std::endl;
+    //std::cout << "Running Test_2_pi_pool_joiner (A)..." << std::endl;
     ulong_type num_steps = NUM_STEPS;
     double_type step = 1.0/static_cast<double_type>(num_steps);
     double_ts sum = 0.0;
@@ -91,6 +83,7 @@ TEST(Test_2_pi_pool_joiner_A)
 
     tm->run_loop<double_type>(compute_block, 0, num_steps, num_threads,
                               join, 0.0);
+    tm->join();
 
     CHECK_CLOSE(step*sum, dat::PI, CheckTol);
 }
@@ -99,7 +92,7 @@ TEST(Test_2_pi_pool_joiner_A)
 // T3
 TEST(Test_3_pi_pool_joiner_B)
 {
-    std::cout << "Running Test_3_pi_pool_joiner (B)..." << std::endl;
+    //std::cout << "Running Test_3_pi_pool_joiner (B)..." << std::endl;
     ulong_type num_steps = NUM_STEPS;
     double_type step = 1.0/static_cast<double_type>(num_steps);
     double_ts sum = 0.0;
@@ -126,6 +119,7 @@ TEST(Test_3_pi_pool_joiner_B)
 
     tm->run_loop<double_type>(compute_block, 0, num_steps,
                               num_threads*4, join, 0.0);
+    tm->join();
 
     CHECK_CLOSE(step*sum, dat::PI, CheckTol);
 }

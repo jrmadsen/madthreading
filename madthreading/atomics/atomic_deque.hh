@@ -84,8 +84,6 @@
 
 #include "atomic.hh"
 
-#ifdef _HAS_ATOMICS_
-
 #include "details/atomic_deque_base.hh"
 #include "details/atomic_allocator.hh"
 
@@ -494,7 +492,6 @@ atomic_deque<_Tp, _Alloc>::insert(iterator __position, const value_type& __x)
 }
 //----------------------------------------------------------------------------//
 
-#endif // _HAS_ATOMICS_
 #ifndef SWIG
 } // namespace mad
 #endif

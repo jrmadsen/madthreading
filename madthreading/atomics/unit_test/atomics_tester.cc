@@ -28,7 +28,6 @@
 #include <iostream>
 
 #include "madthreading/atomics/atomic.hh"
-#include "madthreading/atomics/mutexed_pod.hh"
 #include "madthreading/atomics/atomic_array.hh"
 #include "madthreading/atomics/atomic_deque.hh"
 #include "madthreading/atomics/atomic_map.hh"
@@ -46,12 +45,10 @@ SUITE( Atomic_Tests )
     typedef unsigned int uint32;
     typedef unsigned long uint64;
     using mad::atomic;
-    using mad::mutexed_pod;
     using mad::atomic_array;
     using mad::atomic_deque;
     using mad::atomic_map;
     using mad::auto_lock;
-    using mad::CoreThread;
     typedef mad::mutex  Mutex_t;
     //------------------------------------------------------------------------//
 
@@ -145,8 +142,8 @@ SUITE( Atomic_Tests )
     //========================================================================//
     void* increment_int_without_lock(void* threadarg)
     {
-        struct Basic<mutexed_pod<uint32> >* mydata
-        = (struct Basic<mutexed_pod<uint32> >*) threadarg;
+        struct Basic<atomic<uint32> >* mydata
+        = (struct Basic<atomic<uint32> >*) threadarg;
 
         // try to create a data race
         mydata->counter++;
@@ -186,8 +183,8 @@ SUITE( Atomic_Tests )
     //========================================================================//
     void* increment_float_without_lock(void* threadarg)
     {
-        struct Basic<mutexed_pod<double> >* mydata
-        = (struct Basic<mutexed_pod<double> >*) threadarg;
+        struct Basic<atomic<double> >* mydata
+        = (struct Basic<atomic<double> >*) threadarg;
 
         // try to create a data race
         mydata->counter++;
@@ -213,206 +210,6 @@ SUITE( Atomic_Tests )
         int v = a++;
         CHECK_EQUAL(0, v);
         CHECK_EQUAL(1, a);
-    }
-    //------------------------------------------------------------------------//
-    TEST(Check_mutexed_pod_preincrement)
-    {
-        mutexed_pod<int> a = 0;
-        int v = ++a;
-        CHECK_EQUAL(1, v);
-        CHECK_EQUAL(1, a);
-    }
-    //------------------------------------------------------------------------//
-    TEST(Check_mutexed_pod_postincrement)
-    {
-        mutexed_pod<int> a = 0;
-        int v = a++;
-        CHECK_EQUAL(0, v);
-        CHECK_EQUAL(1, a);
-    }
-    //------------------------------------------------------------------------//
-    TEST(Check_int_POD_with_lock)
-    {
-        uint32 ncycles = NCYCLES_LC;
-        const uint32 nthreads = NTHREADS_LC;
-
-        for(uint32 j = 0; j < ncycles; ++j)
-        {
-            CoreThread threads[nthreads];
-            Basic<uint32> basic(nthreads);
-
-            // have each thread run function
-            for(uint32 i = 0; i < nthreads; ++i)
-                CORETHREADCREATE(&threads[i], increment_int_with_lock,
-                                 (void*) &basic);
-
-            // ensure above is done before checking
-            for(uint32 i = 0; i < nthreads; ++i)
-                CORETHREADJOIN(threads[i]);
-
-            CHECK_EQUAL(nthreads, basic.value);
-        }
-    }
-    //------------------------------------------------------------------------//
-    TEST(Check_Atomic_int_without_lock)
-    {
-        uint32 ncycles = NCYCLES_LC;
-        const uint32 nthreads = NTHREADS_LC;
-
-        for(uint32 j = 0; j < ncycles; ++j)
-        {
-            CoreThread threads[nthreads];
-            Basic<atomic<uint32> > basic(nthreads);
-
-            // have each thread run function
-            for(uint32 i = 0; i < nthreads; ++i)
-                CORETHREADCREATE(&threads[i], increment_atomic_int,
-                                 (void*) &basic);
-
-            // ensure above is done before checking
-            for(uint32 i = 0; i < nthreads; ++i)
-                CORETHREADJOIN(threads[i]);
-
-            CHECK_EQUAL(nthreads, basic.value);
-        }
-    }
-    //------------------------------------------------------------------------//
-    TEST(Check_Atomic_preincr_int_without_lock)
-    {
-        uint32 ncycles = NCYCLES_LC;
-        const uint32 nthreads = NTHREADS_LC;
-
-        for(uint32 j = 0; j < ncycles; ++j)
-        {
-            CoreThread threads[nthreads];
-            Basic<atomic<uint32> > basic(nthreads);
-
-            // have each thread run function
-            for(uint32 i = 0; i < nthreads; ++i)
-                CORETHREADCREATE(&threads[i], pre_increment_atomic_int,
-                                 (void*) &basic);
-
-            // ensure above is done before checking
-            for(uint32 i = 0; i < nthreads; ++i)
-                CORETHREADJOIN(threads[i]);
-
-            CHECK_EQUAL(nthreads, basic.value);
-        }
-    }
-    //------------------------------------------------------------------------//
-    TEST(Check_Atomic_postincr_int_without_lock)
-    {
-        uint32 ncycles = NCYCLES_LC;
-        const uint32 nthreads = NTHREADS_LC;
-
-        for(uint32 j = 0; j < ncycles; ++j)
-        {
-            CoreThread threads[nthreads];
-            Basic<atomic<uint32> > basic(nthreads);
-
-            // have each thread run function
-            for(uint32 i = 0; i < nthreads; ++i)
-                CORETHREADCREATE(&threads[i], post_increment_atomic_int,
-                                 (void*) &basic);
-
-            // ensure above is done before checking
-            for(uint32 i = 0; i < nthreads; ++i)
-                CORETHREADJOIN(threads[i]);
-
-            CHECK_EQUAL(nthreads, basic.value);
-        }
-    }
-    //------------------------------------------------------------------------//
-    TEST(Check_Mutexed_int_POD)
-    {
-        uint32 ncycles = NCYCLES_LC;
-        const uint32 nthreads = NTHREADS_LC;
-
-        for(uint32 j = 0; j < ncycles; ++j)
-        {
-            CoreThread threads[nthreads];
-            Basic<mutexed_pod<uint32> > basic(nthreads);
-
-            // have each thread run function
-            for(uint32 i = 0; i < nthreads; ++i)
-                CORETHREADCREATE(&threads[i], increment_int_without_lock,
-                                 (void*) &basic);
-
-            // ensure above is done before checking
-            for(uint32 i = 0; i < nthreads; ++i)
-                CORETHREADJOIN(threads[i]);
-
-            CHECK_EQUAL(nthreads, basic.value);
-        }
-    }
-    //------------------------------------------------------------------------//
-    TEST(Check_float_POD_with_lock)
-    {
-        uint32 ncycles = NCYCLES_LC;
-        const uint32 nthreads = NTHREADS_LC;
-
-        for(uint32 j = 0; j < ncycles; ++j)
-        {
-            CoreThread threads[nthreads];
-            Basic<double> basic(nthreads);
-
-            // have each thread run function
-            for(uint32 i = 0; i < nthreads; ++i)
-                CORETHREADCREATE(&threads[i], increment_float_with_lock,
-                                 (void*) &basic);
-
-            // ensure above is done before checking
-            for(uint32 i = 0; i < nthreads; ++i)
-                CORETHREADJOIN(threads[i]);
-
-            CHECK_CLOSE(nthreads, basic.value, 1.0e-12);
-        }
-    }
-    //------------------------------------------------------------------------//
-    TEST(Check_Atomic_float_without_lock)
-    {
-        uint32 ncycles = NCYCLES_LC;
-        const uint32 nthreads = NTHREADS_LC;
-
-        for(uint32 j = 0; j < ncycles; ++j)
-        {
-            CoreThread threads[nthreads];
-            Basic<atomic<double> > basic(nthreads);
-
-            // have each thread run function
-            for(uint32 i = 0; i < nthreads; ++i)
-                CORETHREADCREATE(&threads[i], increment_atomic_float,
-                                 (void*) &basic);
-
-            // ensure above is done before checking
-            for(uint32 i = 0; i < nthreads; ++i)
-                CORETHREADJOIN(threads[i]);
-
-            CHECK_CLOSE(nthreads, basic.value, 1.0e-12);
-        }
-    }
-    //------------------------------------------------------------------------//
-    TEST(Check_Mutexed_float_POD)
-    {
-        uint32 ncycles = NCYCLES_LC;
-        const uint32 nthreads = NTHREADS_LC;
-
-        for(uint32 j = 0; j < ncycles; ++j)
-        {
-            CoreThread threads[nthreads];
-            Basic<mutexed_pod<double> > basic(nthreads);
-
-            // have each thread run function
-            for(uint32 i = 0; i < nthreads; ++i)
-                CORETHREADCREATE(&threads[i], increment_float_without_lock,
-                                 (void*) &basic);
-
-            // ensure above is done before checking
-            for(uint32 i = 0; i < nthreads; ++i)
-                CORETHREADJOIN(threads[i]);
-
-            CHECK_CLOSE(nthreads, basic.value, 1.0e-12);
-        }
     }
     //------------------------------------------------------------------------//
 
@@ -565,7 +362,7 @@ SUITE( Atomic_Tests )
     class SetupIntMutexedPOD : public SetupContainer
     {
     public:
-        typedef std::vector<mutexed_pod<uint32> > Array_t;
+        typedef std::vector<atomic<uint32> > Array_t;
 
     public:
         SetupIntMutexedPOD(uint32 _size)
@@ -605,14 +402,14 @@ SUITE( Atomic_Tests )
     {
         const uint32 nthreads = NTHREADS_ARRAYS;
         SetupIntDeque setup(ATOMIC_ARRAY_SIZE);
-        CoreThread threads[nthreads];
+        std::thread threads[nthreads];
         uint32 index = 0;
         SetupIntDequeArgs args(setup);
         args.index = index;
         for(uint32 j = 0; j < nthreads; ++j)
-            CORETHREADCREATE(&threads[j], SetupIntDequeProxy, (void*)&args);
+            threads[j] = std::move(std::thread(SetupIntDequeProxy, (void*)&args));
         for(uint32 j = 0; j < nthreads; ++j)
-            CORETHREADJOIN(threads[j]);
+            threads[j].join();
         for(uint32 j = 0; j < setup.get().size(); ++j)
         {
             if(j == index)
@@ -627,14 +424,14 @@ SUITE( Atomic_Tests )
         const uint32 nthreads = NTHREADS_ARRAYS;
         SetupIntArray setup;
         setup.SetWait(nthreads);
-        CoreThread threads[nthreads];
+        std::thread threads[nthreads];
         uint32 index = 0;
         SetupIntArrayArgs args(setup);
         args.index = index;
         for(uint32 j = 0; j < nthreads; ++j)
-            CORETHREADCREATE(&threads[j], SetupIntArrayProxy, (void*)&args);
+            threads[j] = std::move(std::thread(SetupIntArrayProxy, (void*)&args));
         for(uint32 j = 0; j < nthreads; ++j)
-            CORETHREADJOIN(threads[j]);
+            threads[j].join();
         for(uint32 j = 0; j < setup.get().size(); ++j)
         {
             if(j == index)
@@ -644,42 +441,19 @@ SUITE( Atomic_Tests )
         }
     }
     //------------------------------------------------------------------------//
-    TEST(Atomic_int_map_test)
-    {
-        const uint32 nthreads = NTHREADS_ARRAYS;
-        SetupIntMap setup;
-        setup.SetWait(nthreads);
-        CoreThread threads[nthreads];
-        uint32 index = 2;
-        SetupIntMapArgs args(setup);
-        args.index = index;
-        for(uint32 j = 0; j < nthreads; ++j)
-            CORETHREADCREATE(&threads[j], SetupIntMapProxy, (void*)&args);
-        for(uint32 j = 0; j < nthreads; ++j)
-            CORETHREADJOIN(threads[j]);
-        for(SetupIntMap::const_iterator itr = setup.get().begin();
-            itr != setup.get().end(); ++itr)
-        {
-            if(itr->first == index)
-                CHECK_EQUAL(nthreads, *itr->second);
-            else
-                CHECK_EQUAL(0U, *itr->second);
-        }
-    }
-    //------------------------------------------------------------------------//
     TEST(Mutexed_int_POD_test)
     {
         const uint32 nthreads = NTHREADS_ARRAYS;
         SetupIntMutexedPOD setup(ATOMIC_ARRAY_SIZE);
         setup.SetWait(nthreads);
-        CoreThread threads[nthreads];
+        std::thread threads[nthreads];
         uint32 index = 0;
         SetupIntMutexedPODArgs args(setup);
         args.index = index;
         for(uint32 j = 0; j < nthreads; ++j)
-            CORETHREADCREATE(&threads[j], SetupIntMutexedPODProxy, (void*)&args);
+            threads[j] = std::move(std::thread(SetupIntMutexedPODProxy, (void*)&args));
         for(uint32 j = 0; j < nthreads; ++j)
-            CORETHREADJOIN(threads[j]);
+            threads[j].join();
         for(uint32 j = 0; j < setup.get().size(); ++j)
         {
             if(j == index)
