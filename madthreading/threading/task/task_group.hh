@@ -43,7 +43,7 @@ public:
     typedef unsigned long                                   ulong_type;
     typedef mad::vtask                                      task_type;
     typedef std::size_t                                     size_type;
-    typedef std::deque<task_type*, Allocator_t(task_type*)> TaskContainer_t;
+    typedef std::deque<task_type*>                          TaskContainer_t;
     typedef mad::mutex                                      Lock_t;
     typedef long_ts                                         task_count_type;
     typedef volatile int                                    pool_state_type;
@@ -53,7 +53,7 @@ public:
 
 public:
     // Constructor and Destructors
-    task_group(thread_pool* tp);
+    task_group(thread_pool* tp = nullptr);
     // Virtual destructors are required by abstract classes
     // so add it by default, just in case
     virtual ~task_group();

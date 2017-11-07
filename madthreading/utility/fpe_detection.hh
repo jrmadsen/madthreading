@@ -13,6 +13,9 @@
 #ifndef fpedetection_hh_
 #define fpedetection_hh_ 1
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
+
 #include <iostream>
 #include <stdlib.h>  /* abort(), exit() */
 #include <set>
@@ -480,8 +483,6 @@ static bool EnableInvalidOperationDetection(fpe_settings::fpe_set operations
     else
         return false;
 
-    struct sigaction fpe_termaction, fpe_oldaction;
-
     typedef fpe_settings::fpe_set::const_iterator const_iterator;
     if(operations.empty())
         operations = fpe_settings::enabled();
@@ -598,5 +599,7 @@ static void DisableInvalidOperationDetection() { }
 //============================================================================//
 
 #endif
+
+#pragma GCC diagnostic pop
 
 #endif /* fpedetection_hh_ */

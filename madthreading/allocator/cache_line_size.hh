@@ -32,6 +32,9 @@
 #ifndef cache_line_size_hh_
 #define cache_line_size_hh_
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
+
 //----------------------------------------------------------------------------//
 #ifdef SWIG
 %module cache_line_size
@@ -113,5 +116,6 @@ static inline size_t mad::cache::cache_line_size()
 
 //----------------------------------------------------------------------------//
 
+#pragma GCC diagnostic pop
 
 #endif

@@ -26,6 +26,7 @@ int main(int argc, char** argv)
     double_ts sum = 0.0;
     ulong_type num_threads = thread_manager::GetEnvNumThreads(1);
     thread_manager* tm = new thread_manager(num_threads);
+    task_group tg;
 
     auto compute_block = [&sum, step] (const ulong_type& s, const ulong_type& e)
     {
@@ -40,13 +41,14 @@ int main(int argc, char** argv)
     //========================================================================//
     timer::timer t;
 
-    tm->run_loop(compute_block, 0, num_steps, num_threads);
-    tm->join();
+    tm->run_loop(&tg, compute_block, 0, num_steps, num_threads);
+    tg.join();
 
     report(num_steps, step*sum, t.stop_and_return(), argv[0]);
     //========================================================================//
 
     double_type pi = step * sum;
+    delete tm;
     return (fabs(pi - M_PI) > PI_EPSILON);
 }
 

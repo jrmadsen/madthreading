@@ -46,9 +46,6 @@ thread_manager* thread_manager::Instance() { return fgInstance; }
 
 thread_manager* thread_manager::instance() { return fgInstance; }
 
-//============================================================================//
-
-task_group* thread_manager::m_default_group = nullptr;
 
 //============================================================================//
 
@@ -65,11 +62,6 @@ void thread_manager::check_instance(thread_manager* local_instance)
         throw std::runtime_error(null_msg);
     else
         fgInstance = local_instance;
-
-    if(m_default_group)
-        delete m_default_group;
-
-    m_default_group = new task_group(fgInstance->m_data->tp());
 }
 
 //============================================================================//
@@ -109,9 +101,7 @@ thread_manager::max_threads = 4*std::thread::hardware_concurrency();
 //============================================================================//
 
 thread_manager::thread_manager()
-: m_is_clone(false),
-  m_data(new data_type),
-  m_current_group(nullptr)
+: m_data(new data_type)
 {
     check_instance(this);
 }
@@ -119,9 +109,7 @@ thread_manager::thread_manager()
 //============================================================================//
 
 thread_manager::thread_manager(size_type _n, bool _use_affinity)
-: m_is_clone(false),
-  m_data(new data_type(_n)),
-  m_current_group(nullptr)
+: m_data(new data_type(_n))
 {
     check_instance(this);
     this->use_affinity(_use_affinity);
@@ -131,34 +119,17 @@ thread_manager::thread_manager(size_type _n, bool _use_affinity)
 
 thread_manager::~thread_manager()
 {
-    if(!m_is_clone)
-    {
-        if(m_current_group != m_default_group)
-            delete m_current_group;
-        m_current_group = nullptr;
-        delete m_default_group;
-        m_default_group = nullptr;
-        finalize();
-        delete m_data;
-        m_data = nullptr;
-        fgInstance = nullptr;
-    }
-    else
-    {
-        delete m_current_group;
-    }
+    finalize();
+    delete m_data;
+    m_data = nullptr;
+    fgInstance = nullptr;
 }
 
 //============================================================================//
 
 thread_manager::thread_manager(const thread_manager& rhs)
-: m_is_clone(true),
-  m_data(rhs.m_data),
-  m_current_group(rhs.m_current_group)
-{
-    if(!m_default_group)
-        m_default_group = new task_group(m_data->tp());
-}
+: m_data(rhs.m_data)
+{ }
 
 //============================================================================//
 
@@ -167,28 +138,11 @@ thread_manager& thread_manager::operator=(const thread_manager& rhs)
     if(this == &rhs)
         return *this;
 
-    m_is_clone = rhs.m_is_clone;
     m_data = rhs.m_data;
-    m_current_group = rhs.m_current_group;
-
-    if(!m_default_group)
-        m_default_group = new task_group(m_data->tp());
 
     return *this;
 }
 
-//============================================================================//
-
-thread_manager* thread_manager::clone(task_group* tg) const
-{
-    thread_manager* rhs = new thread_manager(*this);
-    if(!tg)
-        tg = new task_group(rhs->m_data->tp());
-    rhs->m_is_clone = true;
-    rhs->m_data = m_data;
-    rhs->m_current_group = tg;
-    return rhs;
-}
 //============================================================================//
 
 } // namespace mad

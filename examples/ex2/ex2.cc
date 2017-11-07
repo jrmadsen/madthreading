@@ -48,8 +48,9 @@ int main(int argc, char** argv)
     //========================================================================//
     timer::timer t;
 
-    tm->run_loop<double_type>(compute_block, 0, num_steps, num_threads);
-    tm->join<double_type>(join);
+    mad::task_group tg;
+    tm->run_loop<double_type>(&tg, compute_block, 0, num_steps, num_threads);
+    tm->join<double_type>(&tg, join);
 
     report(num_steps, step*sum, t.stop_and_return(), "pthread_pool");
     //========================================================================//

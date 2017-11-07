@@ -14,9 +14,10 @@ if("${CMAKE_BINARY_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-    set(VEC_FLAGS "${VEC_FLAGS} -Wopenmp-simd")
-    set(VEC_FLAGS "${VEC_FLAGS} -ftree-loop-vectorize -fopt-info-vec-optimized")
-    set(VEC_FLAGS "${VEC_FLAGS} -ftree-vectorize -Wvector-operation-performance")
+    set(VEC_FLAGS "-Wopenmp-simd")
+    add(VEC_FLAGS "-ftree-loop-vectorize -fopt-info-vec-optimized")
+    add(VEC_FLAGS "-ftree-vectorize -Wvector-operation-performance")
+    set(VEC_FLAGS "-fno-inline-small-functions -g3")
 endif()
 
 include_directories(${Madthreading_INCLUDE_DIRS})

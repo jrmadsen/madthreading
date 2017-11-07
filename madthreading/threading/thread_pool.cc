@@ -84,13 +84,13 @@ thread_pool::thread_pool(bool _use_affinity)
   m_pool_state(state::NONINIT),
   m_task_lock(), // recursive
   m_back_lock(),
-  m_back_task_to_do(NULL)
+  m_back_task_to_do(nullptr)
 {
     m_task_lock.unlock();
     m_back_lock.unlock();
 
 #ifdef VERBOSE_THREAD_POOL
-    std::cout << "Constructing ThreadPool of size "
+    tmcout << "Constructing ThreadPool of size "
               << m_pool_size << std::endl;
 #endif
 
@@ -111,13 +111,13 @@ thread_pool::thread_pool(size_type pool_size, bool _use_affinity)
   m_pool_state(state::NONINIT),
   m_task_lock(), // recursive
   m_back_lock(),
-  m_back_task_to_do(NULL)
+  m_back_task_to_do(nullptr)
 {
     m_task_lock.unlock();
     m_back_lock.unlock();
 
 #ifdef VERBOSE_THREAD_POOL
-    std::cout << "Constructing ThreadPool of size " << m_pool_size << std::endl;
+    tmcout << "Constructing ThreadPool of size " << m_pool_size << std::endl;
 #endif
 
 #ifdef FPE_DEBUG
@@ -176,13 +176,13 @@ void* thread_pool::start_thread(void* arg)
         mad::Lock_t lock(tid_mutex);
         tids[std::this_thread::get_id()] = tids.size();
 #ifdef VERBOSE_THREAD_POOL
-        std::cout << "--> [MAIN THREAD QUEUE] thread ids size: " << tids.size()
+        tmcout << "--> [MAIN THREAD QUEUE] thread ids size: " << tids.size()
                   << std::endl;
 #endif
     }
     thread_pool* tp = (thread_pool*) arg;
     tp->execute_thread();
-    return NULL;
+    return nullptr;
 }
 
 //============================================================================//
@@ -193,13 +193,13 @@ void* thread_pool::start_background(void* arg)
         mad::Lock_t lock(tid_mutex);
         tids[std::this_thread::get_id()] = tids.size();
 #ifdef VERBOSE_THREAD_POOL
-        std::cout << "--> [BACK THREAD QUEUE] thread ids size: "
+        tmcout << "--> [BACK THREAD QUEUE] thread ids size: "
                   << tids.size() << std::endl;
 #endif
     }
     thread_pool* tp = (thread_pool*) arg;
     tp->background_thread();
-    return NULL;
+    return nullptr;
 }
 
 //============================================================================//
@@ -212,7 +212,7 @@ int thread_pool::initialize_threadpool()
     is_alive_flag = true;
 
 #ifdef VERBOSE_THREAD_POOL
-    std::cout << "--> Creating " << m_pool_size
+    tmcout << "--> Creating " << m_pool_size
               << " threads ... " << m_main_threads.size() << " already exist"
               << std::endl;
 #endif
@@ -271,7 +271,7 @@ int thread_pool::initialize_threadpool()
     m_pool_size = m_main_threads.size();
 
 #ifdef VERBOSE_THREAD_POOL
-    std::cout << "--> " << m_pool_size
+    tmcout << "--> " << m_pool_size
               << " threads created by the thread pool" << std::endl;
 #endif
 
@@ -370,7 +370,7 @@ int thread_pool::destroy_threadpool()
     }
 
 #ifdef VERBOSE_THREAD_POOL
-    std::cout << "--> " << m_pool_size
+    tmcout << "--> " << m_pool_size
               << " threads exited from the thread pool" << std::endl;
 #endif
 
@@ -395,7 +395,7 @@ int thread_pool::destroy_threadpool()
 
 void* thread_pool::execute_thread()
 {
-    vtask* task = NULL;
+    vtask* task = nullptr;
     while(true)
     {
         //--------------------------------------------------------------------//
@@ -426,7 +426,8 @@ void* thread_pool::execute_thread()
                && tids.find(std::this_thread::get_id()) != tids.end())
                 mad::details::allocator_list_tl::get_allocator_list()
                         ->Destroy(tids.find(std::this_thread::get_id())->second, 1);
-            //----------------------------------------------------------------//            
+            //----------------------------------------------------------------//
+            return nullptr;
         }
 
         // get the task
@@ -438,27 +439,12 @@ void* thread_pool::execute_thread()
         m_task_lock.unlock();
         //--------------------------------------------------------------------//
 
-        // get the task group
-        task_group*& tg = task->group();
-        //--------------------------------------------------------------------//
-
         // execute the task
-        run(task);
+        task_group* tg = run(task);
         //--------------------------------------------------------------------//
 
-        // decrement the task group
-        /*long_type tc = (tg->task_count() -= 1);
-        {
-            mad::auto_lock l(io_mutex);
-            tmcout << "Task count (-) : " << tc << std::endl;
-        }*/
-        tg->task_count() -= 1;
-        tg->join_lock().lock();
-        tg->join_cond().notify_one();
-        tg->join_lock().unlock();
-        //--------------------------------------------------------------------//
     }
-    return NULL;
+    return nullptr;
 }
 
 //============================================================================//
@@ -480,7 +466,7 @@ void thread_pool::signal_background(void* ptr)
 
 void thread_pool::background_thread()
 {
-    vtask* task = NULL;
+    vtask* task = nullptr;
     void*  task_key = 0;
 
     while(m_pool_state == state::NONINIT)
@@ -521,7 +507,7 @@ void thread_pool::background_thread()
 
         task_key = m_back_pointer;
         task = m_back_task_to_do;
-        m_back_task_to_do = NULL;
+        m_back_task_to_do = nullptr;
         //--------------------------------------------------------------------//
         // Unlock
         m_back_lock.unlock();
@@ -550,17 +536,19 @@ void thread_pool::background_thread()
         m_back_done.find(task_key)->second = true;
         m_back_lock.unlock();
 
-        task = NULL;
-        task_key = NULL;
+        task = nullptr;
+        task_key = nullptr;
         //--------------------------------------------------------------------//
     }
-    //return NULL;
+    //return nullptr;
 }
 
 //============================================================================//
 
-void thread_pool::run(vtask*& task)
+mad::task_group* thread_pool::run(vtask*& task)
 {
+    task_group* tg = task->group();
+
     // execute task
     (*task)();
 
@@ -579,6 +567,16 @@ void thread_pool::run(vtask*& task)
             task = 0;
         }
     }
+
+    tg->task_count() -= 1;
+    if(tg->task_count().load() < 2)
+    {
+        tg->join_lock().lock();
+        tg->join_cond().notify_all();
+        tg->join_lock().unlock();
+    }
+
+    return tg;
 }
 
 //============================================================================//
@@ -587,7 +585,7 @@ int thread_pool::add_task(vtask* task)
 {
 
 #ifdef VERBOSE_THREAD_POOL
-    std::cout << "Adding task..." << std::endl;
+    tmcout << "Adding task..." << std::endl;
 #endif
 
     if(!is_alive_flag) // if we haven't built thread-pool, just execute

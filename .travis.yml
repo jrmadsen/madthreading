@@ -21,8 +21,7 @@ addons:
             - libunittest++-dev
             - libtbb-dev
             - libgomp1
-            #- g++-5-multilib
-            #- gcc-5-multilib
+            - swig3.0
 
 install:
     #- sudo apt-get update

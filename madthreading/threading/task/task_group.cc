@@ -43,6 +43,8 @@ task_group::task_group(thread_pool* tp)
 {
     m_save_lock.unlock();
     m_join_lock.unlock();
+    if(!m_pool)
+        m_pool = mad::thread_manager::instance()->thread_pool();
 }
 
 //============================================================================//
@@ -81,11 +83,8 @@ void task_group::join()
                 tmcout << "# of tasks: " << ntasks << std::endl;
             }
             #endif
-            // if not locked, we need to lock it
-            /*m_join_lock.lock();
             // Wait until signaled that a task has been competed
             // Unlock mutex while wait, then lock it back when signaled
-            m_join_cond.timed_wait(m_join_lock, 5.0);*/
             m_join_cond.wait(m_join_lock);
         }
 
@@ -103,8 +102,10 @@ void task_group::join()
         throw std::runtime_error(ss.str().c_str());
     }
 
-    m_join_lock.unlock();
-    m_save_lock.unlock();
+    { auto_lock l(m_join_lock); }
+    { auto_lock l(m_save_lock); }
+    //m_join_lock.unlock();
+    //m_save_lock.unlock();
 }
 
 //============================================================================//

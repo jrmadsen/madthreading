@@ -160,7 +160,7 @@ public:
 protected:
     void* execute_thread(); // function thread sits in
     void  background_thread(); // function background threads sit in
-    void  run(task_type*&);
+    task_group*  run(task_type*&);
     bool  is_initialized() const;
 
 protected:
@@ -212,8 +212,8 @@ private:
       m_main_tasks(TaskContainer_t()),
       m_is_joined(JoinContainer_t()),
       m_back_done(JoinMap_t()),
-      m_back_pointer(NULL),
-      m_back_task_to_do(NULL),
+      m_back_pointer(nullptr),
+      m_back_task_to_do(nullptr),
       m_back_tasks(TaskMap_t())
     { }
 
@@ -337,7 +337,7 @@ void thread_pool::signal_background(void* ptr, _Tp... _args)
 
     // acquire lock, assign task-to-do, signal a thread to wake up.
     // thread just woken up will acquire lock, get pointer value of
-    // task-to-do, and then set task-to-do pointer to NULL
+    // task-to-do, and then set task-to-do pointer to nullptr
     m_back_lock.lock();
     m_back_task_to_do = m_back_tasks[ptr];
     m_back_task_to_do->set(_args...);

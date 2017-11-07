@@ -34,7 +34,7 @@
 
 void* mad::aligned_alloc(size_t size, size_t align)
 {
-    void* mem = NULL;
+    void* mem = nullptr;
     int ret = posix_memalign(&mem, align, size);
     if (ret != 0)
     {

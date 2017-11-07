@@ -45,9 +45,9 @@ TEST(Test_1_pi_pool)
         sum += tl_sum;
     };
     //------------------------------------------------------------------------//
-
-    tm->run_loop(compute_block, 0, num_steps, num_threads);
-    tm->join();
+    mad::task_group tg;
+    tm->run_loop(&tg, compute_block, 0, num_steps, num_threads);
+    tg.join();
 
     CHECK_CLOSE(step*sum, dat::PI, CheckTol);
 }
@@ -81,9 +81,10 @@ TEST(Test_2_pi_pool_joiner_A)
     };
     //------------------------------------------------------------------------//
 
-    tm->run_loop<double_type>(compute_block, 0, num_steps, num_threads,
+    mad::task_group tg;
+    tm->run_loop<double_type>(&tg, compute_block, 0, num_steps, num_threads,
                               join, 0.0);
-    tm->join();
+    tg.join();
 
     CHECK_CLOSE(step*sum, dat::PI, CheckTol);
 }
@@ -117,9 +118,10 @@ TEST(Test_3_pi_pool_joiner_B)
     };
     //------------------------------------------------------------------------//
 
-    tm->run_loop<double_type>(compute_block, 0, num_steps,
+    mad::task_group tg;
+    tm->run_loop<double_type>(&tg, compute_block, 0, num_steps,
                               num_threads*4, join, 0.0);
-    tm->join();
+    tg.join();
 
     CHECK_CLOSE(step*sum, dat::PI, CheckTol);
 }

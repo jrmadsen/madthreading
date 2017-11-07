@@ -132,7 +132,7 @@ public:
 
 public:
     task_tree()
-    : m_root(NULL)
+    : m_root(nullptr)
     { }
 
     task_tree(tree_node_type* val)

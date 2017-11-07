@@ -326,7 +326,7 @@ public:
         if(size == 0) size = 1;
         if(void* ptr = scalable_aligned_malloc(size, mad::cache::cache_line_size()))
             return ptr;
-        return NULL;
+        return nullptr;
     }
     //------------------------------------------------------------------------//
     void* operator new [] (size_t size, const std::nothrow_t&) throw ()
@@ -412,7 +412,7 @@ public:
         if(size == 0) size = 1;
         if(void* ptr = scalable_malloc(size))
             return ptr;
-        return NULL;
+        return nullptr;
     }
     //------------------------------------------------------------------------//
     void* operator new [] (size_t size, const std::nothrow_t&) throw ()
