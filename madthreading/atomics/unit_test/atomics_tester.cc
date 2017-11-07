@@ -28,9 +28,6 @@
 #include <iostream>
 
 #include "madthreading/atomics/atomic.hh"
-#include "madthreading/atomics/atomic_array.hh"
-#include "madthreading/atomics/atomic_deque.hh"
-#include "madthreading/atomics/atomic_map.hh"
 #include "madthreading/threading/auto_lock.hh"
 #include "madthreading/threading/threading.hh"
 
@@ -39,15 +36,11 @@
 
 SUITE( Atomic_Tests )
 {
-
     //------------------------------------------------------------------------//
     typedef unsigned short uint16;
     typedef unsigned int uint32;
     typedef unsigned long uint64;
     using mad::atomic;
-    using mad::atomic_array;
-    using mad::atomic_deque;
-    using mad::atomic_map;
     using mad::auto_lock;
     typedef mad::mutex  Mutex_t;
     //------------------------------------------------------------------------//
@@ -212,255 +205,143 @@ SUITE( Atomic_Tests )
         CHECK_EQUAL(1, a);
     }
     //------------------------------------------------------------------------//
-
-    //========================================================================//
-    //
-    //
-    //      TESTS WITH CONTAINERS
-    //
-    //
-    //========================================================================//
-
-#define ATOMIC_ARRAY_SIZE 4
-#define NTHREADS_ARRAYS 16
-    //========================================================================//
-    // Below class is used to create situation where all threads < N-1 (N = num
-    // of threads) wait until the last thread is spawned before proceeding to
-    // the operation. This way, the threads are forced into a data race
-    // and we can actually test whether the atomics/mutexes are working.
-    // Otherwise, the thread executes the simple operation before the following
-    // thread is spawned
-    class SetupContainer
+    TEST(Check_int_POD_with_lock)
     {
-    public:
-        SetupContainer() : wait_until(0), counter(0) { }
-        SetupContainer(const uint32& _wait) : wait_until(_wait), counter(0) { }
-#ifdef DEBUG
-        bool wait() const { return (counter < wait_until) ? true : false; }
-#else
-        bool wait() const { return false; }
-#endif
-        void SetWait(const uint32& val) { wait_until = val; }
-        uint32 operator++() { return ++counter;  }
-        uint32 operator++(int) { uint32 c = counter; counter++; return c; }
+        uint32 ncycles = NCYCLES_LC;
+        const uint32 nthreads = NTHREADS_LC;
 
-    protected:
-        uint32 wait_until;
-        atomic<uint32> counter;
-    };
-    //========================================================================//
-    // Because raw threads are *easier* to implement (e.g. no package
-    // dependencies)
-    //========================================================================//
-    class SetupIntDeque : public SetupContainer
-    {
-    public:
-        typedef atomic_deque<uint32> Array_t;
-    public:
-        SetupIntDeque(const uint32& _size)
-        :array(_size-1, 0) { atomic<uint32> init(0); array.resize(_size, init); }
-        SetupIntDeque& operator()(uint32 i)
+        for(uint32 j = 0; j < ncycles; ++j)
         {
-            ++(*this);
-            while(wait()) { }
-            array[i] += 1;
-            return *this;
-        }
+            std::thread threads[nthreads];
+            Basic<uint32> basic(nthreads);
 
-        const Array_t& get() const { return array; }
+            // have each thread run function
+            for(uint32 i = 0; i < nthreads; ++i)
+                threads[i] = std::move(std::thread(increment_int_with_lock,
+                                 (void*) &basic));
 
-    protected:
-        Array_t array;
-    };
-    //------------------------------------------------------------------------//
-    struct SetupIntDequeArgs
-    {
-        SetupIntDequeArgs(SetupIntDeque& _setup) : setup(_setup), index(0) { }
-        SetupIntDeque& setup;
-        uint32 index;
-    };
-    //------------------------------------------------------------------------//
-    inline void* SetupIntDequeProxy(void* threadarg)
-    {
-        struct SetupIntDequeArgs* setup_deque_args
-        = (SetupIntDequeArgs*)threadarg;
-        setup_deque_args->setup(setup_deque_args->index);
-        return (void*) setup_deque_args;
-    }
-    //========================================================================//
-    //========================================================================//
-    class SetupIntArray : public SetupContainer
-    {
-    public:
-        typedef atomic_array<uint32, ATOMIC_ARRAY_SIZE> Array_t;
+            // ensure above is done before checking
+            for(uint32 i = 0; i < nthreads; ++i)
+                threads[i].join();
 
-    public:
-        SetupIntArray() { }
-        SetupIntArray& operator()(uint32 i)
-        {
-            ++(*this);
-            while(wait()) { }
-            array[i] += 1;
-            return *this;
-        }
-        const Array_t& get() const { return array; }
-
-    protected:
-        Array_t array;
-    };
-    //------------------------------------------------------------------------//
-    struct SetupIntArrayArgs
-    {
-        SetupIntArrayArgs(SetupIntArray& _setup) : setup(_setup), index(0) { }
-        SetupIntArray& setup;
-        uint32 index;
-    };
-    //------------------------------------------------------------------------//
-    inline void* SetupIntArrayProxy(void* threadarg)
-    {
-        struct SetupIntArrayArgs* setup_array_args = (SetupIntArrayArgs*)threadarg;
-        setup_array_args->setup(setup_array_args->index);
-        return (void*) setup_array_args;
-    }
-    //========================================================================//
-    class SetupIntMap : public SetupContainer
-    {
-    public:
-        typedef atomic_map<uint32, uint32> Array_t;
-        typedef typename Array_t::const_iterator const_iterator;
-
-    public:
-        SetupIntMap() { }
-        SetupIntMap& operator()(uint32 i)
-        {
-            ++(*this);
-            while(wait()) { }
-            map[i] += 1;
-            return *this;
-        }
-        const Array_t& get() const { return map; }
-
-    protected:
-        Array_t map;
-    };
-    //------------------------------------------------------------------------//
-    struct SetupIntMapArgs
-    {
-        SetupIntMapArgs(SetupIntMap& _setup) : setup(_setup), index(0) { }
-        SetupIntMap& setup;
-        uint32 index;
-    };
-    //------------------------------------------------------------------------//
-    inline void* SetupIntMapProxy(void* threadarg)
-    {
-        struct SetupIntMapArgs* setup_map_args
-        = (SetupIntMapArgs*)threadarg;
-        setup_map_args->setup(setup_map_args->index);
-        return (void*) setup_map_args;
-    }
-    //========================================================================//
-    class SetupIntMutexedPOD : public SetupContainer
-    {
-    public:
-        typedef std::vector<atomic<uint32> > Array_t;
-
-    public:
-        SetupIntMutexedPOD(uint32 _size)
-        : array(_size, 0) { }
-        SetupIntMutexedPOD& operator()(uint32 i)
-        {
-            ++(*this);
-            while(wait()) { }
-            array[i] += 1;
-            return *this;
-        }
-        const Array_t& get() const { return array; }
-
-    protected:
-        Array_t array;
-    };
-    //------------------------------------------------------------------------//
-    struct SetupIntMutexedPODArgs
-    {
-        SetupIntMutexedPODArgs(SetupIntMutexedPOD& _setup)
-        : setup(_setup), index(0) { }
-        SetupIntMutexedPOD& setup;
-        uint32 index;
-    };
-    //------------------------------------------------------------------------//
-    inline void* SetupIntMutexedPODProxy(void* threadarg)
-    {
-        struct SetupIntMutexedPODArgs* setup_mpod_args
-        = (SetupIntMutexedPODArgs*)threadarg;
-        setup_mpod_args->setup(setup_mpod_args->index);
-        return (void*) setup_mpod_args;
-    }
-    //========================================================================//
-
-    //------------------------------------------------------------------------//
-    TEST(Atomic_int_deque_test)
-    {
-        const uint32 nthreads = NTHREADS_ARRAYS;
-        SetupIntDeque setup(ATOMIC_ARRAY_SIZE);
-        std::thread threads[nthreads];
-        uint32 index = 0;
-        SetupIntDequeArgs args(setup);
-        args.index = index;
-        for(uint32 j = 0; j < nthreads; ++j)
-            threads[j] = std::move(std::thread(SetupIntDequeProxy, (void*)&args));
-        for(uint32 j = 0; j < nthreads; ++j)
-            threads[j].join();
-        for(uint32 j = 0; j < setup.get().size(); ++j)
-        {
-            if(j == index)
-                CHECK_EQUAL(nthreads, setup.get()[j]);
-            else
-                CHECK_EQUAL(0U, setup.get()[j]);
+            CHECK_EQUAL(nthreads, basic.value);
         }
     }
     //------------------------------------------------------------------------//
-    TEST(Atomic_int_array_test)
+    TEST(Check_Atomic_int_without_lock)
     {
-        const uint32 nthreads = NTHREADS_ARRAYS;
-        SetupIntArray setup;
-        setup.SetWait(nthreads);
-        std::thread threads[nthreads];
-        uint32 index = 0;
-        SetupIntArrayArgs args(setup);
-        args.index = index;
-        for(uint32 j = 0; j < nthreads; ++j)
-            threads[j] = std::move(std::thread(SetupIntArrayProxy, (void*)&args));
-        for(uint32 j = 0; j < nthreads; ++j)
-            threads[j].join();
-        for(uint32 j = 0; j < setup.get().size(); ++j)
+        uint32 ncycles = NCYCLES_LC;
+        const uint32 nthreads = NTHREADS_LC;
+
+        for(uint32 j = 0; j < ncycles; ++j)
         {
-            if(j == index)
-                CHECK_EQUAL(nthreads, setup.get()[j]);
-            else
-                CHECK_EQUAL(0U, setup.get()[j]);
+            std::thread threads[nthreads];
+            Basic<atomic<uint32> > basic(nthreads);
+
+            // have each thread run function
+            for(uint32 i = 0; i < nthreads; ++i)
+                threads[i] = std::move(std::thread(increment_atomic_int,
+                                 (void*) &basic));
+
+            // ensure above is done before checking
+            for(uint32 i = 0; i < nthreads; ++i)
+                threads[i].join();
+
+            CHECK_EQUAL(nthreads, basic.value);
         }
     }
     //------------------------------------------------------------------------//
-    TEST(Mutexed_int_POD_test)
+    TEST(Check_Atomic_preincr_int_without_lock)
     {
-        const uint32 nthreads = NTHREADS_ARRAYS;
-        SetupIntMutexedPOD setup(ATOMIC_ARRAY_SIZE);
-        setup.SetWait(nthreads);
-        std::thread threads[nthreads];
-        uint32 index = 0;
-        SetupIntMutexedPODArgs args(setup);
-        args.index = index;
-        for(uint32 j = 0; j < nthreads; ++j)
-            threads[j] = std::move(std::thread(SetupIntMutexedPODProxy, (void*)&args));
-        for(uint32 j = 0; j < nthreads; ++j)
-            threads[j].join();
-        for(uint32 j = 0; j < setup.get().size(); ++j)
+        uint32 ncycles = NCYCLES_LC;
+        const uint32 nthreads = NTHREADS_LC;
+
+        for(uint32 j = 0; j < ncycles; ++j)
         {
-            if(j == index)
-                CHECK_EQUAL(nthreads, setup.get()[j]);
-            else
-                CHECK_EQUAL(0U, setup.get()[j]);
+            std::thread threads[nthreads];
+            Basic<atomic<uint32> > basic(nthreads);
+
+            // have each thread run function
+            for(uint32 i = 0; i < nthreads; ++i)
+                threads[i] = std::move(std::thread(pre_increment_atomic_int,
+                                 (void*) &basic));
+
+            // ensure above is done before checking
+            for(uint32 i = 0; i < nthreads; ++i)
+                threads[i].join();
+
+            CHECK_EQUAL(nthreads, basic.value);
         }
     }
     //------------------------------------------------------------------------//
+    TEST(Check_Atomic_postincr_int_without_lock)
+    {
+        uint32 ncycles = NCYCLES_LC;
+        const uint32 nthreads = NTHREADS_LC;
+
+        for(uint32 j = 0; j < ncycles; ++j)
+        {
+            std::thread threads[nthreads];
+            Basic<atomic<uint32> > basic(nthreads);
+
+            // have each thread run function
+            for(uint32 i = 0; i < nthreads; ++i)
+                threads[i] = std::move(std::thread(post_increment_atomic_int,
+                                 (void*) &basic));
+
+            // ensure above is done before checking
+            for(uint32 i = 0; i < nthreads; ++i)
+                threads[i].join();
+
+            CHECK_EQUAL(nthreads, basic.value);
+        }
+    }
+    //------------------------------------------------------------------------//
+    TEST(Check_float_POD_with_lock)
+    {
+        uint32 ncycles = NCYCLES_LC;
+        const uint32 nthreads = NTHREADS_LC;
+
+        for(uint32 j = 0; j < ncycles; ++j)
+        {
+            std::thread threads[nthreads];
+            Basic<double> basic(nthreads);
+
+            // have each thread run function
+            for(uint32 i = 0; i < nthreads; ++i)
+                threads[i] = std::move(std::thread(increment_float_with_lock,
+                                 (void*) &basic));
+
+            // ensure above is done before checking
+            for(uint32 i = 0; i < nthreads; ++i)
+                threads[i].join();
+
+            CHECK_CLOSE(nthreads, basic.value, 1.0e-12);
+        }
+    }
+    //------------------------------------------------------------------------//
+    TEST(Check_Atomic_float_without_lock)
+    {
+        uint32 ncycles = NCYCLES_LC;
+        const uint32 nthreads = NTHREADS_LC;
+
+        for(uint32 j = 0; j < ncycles; ++j)
+        {
+            std::thread threads[nthreads];
+            Basic<atomic<double> > basic(nthreads);
+
+            // have each thread run function
+            for(uint32 i = 0; i < nthreads; ++i)
+                threads[i] = std::move(std::thread(increment_atomic_float,
+                                 (void*) &basic));
+
+            // ensure above is done before checking
+            for(uint32 i = 0; i < nthreads; ++i)
+                threads[i].join();
+
+            CHECK_CLOSE(nthreads, basic.value, 1.0e-12);
+        }
+    }
+    //------------------------------------------------------------------------//
+
 }

@@ -76,24 +76,11 @@ void mad::array::list_dot(size_t n, size_t m, size_t d, const double* a,
 {
     int nt = num_threads();
 
-    if(n < array_thread_thresh * nt)
+    for(size_t i = 0; i < n; ++i)
     {
-        for(size_t i = 0; i < n; ++i)
-        {
-            dotprod[i] = 0.0;
-            for(size_t j = 0; j < d; ++j)
-                dotprod[i] += a[m * i + j] * b[m * i + j];
-        }
-    }
-    else
-    {
-#pragma omp parallel for schedule(static)
-        for(size_t i = 0; i < n; ++i)
-        {
-            dotprod[i] = 0.0;
-            for(size_t j = 0; j < d; ++j)
-                dotprod[i] += a[m * i + j] * b[m * i + j];
-        }
+        dotprod[i] = 0.0;
+        for(size_t j = 0; j < d; ++j)
+            dotprod[i] += a[m * i + j] * b[m * i + j];
     }
 
     return;
@@ -114,14 +101,11 @@ void mad::array::inv(size_t n, double* q)
 void mad::array::amplitude(size_t n, size_t m, size_t d,
                            const double* v, double* norm)
 {
-    double* temp = static_cast<double*>(mad::aligned_alloc(
-        n * sizeof(double), mad::SIMD_WIDTH));
+    simd_array<double> temp(n);
 
     mad::array::list_dot(n, m, d, v, v, temp);
 
     mad::func::sqrt(n, temp, norm);
-
-    mad::aligned_free(temp);
 
     return;
 }
@@ -131,35 +115,17 @@ void mad::array::amplitude(size_t n, size_t m, size_t d,
 void mad::array::normalize(size_t n, size_t m, size_t d,
                            const double* q_in, double* q_out)
 {
-    double* norm = static_cast<double*>(mad::aligned_alloc(
-                                            n * sizeof(double), mad::SIMD_WIDTH));
+    simd_array<double> norm(n);
 
     mad::array::amplitude(n, m, d, q_in, norm);
 
-    int nt = num_threads();
-
-    if(n < array_thread_thresh * nt)
+    for(size_t i = 0; i < n; ++i)
     {
-        for(size_t i = 0; i < n; ++i)
+        for(size_t j = 0; j < d; ++j)
         {
-            for(size_t j = 0; j < d; ++j)
-            {
-                q_out[m * i + j] = q_in[m * i + j] / norm[i];
-            }
-        }
-    } else
-    {
-#pragma omp parallel for schedule(static)
-        for(size_t i = 0; i < n; ++i)
-        {
-            for(size_t j = 0; j < d; ++j)
-            {
-                q_out[m * i + j] = q_in[m * i + j] / norm[i];
-            }
+            q_out[m * i + j] = q_in[m * i + j] / norm[i];
         }
     }
-
-    mad::aligned_free(norm);
 
     return;
 }
@@ -169,35 +135,17 @@ void mad::array::normalize(size_t n, size_t m, size_t d,
 void mad::array::normalize_inplace(size_t n, size_t m, size_t d, double* q)
 {
 
-    double* norm = static_cast<double*>(mad::aligned_alloc(
-                                            n * sizeof(double), mad::SIMD_WIDTH));
+    simd_array<double> norm(n);
 
     mad::array::amplitude(n, m, d, q, norm);
 
-    int nt = num_threads();
-
-    if(n < array_thread_thresh * nt)
+    for(size_t i = 0; i < n; ++i)
     {
-        for(size_t i = 0; i < n; ++i)
+        for(size_t j = 0; j < d; ++j)
         {
-            for(size_t j = 0; j < d; ++j)
-            {
-                q[m * i + j] /= norm[i];
-            }
-        }
-    } else
-    {
-#pragma omp parallel for schedule(static)
-        for(size_t i = 0; i < n; ++i)
-        {
-            for(size_t j = 0; j < d; ++j)
-            {
-                q[m * i + j] /= norm[i];
-            }
+            q[m * i + j] /= norm[i];
         }
     }
-
-    mad::aligned_free(norm);
 
     return;
 }
@@ -208,158 +156,69 @@ void mad::array::rotate(size_t nq, const double* q, size_t nv,
                         const double* v_in, double* v_out)
 {
 
-    size_t n = nq;
-    if(nv > n)
-    {
-        n = nv;
-    }
+    size_t n = (nv > nq) ? nv : nq;
 
-    double* q_unit = static_cast<double*>(mad::aligned_alloc(
-                                              4 * nq * sizeof(double), mad::SIMD_WIDTH));
+    simd_array<double> q_unit(4*nq);
 
     mad::array::normalize(nq, 4, 4, q, q_unit);
 
-    size_t i;
-    size_t vfin;
-    size_t vfout;
-    size_t qf;
-    double xw, yw, zw, x2, xy, xz, y2, yz, z2;
-
-    int nt = num_threads();
-
     // this is to avoid branching inside the for loop.
-    size_t chv;
-    size_t chq;
-    if(nv == 1)
-        chv = 0;
-    else
-        chv = 1;
+    size_t chv = (nv == 1) ? 0 : 1;
+    size_t chq = (nq == 1) ? 0 : 1;
 
     if(nq == 1)
-        chq = 0;
-    else
-        chq = 1;
-
-    if(n < array_thread_thresh * nt)
     {
-        if(nq == 1)
+        double xw =  q_unit[3] * q_unit[0];
+        double yw =  q_unit[3] * q_unit[1];
+        double zw =  q_unit[3] * q_unit[2];
+        double x2 = -q_unit[0] * q_unit[0];
+        double xy =  q_unit[0] * q_unit[1];
+        double xz =  q_unit[0] * q_unit[2];
+        double y2 = -q_unit[1] * q_unit[1];
+        double yz =  q_unit[1] * q_unit[2];
+        double z2 = -q_unit[2] * q_unit[2];
+        for(size_t i = 0; i < n; ++i)
         {
-            xw =  q_unit[3] * q_unit[0];
-            yw =  q_unit[3] * q_unit[1];
-            zw =  q_unit[3] * q_unit[2];
-            x2 = -q_unit[0] * q_unit[0];
-            xy =  q_unit[0] * q_unit[1];
-            xz =  q_unit[0] * q_unit[2];
-            y2 = -q_unit[1] * q_unit[1];
-            yz =  q_unit[1] * q_unit[2];
-            z2 = -q_unit[2] * q_unit[2];
-            for(i = 0; i < n; ++i)
-            {
-                vfin = 3 * i * chv;
-                vfout = 3 * i;
-                v_out[vfout + 0] = 2*((y2 + z2) * v_in[vfin + 0] +
-                                   (xy - zw) * v_in[vfin + 1] + (yw + xz) * v_in[vfin + 2])
-                        + v_in[vfin + 0];
-                v_out[vfout + 1] = 2*((zw + xy) * v_in[vfin + 0] +
-                                   (x2 + z2) * v_in[vfin + 1] + (yz - xw) * v_in[vfin + 2])
-                        + v_in[vfin + 1];
-                v_out[vfout + 2] = 2*((xz - yw) * v_in[vfin + 0] +
-                                   (xw + yz) * v_in[vfin + 1] + (x2 + y2) * v_in[vfin + 2])
-                        + v_in[vfin + 2];
-            }
-        }
-        else
-        {
-            for(i = 0; i < n; ++i)
-            {
-                vfin = 3 * i * chv;
-                vfout = 3 * i;
-                qf = 4 * i * chq;
-                xw =  q_unit[qf + 3] * q_unit[qf + 0];
-                yw =  q_unit[qf + 3] * q_unit[qf + 1];
-                zw =  q_unit[qf + 3] * q_unit[qf + 2];
-                x2 = -q_unit[qf + 0] * q_unit[qf + 0];
-                xy =  q_unit[qf + 0] * q_unit[qf + 1];
-                xz =  q_unit[qf + 0] * q_unit[qf + 2];
-                y2 = -q_unit[qf + 1] * q_unit[qf + 1];
-                yz =  q_unit[qf + 1] * q_unit[qf + 2];
-                z2 = -q_unit[qf + 2] * q_unit[qf + 2];
-
-                v_out[vfout + 0] = 2*((y2 + z2) * v_in[vfin + 0] +
-                                   (xy - zw) * v_in[vfin + 1] + (yw + xz) * v_in[vfin + 2])
-                        + v_in[vfin + 0];
-                v_out[vfout + 1] = 2*((zw + xy) * v_in[vfin + 0] +
-                                   (x2 + z2) * v_in[vfin + 1] + (yz - xw) * v_in[vfin + 2])
-                        + v_in[vfin + 1];
-                v_out[vfout + 2] = 2*((xz - yw) * v_in[vfin + 0] +
-                                   (xw + yz) * v_in[vfin + 1] + (x2 + y2) * v_in[vfin + 2])
-                        + v_in[vfin + 2];
-            }
+            size_t vfin = 3 * i * chv;
+            size_t vfout = 3 * i;
+            v_out[vfout + 0] = 2*((y2 + z2) * v_in[vfin + 0] +
+                               (xy - zw) * v_in[vfin + 1] + (yw + xz) * v_in[vfin + 2])
+                    + v_in[vfin + 0];
+            v_out[vfout + 1] = 2*((zw + xy) * v_in[vfin + 0] +
+                               (x2 + z2) * v_in[vfin + 1] + (yz - xw) * v_in[vfin + 2])
+                    + v_in[vfin + 1];
+            v_out[vfout + 2] = 2*((xz - yw) * v_in[vfin + 0] +
+                               (xw + yz) * v_in[vfin + 1] + (x2 + y2) * v_in[vfin + 2])
+                    + v_in[vfin + 2];
         }
     }
     else
     {
-        if(nq == 1)
+        for(size_t i = 0; i < n; ++i)
         {
-            xw =  q_unit[3] * q_unit[0];
-            yw =  q_unit[3] * q_unit[1];
-            zw =  q_unit[3] * q_unit[2];
-            x2 = -q_unit[0] * q_unit[0];
-            xy =  q_unit[0] * q_unit[1];
-            xz =  q_unit[0] * q_unit[2];
-            y2 = -q_unit[1] * q_unit[1];
-            yz =  q_unit[1] * q_unit[2];
-            z2 = -q_unit[2] * q_unit[2];
-#pragma omp parallel for default(shared) private(i, vfin, vfout) schedule(static)
-            for(i = 0; i < n; ++i)
-            {
-                vfin = 3 * i * chv;
-                vfout = 3 * i;
-                v_out[vfout + 0] = 2*((y2 + z2) * v_in[vfin + 0] +
-                                   (xy - zw) * v_in[vfin + 1] + (yw + xz) * v_in[vfin + 2])
-                        + v_in[vfin + 0];
-                v_out[vfout + 1] = 2*((zw + xy) * v_in[vfin + 0] +
-                                   (x2 + z2) * v_in[vfin + 1] + (yz - xw) * v_in[vfin + 2])
-                        + v_in[vfin + 1];
-                v_out[vfout + 2] = 2*((xz - yw) * v_in[vfin + 0] +
-                                   (xw + yz) * v_in[vfin + 1] + (x2 + y2) * v_in[vfin + 2])
-                        + v_in[vfin + 2];
-            }
+            size_t vfin = 3 * i * chv;
+            size_t vfout = 3 * i;
+            size_t qf = 4 * i * chq;
+            double xw =  q_unit[qf + 3] * q_unit[qf + 0];
+            double yw =  q_unit[qf + 3] * q_unit[qf + 1];
+            double zw =  q_unit[qf + 3] * q_unit[qf + 2];
+            double x2 = -q_unit[qf + 0] * q_unit[qf + 0];
+            double xy =  q_unit[qf + 0] * q_unit[qf + 1];
+            double xz =  q_unit[qf + 0] * q_unit[qf + 2];
+            double y2 = -q_unit[qf + 1] * q_unit[qf + 1];
+            double yz =  q_unit[qf + 1] * q_unit[qf + 2];
+            double z2 = -q_unit[qf + 2] * q_unit[qf + 2];
 
-        } else {
-#pragma omp parallel for default(shared) private(i, vfin, vfout, qf, xw, yw, zw, x2, xy, xz, y2, yz, z2) schedule(static)
-            for(i = 0; i < n; ++i)
-            {
-                vfin = 3 * i * chv;
-                vfout = 3 * i;
-                qf = 4 * i * chq;
-                // if(i % 1000 == 0)
-                {
-                    xw =  q_unit[qf + 3] * q_unit[qf + 0];
-                    yw =  q_unit[qf + 3] * q_unit[qf + 1];
-                    zw =  q_unit[qf + 3] * q_unit[qf + 2];
-                    x2 = -q_unit[qf + 0] * q_unit[qf + 0];
-                    xy =  q_unit[qf + 0] * q_unit[qf + 1];
-                    xz =  q_unit[qf + 0] * q_unit[qf + 2];
-                    y2 = -q_unit[qf + 1] * q_unit[qf + 1];
-                    yz =  q_unit[qf + 1] * q_unit[qf + 2];
-                    z2 = -q_unit[qf + 2] * q_unit[qf + 2];
-                    v_out[vfout + 0] = 2*((y2 + z2) * v_in[vfin + 0] +
-                                       (xy - zw) * v_in[vfin + 1] + (yw + xz) * v_in[vfin + 2])
-                            + v_in[vfin + 0];
-                    v_out[vfout + 1] = 2*((zw + xy) * v_in[vfin + 0] +
-                                       (x2 + z2) * v_in[vfin + 1] + (yz - xw) * v_in[vfin + 2])
-                            + v_in[vfin + 1];
-                    v_out[vfout + 2] = 2*((xz - yw) * v_in[vfin + 0] +
-                                       (xw + yz) * v_in[vfin + 1] + (x2 + y2) * v_in[vfin + 2])
-                            + v_in[vfin + 2];
-                }
-            }
+            v_out[vfout + 0] = 2*((y2 + z2) * v_in[vfin + 0] +
+                               (xy - zw) * v_in[vfin + 1] + (yw + xz) * v_in[vfin + 2])
+                    + v_in[vfin + 0];
+            v_out[vfout + 1] = 2*((zw + xy) * v_in[vfin + 0] +
+                               (x2 + z2) * v_in[vfin + 1] + (yz - xw) * v_in[vfin + 2])
+                    + v_in[vfin + 1];
+            v_out[vfout + 2] = 2*((xz - yw) * v_in[vfin + 0] +
+                               (xw + yz) * v_in[vfin + 1] + (x2 + y2) * v_in[vfin + 2])
+                    + v_in[vfin + 2];
         }
-
-        mad::aligned_free(q_unit);
-
-        return;
     }
 }
 
@@ -369,67 +228,25 @@ void mad::array::mult(size_t np, const double* p, size_t nq,
                       const double* q, double* r)
 {
 
-    int nt = num_threads();
-
-    size_t n = np;
-    if(nq > n)
-    {
-        n = nq;
-    }
+    size_t n = (nq > np) ? nq : np;
 
     // this is to avoid branching inside the for loop.
-    size_t chp;
-    size_t chq;
-    if(np == 1)
-    {
-        chp = 0;
-    } else {
-        chp = 1;
-    }
-    if(nq == 1)
-    {
-        chq = 0;
-    } else {
-        chq = 1;
-    }
+    size_t chp = (np == 1) ? 0 : 1;
+    size_t chq = (nq == 1) ? 0 : 1;
 
-    size_t i;
-    size_t pf;
-    size_t qf;
-    size_t f;
-
-    if(n < array_thread_thresh * nt)
+    for(size_t i = 0; i < n; ++i)
     {
-        for(size_t i = 0; i < n; ++i)
-        {
-            f = 4 * i;
-            pf = 4 * i * chp;
-            qf = 4 * i * chq;
-            r[f + 0] =  p[pf + 0] * q[qf + 3] + p[pf + 1] * q[qf + 2]
-                        - p[pf + 2] * q[qf + 1] + p[pf + 3] * q[qf + 0];
-            r[f + 1] = -p[pf + 0] * q[qf + 2] + p[pf + 1] * q[qf + 3]
-                       + p[pf + 2] * q[qf + 0] + p[pf + 3] * q[qf + 1];
-            r[f + 2] =  p[pf + 0] * q[qf + 1] - p[pf + 1] * q[qf + 0]
-                        + p[pf + 2] * q[qf + 3] + p[pf + 3] * q[qf + 2];
-            r[f + 3] = -p[pf + 0] * q[qf + 0] - p[pf + 1] * q[qf + 1]
-                       - p[pf + 2] * q[qf + 2] + p[pf + 3] * q[qf + 3];
-        }
-    } else {
-#pragma omp parallel for default(shared) private(i, f, pf, qf) schedule(static)
-        for(i = 0; i < n; ++i)
-        {
-            f = 4 * i;
-            pf = 4 * i * chp;
-            qf = 4 * i * chq;
-            r[f + 0] =  p[pf + 0] * q[qf + 3] + p[pf + 1] * q[qf + 2]
-                        - p[pf + 2] * q[qf + 1] + p[pf + 3] * q[qf + 0];
-            r[f + 1] = -p[pf + 0] * q[qf + 2] + p[pf + 1] * q[qf + 3]
-                       + p[pf + 2] * q[qf + 0] + p[pf + 3] * q[qf + 1];
-            r[f + 2] =  p[pf + 0] * q[qf + 1] - p[pf + 1] * q[qf + 0]
-                        + p[pf + 2] * q[qf + 3] + p[pf + 3] * q[qf + 2];
-            r[f + 3] = -p[pf + 0] * q[qf + 0] - p[pf + 1] * q[qf + 1]
-                       - p[pf + 2] * q[qf + 2] + p[pf + 3] * q[qf + 3];
-        }
+        size_t f = 4 * i;
+        size_t pf = 4 * i * chp;
+        size_t qf = 4 * i * chq;
+        r[f + 0] =  p[pf + 0] * q[qf + 3] + p[pf + 1] * q[qf + 2]
+                    - p[pf + 2] * q[qf + 1] + p[pf + 3] * q[qf + 0];
+        r[f + 1] = -p[pf + 0] * q[qf + 2] + p[pf + 1] * q[qf + 3]
+                   + p[pf + 2] * q[qf + 0] + p[pf + 3] * q[qf + 1];
+        r[f + 2] =  p[pf + 0] * q[qf + 1] - p[pf + 1] * q[qf + 0]
+                    + p[pf + 2] * q[qf + 3] + p[pf + 3] * q[qf + 2];
+        r[f + 3] = -p[pf + 0] * q[qf + 0] - p[pf + 1] * q[qf + 1]
+                   - p[pf + 2] * q[qf + 2] + p[pf + 3] * q[qf + 3];
     }
 
     return;
@@ -506,17 +323,13 @@ void mad::array::slerp(size_t n_time, size_t n_targettime,
 void mad::array::exp(size_t n, const double* q_in, double* q_out)
 {
 
-    double* normv = static_cast<double*>(mad::aligned_alloc(
-                                             n * sizeof(double), mad::SIMD_WIDTH));
+    simd_array<double> normv(n);
 
     mad::array::amplitude(n, 4, 3, q_in, normv);
 
-    double exp_q_w;
-
-    #pragma omp parallel for default(shared) private(exp_q_w) schedule(static)
     for(size_t i = 0; i < n; ++i)
     {
-        exp_q_w = ::exp(q_in[4*i + 3]);
+        double exp_q_w = ::exp(q_in[4*i + 3]);
         q_out[4*i + 3] = exp_q_w * ::cos(normv[i]);
         exp_q_w /= normv[i];
         exp_q_w *= ::sin(normv[i]);
@@ -526,8 +339,6 @@ void mad::array::exp(size_t n, const double* q_in, double* q_out)
         }
     }
 
-    mad::aligned_free(normv);
-
     return;
 }
 
@@ -536,27 +347,21 @@ void mad::array::exp(size_t n, const double* q_in, double* q_out)
 void mad::array::ln(size_t n, const double* q_in, double* q_out)
 {
 
-    double* normq = static_cast<double*>(mad::aligned_alloc(
-                                             n * sizeof(double), mad::SIMD_WIDTH));
+    simd_array<double> normq(n);
 
     mad::array::amplitude(n, 4, 4, q_in, normq);
-
     mad::array::normalize(n, 4, 3, q_in, q_out);
 
-    double tmp;
-
-    #pragma omp parallel for default(shared) private(tmp) schedule(static)
+    #pragma omp parallel for default(shared) schedule(static)
     for(size_t i = 0; i < n; ++i)
     {
         q_out[4*i + 3] = ::log(normq[i]);
-        tmp = ::acos(q_in[4*i + 3] / normq[i]);
+        double tmp = ::acos(q_in[4*i + 3] / normq[i]);
         for(size_t j = 0; j < 3; ++j)
         {
             q_out[4*i + j] *= tmp;
         }
     }
-
-    mad::aligned_free(normq);
 
     return;
 }
@@ -567,22 +372,14 @@ void mad::array::pow(size_t n, const double* p, const double* q_in,
                      double* q_out)
 {
 
-    double* q_tmp = static_cast<double*>(mad::aligned_alloc(
-                                             4 * n * sizeof(double), mad::SIMD_WIDTH));
-
+    simd_array<double> q_tmp(4*n);
     mad::array::ln(n, q_in, q_tmp);
 
     for(size_t i = 0; i < n; ++i)
-    {
         for(size_t j = 0; j < 4; ++j)
-        {
             q_tmp[4*i + j] *= p[i];
-        }
-    }
 
     mad::array::exp(n, q_tmp, q_out);
-
-    mad::aligned_free(q_tmp);
 
     return;
 }
@@ -595,10 +392,9 @@ void mad::array::from_axisangle(size_t n, const double* axis,
 {
     if(n == 1)
     {
-        double sin_a;
         for(size_t i = 0; i < n; ++i)
         {
-            sin_a = ::sin(0.5 * angle[i]);
+            double sin_a = ::sin(0.5 * angle[i]);
             for(size_t j = 0; j < 3; ++j)
             {
                 q_out[4*i + j] = axis[3*i + j] * sin_a;
@@ -608,34 +404,22 @@ void mad::array::from_axisangle(size_t n, const double* axis,
     }
     else
     {
-        double* a = static_cast<double*>(mad::aligned_alloc(
-                                             n * sizeof(double), mad::SIMD_WIDTH));
+        simd_array<double> a(n);
 
         for(size_t i = 0; i < n; ++i)
-        {
             a[i] = 0.5 * angle[i];
-        }
 
-        double* sin_a = static_cast<double*>(mad::aligned_alloc(
-                                                 n * sizeof(double), mad::SIMD_WIDTH));
-
-        double* cos_a = static_cast<double*>(mad::aligned_alloc(
-                                                 n * sizeof(double), mad::SIMD_WIDTH));
+        simd_array<double> sin_a(n);
+        simd_array<double> cos_a(n);
 
         mad::func::sincos(n, a, sin_a, cos_a);
 
         for(size_t i = 0; i < n; ++i)
         {
             for(size_t j = 0; j < 3; ++j)
-            {
                 q_out[4*i + j] = axis[3*i + j] * sin_a[i];
-            }
             q_out[4*i + 3] = cos_a[i];
         }
-
-        mad::aligned_free(a);
-        mad::aligned_free(sin_a);
-        mad::aligned_free(cos_a);
     }
 
     return;
@@ -647,29 +431,23 @@ void mad::array::from_axisangle(size_t n, const double* axis,
 void mad::array::to_axisangle(size_t n, const double* q,
                               double* axis, double* angle)
 {
-    #pragma omp parallel default(shared)
+    #pragma omp parallel for schedule(static)
+    for(size_t i = 0; i < n; ++i)
     {
-        size_t vf;
-        size_t qf;
-        double tmp;
-
-        #pragma omp for schedule(static)
-        for(size_t i = 0; i < n; ++i)
-{
-            qf = 4 * i;
-            vf = 3 * i;
-            angle[i] = 2.0 * ::acos(q[qf+3]);
-            if(angle[i] < 1e-10)
-{
-                axis[vf+0] = 0;
-                axis[vf+1] = 0;
-                axis[vf+2] = 0;
-            } else {
-                tmp = 1.0 / ::sin(0.5 * angle[i]);
-                axis[vf+0] = q[qf+0] * tmp;
-                axis[vf+1] = q[qf+1] * tmp;
-                axis[vf+2] = q[qf+2] * tmp;
-            }
+        size_t qf = 4 * i;
+        size_t vf = 3 * i;
+        angle[i] = 2.0 * ::acos(q[qf+3]);
+        if(angle[i] < 1e-10)
+        {
+            axis[vf+0] = 0;
+            axis[vf+1] = 0;
+            axis[vf+2] = 0;
+        } else
+        {
+            double tmp = 1.0 / ::sin(0.5 * angle[i]);
+            axis[vf+0] = q[qf+0] * tmp;
+            axis[vf+1] = q[qf+1] * tmp;
+            axis[vf+2] = q[qf+2] * tmp;
         }
     }
     return;
@@ -708,12 +486,10 @@ void mad::array::to_rotmat(const double* q, double* rotmat)
 void mad::array::from_rotmat(const double* rotmat, double* q)
 {
     double tr = rotmat[0] + rotmat[4] + rotmat[8];
-    double S;
-    double invS;
     if(tr > 0)
     {
-        S = ::sqrt(tr + 1.0)* 2.0; /* S=4*qw */
-        invS = 1.0 / S;
+        double S = ::sqrt(tr + 1.0)* 2.0; /* S=4*qw */
+        double invS = 1.0 / S;
         q[0] = (rotmat[7] - rotmat[5]) * invS;
         q[1] = (rotmat[2] - rotmat[6]) * invS;
         q[2] = (rotmat[3] - rotmat[1]) * invS;
@@ -721,8 +497,8 @@ void mad::array::from_rotmat(const double* rotmat, double* q)
     }
     else if((rotmat[0] > rotmat[4])&&(rotmat[0] > rotmat[8]))
     {
-        S = ::sqrt(1.0 + rotmat[0] - rotmat[4] - rotmat[8])* 2.0; /* S=4*qx */
-        invS = 1.0 / S;
+        double S = ::sqrt(1.0 + rotmat[0] - rotmat[4] - rotmat[8])* 2.0; /* S=4*qx */
+        double invS = 1.0 / S;
         q[0] = 0.25 * S;
         q[1] = (rotmat[1] + rotmat[3]) * invS;
         q[2] = (rotmat[2] + rotmat[6]) * invS;
@@ -730,8 +506,8 @@ void mad::array::from_rotmat(const double* rotmat, double* q)
     }
     else if(rotmat[4] > rotmat[8])
     {
-        S = ::sqrt(1.0 + rotmat[4] - rotmat[0] - rotmat[8])* 2.0; /* S=4*qy */
-        invS = 1.0 / S;
+        double S = ::sqrt(1.0 + rotmat[4] - rotmat[0] - rotmat[8])* 2.0; /* S=4*qy */
+        double invS = 1.0 / S;
         q[0] = (rotmat[1] + rotmat[3]) * invS;
         q[1] = 0.25 * S;
         q[2] = (rotmat[5] + rotmat[7]) * invS;
@@ -739,8 +515,8 @@ void mad::array::from_rotmat(const double* rotmat, double* q)
     }
     else
     {
-        S = ::sqrt(1.0 + rotmat[8] - rotmat[0] - rotmat[4])* 2.0; /* S=4*qz */
-        invS = 1.0 / S;
+        double S = ::sqrt(1.0 + rotmat[8] - rotmat[0] - rotmat[4])* 2.0; /* S=4*qz */
+        double invS = 1.0 / S;
         q[0] = (rotmat[2] + rotmat[6]) * invS;
         q[1] = (rotmat[5] + rotmat[7]) * invS;
         q[2] = 0.25 * S;
@@ -785,72 +561,41 @@ void mad::array::from_angles(size_t n,
                              const double* pa,
                              double* quat, bool IAU)
 {
-    #pragma omp parallel default(shared)
+    #pragma omp parallel for schedule(static)
+    for(size_t i = 0; i < n; ++i)
     {
-        size_t qf;
-
-        double angR;
-        double angD;
-        double angP;
-        double norm;
-
-        double qR[4];
-        double qD[4];
-        double qP[4];
+        size_t qf = 4 * i;
         double qtemp[4];
 
-        #pragma omp for schedule(static)
-        for(size_t i = 0; i < n; ++i)
-        {
-            qf = 4 * i;
+        // phi rotation around z-axis
+        double angR = phi[i] + mad::dat::PI_2;
+        // theta rotation around x-axis
+        double angD = theta[i];
+        // position angle rotation about z-axis
+        double angP = mad::dat::PI_2;
+        if(IAU)
+            angP -= pa[i];
+        else
+            angP += pa[i];
 
-            // phi rotation around z-axis
+        double qR[] = { 0.0, 0.0, ::sin(0.5*angR), ::cos(0.5*angR) };
+        double qD[] = { ::sin(0.5*angD), 0.0, 0.0, ::cos(0.5*angD) };
+        double qP[] = { 0.0, 0.0, ::sin(0.5*angP), ::cos(0.5*angP) };
 
-            angR = phi[i] + mad::dat::PI_2;
+        mad::array::mult(1, qD, 1, qP, qtemp);
+        mad::array::mult(1, qR, 1, qtemp, &(quat[qf]));
 
-            qR[0] = 0.0;
-            qR[1] = 0.0;
-            qR[2] = ::sin(0.5 * angR);
-            qR[3] = ::cos(0.5 * angR);
-
-            // theta rotation around x-axis
-
-            angD = theta[i];
-
-            qD[0] = ::sin(0.5 * angD);
-            qD[1] = 0.0;
-            qD[2] = 0.0;
-            qD[3] = ::cos(0.5 * angD);
-
-            // position angle rotation about z-axis
-
-            angP = mad::dat::PI_2;
-            if(IAU)
-                angP -= pa[i];
-            else
-                angP += pa[i];
-
-            qP[0] = 0.0;
-            qP[1] = 0.0;
-            qP[2] = ::sin(0.5 * angP);
-            qP[3] = ::cos(0.5 * angP);
-
-            mad::array::mult(1, qD, 1, qP, qtemp);
-            mad::array::mult(1, qR, 1, qtemp, &(quat[qf]));
-
-            norm = 0.0;
-            norm += quat[qf] * quat[qf];
-            norm += quat[qf+1] * quat[qf+1];
-            norm += quat[qf+2] * quat[qf+2];
-            norm += quat[qf+3] * quat[qf+3];
-            norm = 1.0 / ::sqrt(norm);
-            quat[qf] *= norm;
-            quat[qf+1] *= norm;
-            quat[qf+2] *= norm;
-            quat[qf+3] *= norm;
-        }
+        double norm = 0.0;
+        norm += quat[qf] * quat[qf];
+        norm += quat[qf+1] * quat[qf+1];
+        norm += quat[qf+2] * quat[qf+2];
+        norm += quat[qf+3] * quat[qf+3];
+        norm = 1.0 / ::sqrt(norm);
+        quat[qf] *= norm;
+        quat[qf+1] *= norm;
+        quat[qf+2] *= norm;
+        quat[qf+3] *= norm;
     }
-
     return;
 }
 
@@ -862,55 +607,43 @@ void mad::array::to_angles(size_t n, const double* quat, double* theta,
     double const xaxis[3] = { 1.0, 0.0, 0.0 };
     double const zaxis[3] = { 0.0, 0.0, 1.0 };
 
-#pragma omp parallel default(shared)
+
+    #pragma omp parallel for schedule(static)
+    for(size_t i = 0; i < n; ++i)
     {
-        size_t qf;
+        size_t qf = 4 * i;
+        double dir[]    = { 0.0, 0.0, 0.0 };
+        double orient[] = { 0.0, 0.0, 0.0 };
+        double qtemp[]  = { 0.0, 0.0, 0.0, 0.0 };
 
-        double norm;
+        double norm = 0.0;
+        norm += quat[qf] * quat[qf];
+        norm += quat[qf+1] * quat[qf+1];
+        norm += quat[qf+2] * quat[qf+2];
+        norm += quat[qf+3] * quat[qf+3];
+        norm = 1.0 / ::sqrt(norm);
+        qtemp[0] = quat[qf] * norm;
+        qtemp[1] = quat[qf+1] * norm;
+        qtemp[2] = quat[qf+2] * norm;
+        qtemp[3] = quat[qf+3] * norm;
 
-        double dir[3];
-        double orient[3];
-        double qtemp[4];
+        mad::array::rotate(1, qtemp, 1, zaxis, dir);
+        mad::array::rotate(1, qtemp, 1, xaxis, orient);
 
-#pragma omp for schedule(static)
-        for(size_t i = 0; i < n; ++i)
-        {
-            qf = 4 * i;
+        theta[i] = mad::dat::PI_2 - ::asin(dir[2]);
+        phi[i] = ::atan2(dir[1], dir[0]);
 
-            norm = 0.0;
-            norm += quat[qf] * quat[qf];
-            norm += quat[qf+1] * quat[qf+1];
-            norm += quat[qf+2] * quat[qf+2];
-            norm += quat[qf+3] * quat[qf+3];
-            norm = 1.0 / ::sqrt(norm);
-            qtemp[0] = quat[qf] * norm;
-            qtemp[1] = quat[qf+1] * norm;
-            qtemp[2] = quat[qf+2] * norm;
-            qtemp[3] = quat[qf+3] * norm;
+        if(phi[i] < 0.0)
+            phi[i] += mad::dat::TWOPI;
 
-            mad::array::rotate(1, qtemp, 1, zaxis, dir);
-            mad::array::rotate(1, qtemp, 1, xaxis, orient);
+        pa[i] = ::atan2(orient[0] * dir[1] - orient[1] * dir[0],
+                -(orient[0] * dir[2] * dir[0])
+                -(orient[1] * dir[2] * dir[1])
+                +(orient[2] *(dir[0] * dir[0] + dir[1] * dir[1])));
 
-            theta[i] = mad::dat::PI_2 - ::asin(dir[2]);
-            phi[i] = ::atan2(dir[1], dir[0]);
-
-            if(phi[i] < 0.0)
-            {
-                phi[i] += mad::dat::TWOPI;
-            }
-
-            pa[i] = ::atan2(orient[0] * dir[1] - orient[1] * dir[0],
-                    -(orient[0] * dir[2] * dir[0])
-                    -(orient[1] * dir[2] * dir[1])
-                    +(orient[2] *(dir[0] * dir[0] + dir[1] * dir[1])));
-
-            if(IAU)
-            {
-                pa[i] = -pa[i];
-            }
-        }
+        if(IAU)
+            pa[i] = -pa[i];
     }
-
     return;
 }
 

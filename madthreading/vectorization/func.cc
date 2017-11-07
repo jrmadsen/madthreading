@@ -185,24 +185,9 @@ void mad::func::fast_erfinv(int n, const double* in, double* out)
 // math library functions.
 void mad::func::sin(int n, const double* ang, double* sinout)
 {
-    size_t nt = num_threads();
-
-    if((size_t) n < array_thread_thresh * nt)
-    {
-        for(int i = 0; i < n; ++i)
-        {
-            sinout[i] = ::sin(ang[i]);
-        }
-    }
-    else
-    {
-#pragma omp parallel for schedule(static)
-        for(int i = 0; i < n; ++i)
-        {
-            sinout[i] = ::sin(ang[i]);
-        }
-    }
-
+    #pragma omp simd
+    for(int i = 0; i < n; ++i)
+        sinout[i] = ::sin(ang[i]);
     return;
 }
 
@@ -210,24 +195,9 @@ void mad::func::sin(int n, const double* ang, double* sinout)
 //
 void mad::func::cos(int n, const double* ang, double* cosout)
 {
-    size_t nt = num_threads();
-
-    if((size_t) n < array_thread_thresh * nt)
-    {
-        for(int i = 0; i < n; ++i)
-        {
-            cosout[i] = ::cos(ang[i]);
-        }
-    }
-    else
-    {
-#pragma omp parallel for schedule(static)
-        for(int i = 0; i < n; ++i)
-        {
-            cosout[i] = ::cos(ang[i]);
-        }
-    }
-
+    #pragma omp simd
+    for(int i = 0; i < n; ++i)
+        cosout[i] = ::cos(ang[i]);
     return;
 }
 
@@ -235,24 +205,11 @@ void mad::func::cos(int n, const double* ang, double* cosout)
 //
 void mad::func::sincos(int n, const double* ang, double* sinout, double* cosout)
 {
-    size_t nt = num_threads();
-
-    if((size_t) n < array_thread_thresh * nt)
+    #pragma omp simd
+    for(int i = 0; i < n; ++i)
     {
-        for(int i = 0; i < n; ++i)
-        {
-            sinout[i] = ::sin(ang[i]);
-            cosout[i] = ::cos(ang[i]);
-        }
-    }
-    else
-    {
-#pragma omp parallel for schedule(static)
-        for(int i = 0; i < n; ++i)
-        {
-            sinout[i] = ::sin(ang[i]);
-            cosout[i] = ::cos(ang[i]);
-        }
+        sinout[i] = ::sin(ang[i]);
+        cosout[i] = ::cos(ang[i]);
     }
 
     return;
@@ -262,23 +219,9 @@ void mad::func::sincos(int n, const double* ang, double* sinout, double* cosout)
 //
 void mad::func::atan2(int n, const double* y, const double* x, double* ang)
 {
-    size_t nt = num_threads();
-
-    if((size_t) n < array_thread_thresh * nt)
-    {
-        for(int i = 0; i < n; ++i)
-        {
-            ang[i] = ::atan2(y[i], x[i]);
-        }
-    }
-    else
-    {
-#pragma omp parallel for schedule(static)
-        for(int i = 0; i < n; ++i)
-        {
-            ang[i] = ::atan2(y[i], x[i]);
-        }
-    }
+    #pragma omp simd
+    for(int i = 0; i < n; ++i)
+        ang[i] = ::atan2(y[i], x[i]);
 
     return;
 }
@@ -287,23 +230,9 @@ void mad::func::atan2(int n, const double* y, const double* x, double* ang)
 //
 void mad::func::sqrt(int n, const double* in, double* out)
 {
-    size_t nt = num_threads();
-
-    if((size_t) n < array_thread_thresh * nt)
-    {
-        for(int i = 0; i < n; ++i)
-        {
-            out[i] = ::sqrt(in[i]);
-        }
-    }
-    else
-    {
-#pragma omp parallel for schedule(static)
-        for(int i = 0; i < n; ++i)
-        {
-            out[i] = ::sqrt(in[i]);
-        }
-    }
+    #pragma omp simd
+    for(int i = 0; i < n; ++i)
+        out[i] = ::sqrt(in[i]);
     return;
 }
 
@@ -311,23 +240,9 @@ void mad::func::sqrt(int n, const double* in, double* out)
 //
 void mad::func::rsqrt(int n, const double* in, double* out)
 {
-    size_t nt = num_threads();
-
-    if((size_t) n < array_thread_thresh * nt)
-    {
-        for(int i = 0; i < n; ++i)
-        {
-            out[i] = 1.0 / ::sqrt(in[i]);
-        }
-    }
-    else
-    {
-#pragma omp parallel for schedule(static)
-        for(int i = 0; i < n; ++i)
-        {
-            out[i] = 1.0 / ::sqrt(in[i]);
-        }
-    }
+    #pragma omp simd
+    for(int i = 0; i < n; ++i)
+        out[i] = 1.0 / ::sqrt(in[i]);
 
     return;
 }
@@ -336,23 +251,9 @@ void mad::func::rsqrt(int n, const double* in, double* out)
 //
 void mad::func::exp(int n, const double* in, double* out)
 {
-    size_t nt = num_threads();
-
-    if((size_t) n < array_thread_thresh * nt)
-    {
-        for(int i = 0; i < n; ++i)
-        {
-            out[i] = ::exp(in[i]);
-        }
-    }
-    else
-    {
-#pragma omp parallel for schedule(static)
-        for(int i = 0; i < n; ++i)
-        {
-            out[i] = ::exp(in[i]);
-        }
-    }
+    #pragma omp simd
+    for(int i = 0; i < n; ++i)
+        out[i] = ::exp(in[i]);
 
     return;
 }
@@ -361,23 +262,9 @@ void mad::func::exp(int n, const double* in, double* out)
 //
 void mad::func::log(int n, const double* in, double* out)
 {
-    size_t nt = num_threads();
-
-    if((size_t) n < array_thread_thresh * nt)
-    {
-        for(int i = 0; i < n; ++i)
-        {
-            out[i] = ::log(in[i]);
-        }
-    }
-    else
-    {
-#pragma omp parallel for schedule(static)
-        for(int i = 0; i < n; ++i)
-        {
-            out[i] = ::log(in[i]);
-        }
-    }
+    #pragma omp simd
+    for(int i = 0; i < n; ++i)
+        out[i] = ::log(in[i]);
 
     return;
 }
@@ -699,31 +586,16 @@ void mad::func::fast_erfinv(int n, const double* in, double* out)
     nt = omp_get_num_threads();
 #endif
 
-    double* arg = static_cast<double*>(mad::aligned_alloc(n * sizeof(double),
-                                                          mad::SIMD_WIDTH));
-
-    double* lg = static_cast<double*>(mad::aligned_alloc(n * sizeof(double),
-                                                         mad::SIMD_WIDTH));
+    simd_array<double> arg(n);
+    simd_array<double> lg(n);
 
     int i;
     double ab;
 
-    if((size_t) n < array_thread_thresh * nt)
+    for(i = 0; i < n; ++i)
     {
-        for(i = 0; i < n; ++i)
-        {
-            ab = ::fabs(in[i]);
-            arg[i] =(1.0 - ab) *(1.0 + ab);
-        }
-    }
-    else
-    {
-#pragma omp parallel for default(shared) private(i, ab) schedule(static)
-        for(i = 0; i < n; ++i)
-        {
-            ab = ::fabs(in[i]);
-            arg[i] =(1.0 - ab) *(1.0 + ab);
-        }
+        ab = ::fabs(in[i]);
+        arg[i] =(1.0 - ab) *(1.0 + ab);
     }
 
     mad::func::fast_log(n, arg, lg);
@@ -875,9 +747,6 @@ void mad::func::fast_erfinv(int n, const double* in, double* out)
 
         out[i] = p * in[i];
     }
-
-    mad::aligned_free(arg);
-    mad::aligned_free(lg);
 
     return;
 }

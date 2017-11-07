@@ -13,7 +13,6 @@ GLOBAL_OBJECT_TARGET(INSTALL_HEADERS
         sources.cmake
         allocator/sources.cmake
         atomics/sources.cmake
-        atomics/details/sources.cmake
         threading/sources.cmake
         threading/task/sources.cmake
         vectorization/sources.cmake
