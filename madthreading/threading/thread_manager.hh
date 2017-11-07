@@ -559,10 +559,8 @@ public:
         typedef task<void, InputIterator> task_type;
 
         tg = set_task_group(tg);
-        task_list_t _tasks(distance<InputIterator>(_s, _e) + 1, nullptr);
         for(InputIterator itr = _s; itr != _e; ++itr)
-            _tasks[distance<InputIterator>(_s, itr)] = new task_type(tg, function, itr);
-        m_data->tp()->add_tasks(_tasks);
+            m_data->tp()->add_task(new task_type(tg, function, itr));
 
     }
     //------------------------------------------------------------------------//
@@ -578,10 +576,8 @@ public:
         typedef task<_Ret, _Arg> task_type;
 
         tg = set_task_group(tg);
-        task_list_t _tasks(distance(_s, _e) + 1, nullptr);
         for(size_type i = _s; i < _e; ++i)
-            _tasks[i] = new task_type(tg, function, i);
-        m_data->tp()->add_tasks(_tasks);
+            m_data->tp()->add_task(new task_type(tg, function, i));
     }
     //------------------------------------------------------------------------//
 #ifndef SWIG
@@ -593,10 +589,8 @@ public:
         typedef task<_Ret, InputIterator> task_type;
 
         tg = set_task_group(tg);
-        task_list_t _tasks(distance(_s, _e) + 1, nullptr);
         for(InputIterator itr = _s; itr != _e; ++itr)
-            _tasks[distance(_s, _e)] = new task_type(tg, function, itr);
-        m_data->tp()->add_tasks(_tasks);
+            m_data->tp()->add_task(new task_type(tg, function, itr));
     }
     //------------------------------------------------------------------------//
     // Specialization for above when run_loop(func, 0, container->size())
@@ -611,10 +605,8 @@ public:
         typedef task<void, _Arg> task_type;
 
         tg = set_task_group(tg);
-        task_list_t _tasks(std::distance(_s, _e) + 1, nullptr);
         for(size_type i = _s; i < _e; ++i)
-            _tasks[i] = new task_type(tg, function, i);
-        m_data->tp()->add_tasks(_tasks);
+            m_data->tp()->add_task(new task_type(tg, function, i));
     }
 #endif
     //------------------------------------------------------------------------//
