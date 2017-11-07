@@ -328,10 +328,8 @@ inline void DisableInvalidOperationDetection()
 #     include <fenv.h>
 #     include <signal.h>
 
-#     define DEFINED_PPC      (defined(__ppc__) || defined(__ppc64__))
-#     define DEFINED_INTEL    (defined(__i386__) || defined(__x86_64__))
-
-#     if DEFINED_PPC
+// DEFINED PPC
+#     if (defined(__ppc__) || defined(__ppc64__))
 
 #       define FE_EXCEPT_SHIFT 22  // shift flags right to get masks
 #       define FM_ALL_EXCEPT    FE_ALL_EXCEPT >> FE_EXCEPT_SHIFT
@@ -376,7 +374,8 @@ static inline int fedisableexcept (unsigned int excepts)
 } // namespace mad
 
 //============================================================================//
-#     elif DEFINED_INTEL
+// defined INTEL
+#     elif  (defined(__i386__) || defined(__x86_64__))
 //============================================================================//
 
 namespace mad

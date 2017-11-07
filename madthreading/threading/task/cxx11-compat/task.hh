@@ -45,13 +45,6 @@
 #include <string>
 #include <array>
 
-namespace mad
-{
-using std::function;
-using std::bind;
-using std::tuple;
-}
-
 #define FUNCTION_TYPEDEF_0(alias, ret) \
     typedef function<ret()> alias
 #define FUNCTION_TYPEDEF_1(alias, ret, arg) \
@@ -61,6 +54,13 @@ using std::tuple;
 #define FUNCTION_TYPEDEF_3(alias, ret, arg1, arg2, arg3) \
     typedef function<ret(arg1, arg2, arg3)> alias
 #define CALL_FUNCTION(ptr2fn) ptr2fn
+
+namespace mad
+{
+using std::function;
+using std::bind;
+using std::tuple;
+}
 
 namespace mad
 {
@@ -108,25 +108,6 @@ template <std::size_t _N>
 using make_index_sequence = make_integer_sequence<std::size_t, _N>;
 //----------------------------------------------------------------------------//
 
-/*template<int... _Args>
-struct args_tuple
-{
-    // put args... into a constexpr array for indexing
-    static constexpr int _ArgsArray[] = {_Args...};
-
-    // undefined helper function that computes the desired type in the return type
-    // For Is... = 0, 1, ..., N-2, Filter<my_args[Is], my_args[Is+1]>...
-    // expands to Filter<my_args[0], my_args[1]>,
-    //            Filter<my_args[1], my_args[2]>, ...,
-    //            Filter<my_args[N-2], my_args[N-1]>
-
-    template<size_t... _I>
-    static std::tuple<_ArgsArray[_I]...> helper(index_sequence<_I...>);
-
-    // and the result
-    using tuple_type =
-    decltype(helper(make_index_sequence<sizeof...(_Args)>()));
-};*/
 
 //----------------------------------------------------------------------------//
 
@@ -169,7 +150,7 @@ template <typename _Ret, typename _Func, typename _ArgTuple>
 _Ret call_ret(const _Func& func, _ArgTuple&& args)
 {
     typedef typename std::remove_reference<_ArgTuple>::type tuple_t;
-    const build_indices<std::tuple_size<tuple_t>::value> indices;
+    const build_indices<std::tuple_size<tuple_t>::value> indices = {};
     return std::move(_call_ret<_Ret>(func, std::move(args), indices));
 }
 
@@ -179,7 +160,7 @@ template <typename _Func, typename _ArgTuple>
 void call_void(const _Func& func, _ArgTuple&& args)
 {
     typedef typename std::remove_reference<_ArgTuple>::type tuple_t;
-    const build_indices<std::tuple_size<tuple_t>::value> indices;
+    const build_indices<std::tuple_size<tuple_t>::value> indices = {};
     _call_void(func, std::move(args), indices);
 }
 
