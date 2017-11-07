@@ -5,7 +5,7 @@ os:
     - linux
 
 # These use container-based images (faster boot) and Ubuntu 14.04 LTS
-sudo: false
+sudo: enabled
 dist: trusty
 
 # The apt packages here install our compiled code dependencies.
@@ -21,10 +21,16 @@ addons:
             - libunittest++-dev
             - libtbb-dev
             - libgomp1
+            #- g++-5-multilib
+            #- gcc-5-multilib
 
 install:
+    #- sudo apt-get update
+    #- sudo apt-get upgrade -y
     - mkdir -p build-madthreading/release
     - cd build-madthreading/release
+    - export CC=$(which gcc-5)
+    - export CXX=$(which g++-5)
     - cmake -DCMAKE_INSTALL_PREFIX=$HOME/madthreading/current \
         -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=ON -DENABLE_UNIT_TEST=ON \
         -DUSE_TBB=ON -DUSE_OPENMP=ON -DUSE_TCMALLOC=OFF -DBUILD_CXXSTD=14 \
