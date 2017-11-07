@@ -18,7 +18,6 @@ addons:
             - gcc-5
             - g++-5
             - cmake3
-            - cmake
             - libunittest++-dev
             - libtbb-dev
             - libgomp1
