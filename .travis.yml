@@ -44,7 +44,6 @@ script:
     - ./ex3a
     - ./ex3b
     - ./ex5
-    - ./examples
     - ./omp_pi_loop
     - ./omp_pi_spmd_final
     - ./omp_pi_spmd_simple
