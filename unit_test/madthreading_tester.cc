@@ -6,7 +6,7 @@
 //
 //
 
-#include <UnitTest++/UnitTest++.h>
+#include <UnitTest++.h>
 
 #ifdef USE_OPENMP
     #include <omp.h>

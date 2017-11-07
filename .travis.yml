@@ -1,0 +1,55 @@
+# We simply apt install the compiled dependencies.
+language: c++
+
+os:
+    - linux
+
+# These use container-based images (faster boot) and Ubuntu 14.04 LTS
+sudo: false
+dist: trusty
+
+# The apt packages here install our compiled code dependencies.
+addons:
+    apt:
+        sources:
+            - sourceline: 'ppa:ubuntu-toolchain-r/test'
+        packages:
+            - build-essential
+            - gcc-5
+            - g++-5
+            - cmake3
+            - cmake
+            - libunittest++-dev
+            - libtbb-dev
+            - libgomp1
+
+install:
+    - mkdir -p build-madthreading/release
+    - cd build-madthreading/release
+    - cmake -DCMAKE_INSTALL_PREFIX=$HOME/madthreading/current \
+        -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=ON -DENABLE_UNIT_TEST=ON \
+        -DUSE_TBB=ON -DUSE_OPENMP=ON -DUSE_TCMALLOC=OFF -DBUILD_CXXSTD=14 \
+        -DGENERATE_PYTHON_INTERFACES=OFF ../..
+    - make -j4
+    - make install -j4
+
+script:
+    - ./ex1
+    - ./ex2
+    - ./ex3a
+    - ./ex3b
+    - ./ex5
+    - ./examples
+    - ./omp_pi_loop
+    - ./omp_pi_spmd_final
+    - ./omp_pi_spmd_simple
+    - ./omp_pi_task
+    - ./pi_cxx11
+    - ./pi_lambda_serial
+    - ./pi_lambda_tbb
+    - ./pi_pthreads
+    - ./pi_serial
+    - ./pi_tbb
+    - ./pi_thread_pool
+    - ./pi_thread_pool_joiner_1
+    - ./pi_thread_pool_joiner_2

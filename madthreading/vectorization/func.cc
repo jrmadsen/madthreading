@@ -281,46 +281,45 @@ void mad::func::fast_sin(int n, const double* ang, double* sinout)
     double const SC6 = -0.0000002755693576863181;
     double const SC7 = 0.0000000020858327958707;
     double const SC8 = -0.000000000011080716368;
-    double sx;
-    double sx2;
-    double quot;
-    double rem;
-    double x;
-    int quad;
-    int i;
 
-#pragma omp parallel for default(shared) private(i, sx, sx2, quot, rem, x, quad) schedule(static)
-    for(i = 0; i < n; i++)
+#pragma omp parallel for default(shared) schedule(static)
+    for(int i = 0; i < n; i++)
     {
-        quot = ang[i] * INV_TWOPI;
-        rem = quot - floor(quot);
-        x = rem * TWOPI;
+        double sx;
+        double sx2;
+        double quot = ang[i] * INV_TWOPI;
+        double rem = quot - floor(quot);
+        double x = rem * TWOPI;
         while(x < 0.0)
         {
             x += TWOPI;
         }
-        quad = static_cast < int >(x * TWOINVPI);
+        int quad = static_cast < int >(x * TWOINVPI);
         switch(quad)
         {
             case 1:
                 sx = x - PI_2;
                 sx2 = sx * sx;
-                sinout[i] = (SC1 + sx2 * (SC2 + sx2 * (SC3 + sx2 * (SC4 + sx2 * (SC5 + sx2 * (SC6 + sx2 * (SC7 + sx2 * SC8)))))));
+                sinout[i] = (SC1 + sx2 * (SC2 + sx2 * (SC3 + sx2 *
+                        (SC4 + sx2 * (SC5 + sx2 * (SC6 + sx2 * (SC7 + sx2 * SC8)))))));
                 break;
             case 2:
                 sx = THREEPI_2 - x;
                 sx2 = sx * sx;
-                sinout[i] = - (SC1 + sx2 * (SC2 + sx2 * (SC3 + sx2 * (SC4 + sx2 * (SC5 + sx2 * (SC6 + sx2 * (SC7 + sx2 * SC8)))))));
+                sinout[i] = - (SC1 + sx2 * (SC2 + sx2 * (SC3 + sx2 *
+                        (SC4 + sx2 * (SC5 + sx2 * (SC6 + sx2 * (SC7 + sx2 * SC8)))))));
                 break;
             case 3:
                 sx = x - THREEPI_2;
                 sx2 = sx * sx;
-                sinout[i] = - (SC1 + sx2 * (SC2 + sx2 * (SC3 + sx2 * (SC4 + sx2 * (SC5 + sx2 * (SC6 + sx2 * (SC7 + sx2 * SC8)))))));
+                sinout[i] = - (SC1 + sx2 * (SC2 + sx2 * (SC3 + sx2 *
+                        (SC4 + sx2 * (SC5 + sx2 * (SC6 + sx2 * (SC7 + sx2 * SC8)))))));
                 break;
             default:
                 sx = PI_2 - x;
                 sx2 = sx * sx;
-                sinout[i] = (SC1 + sx2 * (SC2 + sx2 * (SC3 + sx2 * (SC4 + sx2 * (SC5 + sx2 * (SC6 + sx2 * (SC7 + sx2 * SC8)))))));
+                sinout[i] = (SC1 + sx2 * (SC2 + sx2 * (SC3 + sx2 * (SC4 + sx2 *
+                                    (SC5 + sx2 * (SC6 + sx2 * (SC7 + sx2 * SC8)))))));
                 break;
         }
     }
@@ -339,45 +338,44 @@ void mad::func::fast_cos(int n, const double* ang, double* cosout)
     double const SC6 = -0.0000002755693576863181;
     double const SC7 = 0.0000000020858327958707;
     double const SC8 = -0.000000000011080716368;
-    double cx;
-    double cx2;
-    double quot;
-    double rem;
-    double x;
-    int quad;
-    int i;
 
-#pragma omp parallel for default(shared) private(i, cx, cx2, quot, rem, x, quad) schedule(static)
-    for(i = 0; i < n; i++)
+#pragma omp parallel for default(shared) schedule(static)
+    for(int i = 0; i < n; i++)
     {
-        quot = ang[i] * INV_TWOPI;
-        rem = quot - floor(quot);
-        x = rem * TWOPI;
+        double cx;
+        double cx2;
+        double quot = ang[i] * INV_TWOPI;
+        double rem = quot - floor(quot);
+        double x = rem * TWOPI;
         while(x < 0.0)
         {
             x += TWOPI;
         }
-        quad = static_cast < int >(x * TWOINVPI);
+        int quad = static_cast < int >(x * TWOINVPI);
         switch(quad)
         {
             case 1:
                 cx = PI - x;
                 cx2 = cx * cx;
-                cosout[i] = - (SC1 + cx2 * (SC2 + cx2 * (SC3 + cx2 * (SC4 + cx2 * (SC5 + cx2 * (SC6 + cx2 * (SC7 + cx2 * SC8)))))));
+                cosout[i] = - (SC1 + cx2 * (SC2 + cx2 * (SC3 + cx2 *
+                            (SC4 + cx2 * (SC5 + cx2 * (SC6 + cx2 * (SC7 + cx2 * SC8)))))));
                 break;
             case 2:
                 cx = x - PI;
                 cx2 = cx * cx;
-                cosout[i] = - (SC1 + cx2 * (SC2 + cx2 * (SC3 + cx2 * (SC4 + cx2 * (SC5 + cx2 * (SC6 + cx2 * (SC7 + cx2 * SC8)))))));
+                cosout[i] = - (SC1 + cx2 * (SC2 + cx2 * (SC3 + cx2 *
+                        (SC4 + cx2 * (SC5 + cx2 * (SC6 + cx2 * (SC7 + cx2 * SC8)))))));
                 break;
             case 3:
                 cx = TWOPI - x;
                 cx2 = cx * cx;
-                cosout[i] = (SC1 + cx2 * (SC2 + cx2 * (SC3 + cx2 * (SC4 + cx2 * (SC5 + cx2 * (SC6 + cx2 * (SC7 + cx2 * SC8)))))));
+                cosout[i] = (SC1 + cx2 * (SC2 + cx2 * (SC3 + cx2 * (SC4 + cx2 *
+                                (SC5 + cx2 * (SC6 + cx2 * (SC7 + cx2 * SC8)))))));
                 break;
             default:
                 cx2 = x * x;
-                cosout[i] = (SC1 + cx2 * (SC2 + cx2 * (SC3 + cx2 * (SC4 + cx2 * (SC5 + cx2 * (SC6 + cx2 * (SC7 + cx2 * SC8)))))));
+                cosout[i] = (SC1 + cx2 * (SC2 + cx2 * (SC3 + cx2 * (SC4 + cx2 *
+                                (SC5 + cx2 * (SC6 + cx2 * (SC7 + cx2 * SC8)))))));
                 break;
         }
     }
@@ -396,25 +394,20 @@ void mad::func::fast_sincos(int n, const double* ang, double* sinout, double* co
     double const SC6 = -0.0000002755693576863181;
     double const SC7 = 0.0000000020858327958707;
     double const SC8 = -0.000000000011080716368;
-    double sx, cx;
-    double sx2, cx2;
-    double quot;
-    double rem;
-    double x;
-    int quad;
-    int i;
 
-#pragma omp parallel for default(shared) private(i, sx, cx, sx2, cx2, quot, rem, x, quad) schedule(static)
-    for(i = 0; i < n; i++)
+#pragma omp parallel for default(shared) schedule(static)
+    for(int i = 0; i < n; i++)
     {
-        quot = ang[i] * INV_TWOPI;
-        rem = quot - floor(quot);
-        x = rem * TWOPI;
+        double sx, cx;
+        double sx2, cx2;
+        double quot = ang[i] * INV_TWOPI;
+        double rem = quot - floor(quot);
+        double x = rem * TWOPI;
         while(x < 0.0)
         {
             x += TWOPI;
         }
-        quad = static_cast < int >(x * TWOINVPI);
+        int quad = static_cast < int >(x * TWOINVPI);
         switch(quad)
         {
             case 1:
@@ -422,31 +415,39 @@ void mad::func::fast_sincos(int n, const double* ang, double* sinout, double* co
                 cx = PI - x;
                 cx2 = cx * cx;
                 sx2 = sx * sx;
-                cosout[i] = - (SC1 + cx2 * (SC2 + cx2 * (SC3 + cx2 * (SC4 + cx2 * (SC5 + cx2 * (SC6 + cx2 * (SC7 + cx2 * SC8)))))));
-                sinout[i] = (SC1 + sx2 * (SC2 + sx2 * (SC3 + sx2 * (SC4 + sx2 * (SC5 + sx2 * (SC6 + sx2 * (SC7 + sx2 * SC8)))))));
+                cosout[i] = - (SC1 + cx2 * (SC2 + cx2 * (SC3 + cx2 *
+                            (SC4 + cx2 * (SC5 + cx2 * (SC6 + cx2 * (SC7 + cx2 * SC8)))))));
+                sinout[i] = (SC1 + sx2 * (SC2 + sx2 * (SC3 + sx2 *
+                            (SC4 + sx2 * (SC5 + sx2 * (SC6 + sx2 * (SC7 + sx2 * SC8)))))));
                 break;
             case 2:
                 sx = THREEPI_2 - x;
                 cx = x - PI;
                 cx2 = cx * cx;
                 sx2 = sx * sx;
-                cosout[i] = - (SC1 + cx2 * (SC2 + cx2 * (SC3 + cx2 * (SC4 + cx2 * (SC5 + cx2 * (SC6 + cx2 * (SC7 + cx2 * SC8)))))));
-                sinout[i] = - (SC1 + sx2 * (SC2 + sx2 * (SC3 + sx2 * (SC4 + sx2 * (SC5 + sx2 * (SC6 + sx2 * (SC7 + sx2 * SC8)))))));
+                cosout[i] = - (SC1 + cx2 * (SC2 + cx2 * (SC3 + cx2 *
+                        (SC4 + cx2 * (SC5 + cx2 * (SC6 + cx2 * (SC7 + cx2 * SC8)))))));
+                sinout[i] = - (SC1 + sx2 * (SC2 + sx2 * (SC3 + sx2 *
+                        (SC4 + sx2 * (SC5 + sx2 * (SC6 + sx2 * (SC7 + sx2 * SC8)))))));
                 break;
             case 3:
                 sx = x - THREEPI_2;
                 cx = TWOPI - x;
                 cx2 = cx * cx;
                 sx2 = sx * sx;
-                cosout[i] = (SC1 + cx2 * (SC2 + cx2 * (SC3 + cx2 * (SC4 + cx2 * (SC5 + cx2 * (SC6 + cx2 * (SC7 + cx2 * SC8)))))));
-                sinout[i] = - (SC1 + sx2 * (SC2 + sx2 * (SC3 + sx2 * (SC4 + sx2 * (SC5 + sx2 * (SC6 + sx2 * (SC7 + sx2 * SC8)))))));
+                cosout[i] = (SC1 + cx2 * (SC2 + cx2 * (SC3 + cx2 *
+                            (SC4 + cx2 * (SC5 + cx2 * (SC6 + cx2 * (SC7 + cx2 * SC8)))))));
+                sinout[i] = - (SC1 + sx2 * (SC2 + sx2 * (SC3 + sx2 *
+                            (SC4 + sx2 * (SC5 + sx2 * (SC6 + sx2 * (SC7 + sx2 * SC8)))))));
                 break;
             default:
                 sx = PI_2 - x;
                 cx2 = x * x;
                 sx2 = sx * sx;
-                cosout[i] = (SC1 + cx2 * (SC2 + cx2 * (SC3 + cx2 * (SC4 + cx2 * (SC5 + cx2 * (SC6 + cx2 * (SC7 + cx2 * SC8)))))));
-                sinout[i] = (SC1 + sx2 * (SC2 + sx2 * (SC3 + sx2 * (SC4 + sx2 * (SC5 + sx2 * (SC6 + sx2 * (SC7 + sx2 * SC8)))))));
+                cosout[i] = (SC1 + cx2 * (SC2 + cx2 * (SC3 + cx2 *
+                            (SC4 + cx2 * (SC5 + cx2 * (SC6 + cx2 * (SC7 + cx2 * SC8)))))));
+                sinout[i] = (SC1 + sx2 * (SC2 + sx2 * (SC3 + sx2 * (SC4 + sx2 *
+                                (SC5 + sx2 * (SC6 + sx2 * (SC7 + sx2 * SC8)))))));
                 break;
         }
     }
@@ -497,7 +498,8 @@ void mad::func::fast_atan2(int n, const double* y, const double* x, double* ang)
             region = 1;
         }
         r2 = r * r;
-        r = (r * (ATCHEB1 + r2 * (ATCHEB2 + r2 * ATCHEB3))) / (ATCHEB4 + r2 * (ATCHEB5 + r2 * (ATCHEB6 + r2)));
+        r = (r * (ATCHEB1 + r2 * (ATCHEB2 + r2 * ATCHEB3)))
+            / (ATCHEB4 + r2 * (ATCHEB5 + r2 * (ATCHEB6 + r2)));
         if(region)
         {
             r += SIXTHPI;
