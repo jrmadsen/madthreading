@@ -12,7 +12,7 @@ set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX
 
 include(MakeRulesCXX)
 include(GenericCMakeFunctions)
-SET_PROJECT_VERSION("2" "0" "0" "Multithreading API using pthreads. Task-based with thread-pool")
+SET_PROJECT_VERSION("2" "0" "1" "Multithreading API using C++11 threads. Task-based with thread-pool")
 SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
 SET(CMAKE_INSTALL_MESSAGE LAZY)
 
