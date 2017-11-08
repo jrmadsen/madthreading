@@ -52,5 +52,5 @@ script:
     - ./pi_serial
     - ./pi_tbb
     - ./pi_thread_pool
-    - ./pi_thread_pool_joiner_1
-    - ./pi_thread_pool_joiner_2
+    - ./pi_thread_pool_tree_1
+    - ./pi_thread_pool_tree_2
