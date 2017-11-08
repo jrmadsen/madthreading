@@ -150,8 +150,6 @@ thread_pool::~thread_pool()
         mad::details::allocator_list_tl::get_allocator_list()->Destroy(_id, 1);
     }
 
-    m_task_lock.unlock();
-    m_back_lock.unlock();
 }
 
 //============================================================================//
@@ -228,7 +226,7 @@ int thread_pool::initialize_threadpool()
         bool _add_thread = true;
         try
         {
-            *tid = std::move(std::thread(thread_pool::start_thread, (void*)(this)));
+            *tid = std::thread(thread_pool::start_thread, (void*)(this));
 #if defined(ALLOW_AFFINITY)
             if(m_use_affinity)
             {
@@ -378,9 +376,6 @@ int thread_pool::destroy_threadpool()
         delete itr;
     m_back_threads.clear();
     m_is_joined.clear();
-
-    m_task_lock.unlock();
-    m_back_lock.unlock();
 
     is_alive_flag = false;
 
@@ -620,8 +615,7 @@ int thread_pool::add_background_task(void* ptr, vtask* task)
     try
     {
         // assign to core if affinity is set to on
-        *tid = std::move(std::thread(thread_pool::start_background,
-                                    (void*)(this)));
+        *tid = std::thread(thread_pool::start_background, (void*)(this));
 #if defined(ALLOW_AFFINITY)
         if(m_use_affinity)
         {

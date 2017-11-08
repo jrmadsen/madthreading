@@ -543,8 +543,7 @@ public:
         m_data->tp()->add_tasks(tree->root());
         tg->join();
 
-        typedef typename std::deque<task_type*>::iterator            task_deque_itr;
-        typedef typename std::deque<task_tree_node_type*>::iterator  node_deque_itr;
+        typedef typename std::deque<task_type*>::iterator   task_deque_itr;
         typedef typename mad::task_group::iterator          tgrp_saved_itr;
         for(task_deque_itr titr = _tasks.begin(); titr != _tasks.end(); ++titr)
         {

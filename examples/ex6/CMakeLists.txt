@@ -42,8 +42,8 @@ set(executables pi_serial
                 pi_pthreads
                 pi_cxx11
                 pi_thread_pool
-                pi_thread_pool_joiner_1
-                pi_thread_pool_joiner_2)
+                pi_thread_pool_tree_1
+                pi_thread_pool_tree_2)
 if(TBB_FOUND)
     list(APPEND executables pi_tbb pi_lambda_tbb)
 endif()

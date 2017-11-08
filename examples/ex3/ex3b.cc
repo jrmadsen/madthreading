@@ -52,6 +52,6 @@ int main(int argc, char** argv)
     tm->run_loop<double_type>(&tg, compute_block, 0, num_steps,
                               num_threads*4, join, 0.0);
 
-    report(num_steps, step*sum, t.stop_and_return(), "pthread_pool_joiner_b");
+    report(num_steps, step*sum, t.stop_and_return(), "mad_thread_pool_tree_b");
     //========================================================================//
 }
