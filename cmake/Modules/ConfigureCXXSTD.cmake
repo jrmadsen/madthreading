@@ -112,9 +112,6 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
     endif()
   endif()
 
-  # always available?
-  set(CMAKE_CXX98_COMPILE_FEATURES cxx_template_template_parameters)
-
   set(CMAKE_CXX_COMPILE_FEATURES
     ${CMAKE_CXX11_COMPILE_FEATURES}
     ${CMAKE_CXX14_COMPILE_FEATURES}

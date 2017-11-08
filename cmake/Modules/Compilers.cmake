@@ -73,6 +73,17 @@ foreach(LANG C CXX)
         # IRIX MIPSpro CC Compiler
         SET_COMPILER_VAR(       MIPS                ON)
 
+    elseif(CMAKE_${LANG}_COMPILER_ID MATCHES "Intel")
+
+        SET_COMPILER_VAR(       INTEL               ON)
+
+        set(CTYPE ICC)
+        if("${LANG}" STREQUAL "CXX")
+            set(CTYPE ICPC)
+        endif("${LANG}" STREQUAL "CXX")
+
+        SET_COMPILER_VAR(       INTEL_${CTYPE}      ON)
+
     endif()
 
     # set other to no

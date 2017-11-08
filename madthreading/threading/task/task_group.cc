@@ -41,8 +41,6 @@ task_group::task_group(thread_pool* tp)
   m_save_lock(),
   m_join_lock()
 {
-    m_save_lock.unlock();
-    m_join_lock.unlock();
     if(!m_pool)
         m_pool = mad::thread_manager::instance()->thread_pool();
 }
@@ -50,10 +48,7 @@ task_group::task_group(thread_pool* tp)
 //============================================================================//
 
 task_group::~task_group()
-{
-    m_join_lock.unlock();
-    m_save_lock.unlock();
-}
+{ }
 
 //============================================================================//
 
@@ -102,10 +97,7 @@ void task_group::join()
         throw std::runtime_error(ss.str().c_str());
     }
 
-    { auto_lock l(m_join_lock); }
-    { auto_lock l(m_save_lock); }
-    //m_join_lock.unlock();
-    //m_save_lock.unlock();
+    m_join_lock.unlock();
 }
 
 //============================================================================//

@@ -24,8 +24,6 @@ addons:
             - swig3.0
 
 install:
-    #- sudo apt-get update
-    #- sudo apt-get upgrade -y
     - mkdir -p build-madthreading/release
     - cd build-madthreading/release
     - export CC=$(which gcc-5)

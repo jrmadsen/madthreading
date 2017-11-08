@@ -38,66 +38,60 @@ endif()
 #------------------------------------------------------------------------------#
 macro(get_intel_intrinsic_include_dir)
 
+    find_program(ICC_COMPILER icc)
+    if(NOT ICC_COMPILER)
+        set(ICC_COMPILER "${CMAKE_CXX_COMPILER}" CACHE FILEPATH 
+            "Path to CMake compiler (should be icc)" FORCE) 
+    endif(NOT ICC_COMPILER)
+
+    get_filename_component(COMPILER_DIR "${ICC_COMPILER}" REALPATH)
+    set(SYSNAME "${CMAKE_SYSTEM_NAME}")
+    string(TOLOWER "${CMAKE_SYSTEM_NAME}" LSYSNAME)
+    if(APPLE)
+        set(LSYSNAME "mac")
+    endif(APPLE)
+
     #--------------------------------------------------------------------------#
-    if(NOT DEFINED INTEL_ICC_CPATH)
-        get_filename_component(COMPILER_DIR "${CMAKE_CXX_COMPILER}" PATH)
-        string(TOLOWER "${CMAKE_SYSTEM_NAME}" LSYSNAME)
-        set(SYSNAME "${CMAKE_SYSTEM_NAME}")
-        find_path(INTEL_ICC_CPATH
-            NAMES icc/x86intrin.h icpc/x86intrin.h icl/x86intrin.h
-            HINTS
-                ENV INTEL_ICC_CPATH
-                ${COMPILER_DIR}
-                ${COMPILER_DIR}/..
-                ${COMPILER_DIR}/../..
-                ENV INTEL_ROOT
-            PATHS
-                ENV CPATH
-            PATH_SUFFIXES
-                include
-                include/intel64
-                include/ia32
-                include
-                ${SYSNAME}/include
-                ${SYSNAME}/compiler
-                ${SYSNAME}/compiler/include
-                ${LSYSNAME}/include
-                ${LSYSNAME}/compiler
-                ${LSYSNAME}/compiler/include
-            NO_SYSTEM_ENVIRONMENT_PATH
-            DOC "Include path for the ICC Compiler (need to correctly compile intrinsics)")
-    endif()
+    find_path(INTEL_ICC_CPATH
+        NAMES x86intrin.h
+        HINTS
+            ENV INTEL_ICC_CPATH
+            ${COMPILER_DIR}
+            ${COMPILER_DIR}/..
+            ${COMPILER_DIR}/../..
+            /opt/intel/compilers_and_libraries
+            /opt/intel/compilers_and_libraries/${SYSNAME}
+            /opt/intel/compilers_and_libraries/${LSYSNAME}
+            ENV INTEL_ROOT
+        PATHS
+            ENV CPATH
+            ENV INTEL_ICC_CPATH
+            ${COMPILER_DIR}
+            ${COMPILER_DIR}/..
+            ${COMPILER_DIR}/../..
+            /opt/intel/compilers_and_libraries
+            /opt/intel/compilers_and_libraries/${SYSNAME}
+            /opt/intel/compilers_and_libraries/${LSYSNAME}
+            ENV INTEL_ROOT
+        PATH_SUFFIXES
+            icc
+            include/icc
+            ${SYSNAME}/include/icc
+            ${SYSNAME}/compiler/include/icc
+            ${LSYSNAME}/compiler/include/icc
+        NO_SYSTEM_ENVIRONMENT_PATH
+        DOC "Include path for the ICC Compiler (need to correctly compile intrinsics)")
     #--------------------------------------------------------------------------#
 
     #--------------------------------------------------------------------------#
-    macro(cat_intrin_file _VAR ARGS)
-        set(_ICC_PATH ${_VAR})
-        set(_FILE x86intrin.h)
-        foreach(_arg ${ARGS} ${_FILE})
-            set(_ICC_PATH "${_ICC_PATH}/${_arg}")
-        endforeach()
-    endmacro()
-    #--------------------------------------------------------------------------#
-
-    #--------------------------------------------------------------------------#
-    if(NOT INTEL_ICC_CPATH)
-        set(_expath "/opt/intel/compilers_and_libraries/linux/compiler/include/icc")
+    if(NOT EXISTS "${INTEL_ICC_CPATH}/x86intrin.h")
+        set(_expath "/opt/intel/compilers_and_libraries/${LSYSNAME}/compiler/include/icc")
         set(_msg "INTEL_ICC_CPATH was not found! Please specify the path to \"x86intrin.h\"")
         add(_msg "in the Intel ICC compiler path. Using the GNU header for this file")
         add(_msg "typically results in a failure to compile.\nExample:\n")
         add(_msg "\t-DINTEL_ICC_CPATH=${_expath}")
         add(_msg "\nfor \"${_expath}/x86intrin.h\"\n")
         message(WARNING "${_msg}")
-    else()
-        foreach(_postfix icc icpc icl "")
-            cat_intrin_file(${INTEL_ICC_CPATH} "${_postfix}")
-            if(EXISTS "${_ICC_PATH}" AND NOT IS_DIRECTORY "${_ICC_PATH}")
-                set(_ICC_PATH "${INTEL_ICC_CPATH}/${_postfix}")
-                string(REGEX REPLACE "/$" "" _ICC_PATH "${_ICC_PATH}")
-                INCLUDE_DIRECTORIES(${_ICC_PATH})
-                break()
-            endif()
-        endforeach()
     endif()
     #--------------------------------------------------------------------------#
 

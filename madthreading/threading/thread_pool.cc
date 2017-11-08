@@ -86,8 +86,6 @@ thread_pool::thread_pool(bool _use_affinity)
   m_back_lock(),
   m_back_task_to_do(nullptr)
 {
-    m_task_lock.unlock();
-    m_back_lock.unlock();
 
 #ifdef VERBOSE_THREAD_POOL
     tmcout << "Constructing ThreadPool of size "
@@ -113,8 +111,6 @@ thread_pool::thread_pool(size_type pool_size, bool _use_affinity)
   m_back_lock(),
   m_back_task_to_do(nullptr)
 {
-    m_task_lock.unlock();
-    m_back_lock.unlock();
 
 #ifdef VERBOSE_THREAD_POOL
     tmcout << "Constructing ThreadPool of size " << m_pool_size << std::endl;

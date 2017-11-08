@@ -171,6 +171,9 @@ function(ArchitectureFlags VAR)
         message(STATUS "Detected CPU: ${TARGET_ARCHITECTURE}")
     endif(TARGET_ARCHITECTURE STREQUAL "auto")
 
+    add_feature(TARGET_ARCHITECTURE "Target CPU architecture")
+
+    set(_ARCH_FLAGS )
     if(MSVC)
         message(WARNING "Windows support not implemented")
     elseif(CMAKE_CXX_COMPILER_IS_INTEL)
@@ -187,12 +190,18 @@ function(ArchitectureFlags VAR)
         set(OFA_map_penryn "-xSSSE3")
         set(OFA_map_merom "-xSSSE3")
         set(OFA_map_core2 "-xSSE3")
-        set(${VAR} "${OFA_map_${TARGET_ARCHITECTURE}}" PARENT_SCOPE)
+        set(OFA_map_kaby-lake "-xAVX")
+        set(_ARCH_FLAGS "${OFA_map_${TARGET_ARCHITECTURE}}")
     else() # not MSVC and not ICC => GCC, Clang, Open64
-        #set(${VAR} "-march=${TARGET_ARCHITECTURE}" PARENT_SCOPE)
-        set(${VAR} "-march=native" PARENT_SCOPE)
+        set(_ARCH_FLAGS "-march=native")
     endif()
+    
+    if(APPLE AND CMAKE_CXX_COMPILER_IS_GNU)
+        add(_ARCH_FLAGS "-Wa,-W")
+        add(_ARCH_FLAGS "-Wa,-q")
+    endif(APPLE AND CMAKE_CXX_COMPILER_IS_GNU)
 
+    set(${VAR} "${_ARCH_FLAGS}" PARENT_SCOPE)
 endfunction()
 
 # =============================================================================#
