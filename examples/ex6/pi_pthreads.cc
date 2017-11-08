@@ -12,6 +12,20 @@
 #include <madthreading/threading/thread_manager.hh>
 #include "../Common.hh"
 
+#define CORETHREADCREATE( worker , func , arg )  { \
+                pthread_attr_t attr; \
+                pthread_attr_init(&attr); \
+                pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE); \
+                int ret = pthread_create( worker, &attr, func , arg ); \
+                if (ret != 0) \
+                { \
+                    std::stringstream msg; \
+                    msg << "pthread_create() failed: " << ret << std::endl; \
+                    throw std::runtime_error(msg.str()); \
+                } \
+            }
+#define CORETHREADJOIN(worker) pthread_join(worker, NULL)
+
 using namespace mad;
 
 //============================================================================//
@@ -70,8 +84,9 @@ int main(int argc, char** argv)
     //========================================================================//
     timer::timer t;
 
+
     std::vector<ProxyStruct*> proxies(num_threads, 0);
-    std::vector<CoreThread> threads(num_threads);
+    std::vector<pthread_t> threads(num_threads);
     ulong_type diff = num_steps/num_threads;
     for(ulong_type i = 0; i < threads.size(); ++i)
     {
@@ -83,7 +98,7 @@ int main(int argc, char** argv)
         ProxyStruct* proxy_struct
             = new ProxyStruct(compute_block, range_t(_f, _l));
 
-        CoreThread thread;
+        pthread_t thread;
         proxies[i] = proxy_struct;
         CORETHREADCREATE(&thread, proxy, (void*)(proxies[i]));
         threads[i] = std::move(thread);

@@ -40,8 +40,6 @@
 #include <madthreading/threading/thread_manager.hh>
 #include "../Common.hh"
 
-#include <madthreading/atomics/omp_atomic.hh>
-
 using namespace mad;
 
 //============================================================================//

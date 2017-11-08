@@ -63,13 +63,14 @@ int main(int argc, char** argv)
     // just executabe all the blocks
     // note: thread sleep in block_b will help ensure the resulting sentence
     //  is out of order
+    mad::task_group tg1;
     for(ulong_type j = 0; j < nchar; ++j)
     {
         for(ulong_type i = 0; i < nchar; ++i)
-            tm->exec(block_b);
-        tm->exec(block_a);
+            tm->exec(&tg1, block_b);
+        tm->exec(&tg1, block_a);
     }
-    tm->join();
+    tg1.join();
     //========================================================================//
 
     tmcout << "Sentence A: " << sentence << endl;
@@ -78,24 +79,20 @@ int main(int argc, char** argv)
 
     //========================================================================//
     // new task group is created implicitly
-    thread_manager* tm_tg = tm->clone(); // clone can take specific task_group
+    mad::task_group tg2a;
     for(ulong_type j = 0; j < nchar; ++j)
     {
+        mad::task_group tg2b;
         for(ulong_type i = 0; i < nchar; ++i)
-            tm_tg->exec(block_b);
-        // here we want tm_tg finish
-        tm_tg->join();
-        // note: in this example, we could accomplish the same results by
-        //      not using/creating "tm_tg" and just calling "tm->join()"
-        //      but that is not the purpose of this example
-        tm->exec(block_a);
+            tm->exec(&tg2b, block_b);
+        // here we want thread_group 2b to finish
+        tg2b.join();
+        tm->exec(&tg2a, block_a);
     }
-    tm->join();
+    tg2a.join();
     //========================================================================//
 
     tmcout << "Sentence B: " << sentence << endl;
-
-    delete tm_tg;
     delete tm;
     return (soln != sentence && sentA == sentence);
 }

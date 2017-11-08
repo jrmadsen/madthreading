@@ -64,44 +64,8 @@
 #endif
 
 //============================================================================//
-//  MAD_USE_CXX{98,0X,11,14,17}
+//  MAD_USE_CXX{11,14,17}
 //============================================================================//
-
-#if defined(MAD_USE_CXX98)
-#   if defined(MAD_USE_CXX0X)
-#       undef MAD_USE_CXX0X
-#   endif
-
-#   if defined(MAD_USE_CXX11)
-#       undef MAD_USE_CXX11
-#   endif
-
-#   if defined(MAD_USE_CXX14)
-#       undef MAD_USE_CXX14
-#   endif
-
-#   if defined(MAD_USE_CXX17)
-#       undef MAD_USE_CXX17
-#   endif
-#endif
-
-#if defined(MAD_USE_CXX0X)
-#   if !defined(MAD_USE_CXX98)
-#       define MAD_USE_CXX98
-#   endif
-
-#   if defined(MAD_USE_CXX11)
-#       undef MAD_USE_CXX11
-#   endif
-
-#   if defined(MAD_USE_CXX14)
-#       undef MAD_USE_CXX14
-#   endif
-
-#   if defined(MAD_USE_CXX17)
-#       undef MAD_USE_CXX17
-#   endif
-#endif
 
 #if defined(MAD_USE_CXX11)
 #   if defined(MAD_USE_CXX14)

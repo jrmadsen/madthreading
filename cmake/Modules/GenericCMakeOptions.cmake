@@ -285,13 +285,7 @@ macro(OPTION_USE_OPENMP DEFAULT)
     ADD_OPTION_AND_FEATURE(USE_OPENMP "Enable OpenMP ${_for_message}" ${DEFAULT} "${ARGN}")
     unset(_for_message)
     IF(USE_OPENMP)
-
-        if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-            message(WARNING "\n\tClang on Darwin (as of OS X Mavericks) does not have OpenMP Support\n")
-        endif()
-
         find_package(OpenMP)
-
         if(OpenMP_FOUND)
             # Add the OpenMP-specific compiler and linker flags
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")

@@ -51,9 +51,6 @@ endif()
 
 set(CMAKE_THREAD_PREFER_PTHREADS ON)
 find_package(Threads REQUIRED)
-if(Threads_FOUND)
-    add_definitions(-DENABLE_THREADING)
-endif()
 list(APPEND EXTERNAL_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
 
 
@@ -227,10 +224,31 @@ if(USE_SSE)
     unset(SSE_DEFINITIONS)
 
     add(CMAKE_CXX_FLAGS_EXTRA "${SSE_FLAGS}")
-else()
+
+else(USE_SSE)
+
     foreach(type SSE2 SSE3 SSSE3 SSE4_1 AVX AVX2)
         remove_definitions(-DHAS_${type})
     endforeach()
+endif(USE_SSE)
+
+
+################################################################################
+#
+#        Architecture Flags
+#
+################################################################################
+
+include(Architecture)
+
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Release" OR
+   "${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo" OR
+   DEFINED TARGET_ARCHITECTURE)
+
+    ArchitectureFlags(ARCH_FLAGS)
+    add(CMAKE_C_FLAGS_EXTRA "${ARCH_FLAGS}")
+    add(CMAKE_CXX_FLAGS_EXTRA "${ARCH_FLAGS}")
+
 endif()
 
 
@@ -252,3 +270,4 @@ if(USE_BOOST)
         set(Boost_FOUND ON)
     endif()
 endif()
+

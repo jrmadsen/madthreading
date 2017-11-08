@@ -45,9 +45,7 @@
 #include "madthreading/threading/threading.hh"
 #include "madthreading/threading/auto_lock.hh"
 
-#ifdef ENABLE_THREADING
-    #include "madthreading/atomics/atomic.hh"
-#endif
+#include "madthreading/atomics/atomic.hh"
 
 #ifdef USE_TBB
     #include <tbb/tbb_stddef.h>
@@ -63,8 +61,6 @@ namespace mad
 #else
     class splitter { };
 #endif
-
-#ifdef ENABLE_THREADING
 
     typedef atomic<short>           short_ts;
     typedef atomic<unsigned short>  ushort_ts;
@@ -92,37 +88,6 @@ namespace mad
     #define base_conversion(type)   typename type::value_type
 
     typedef auto_lock                Lock_t;
-
-#else
-
-    typedef short                   short_ts;
-    typedef unsigned short          ushort_ts;
-    typedef int                     int_ts;
-    typedef unsigned                uint_ts;
-    typedef unsigned                unsigned_ts;
-    typedef long                    long_ts;
-    typedef unsigned long           ulong_ts;
-
-    typedef float                   float_ts;
-    typedef double                  double_ts;
-
-    typedef short                   short_type;
-    typedef unsigned short          ushort_type;
-    typedef int                     int_type;
-    typedef unsigned                uint_type;
-    typedef unsigned                unsigned_type;
-    typedef long                    long_type;
-    typedef unsigned long           ulong_type;
-
-    typedef float                   float_type;
-    typedef double                  double_type;
-
-    #define type_conversion(type)   type
-    #define base_conversion(type)   type
-
-    typedef auto_lock                Lock_t;
-
-#endif
 
 } // namespace mad
 

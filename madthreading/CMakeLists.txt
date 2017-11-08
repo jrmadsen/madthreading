@@ -13,7 +13,6 @@ GLOBAL_OBJECT_TARGET(INSTALL_HEADERS
         sources.cmake
         allocator/sources.cmake
         atomics/sources.cmake
-        atomics/details/sources.cmake
         threading/sources.cmake
         threading/task/sources.cmake
         vectorization/sources.cmake
@@ -173,9 +172,16 @@ install(EXPORT ${CPROJECT_NAME}LibraryDepends
 # export the packages
 export(PACKAGE ${PROJECT_NAME})
 
-foreach(_cmake_file Compilers FindMKL FindSSE MacroUtilities FindTBB)
+foreach(_cmake_file Compilers MacroUtilities)
     # Install CMake files
     install(FILES ${PROJECT_SOURCE_DIR}/cmake/Modules/${_cmake_file}.cmake
         DESTINATION ${CMAKE_INSTALL_CMAKEDIR}
         COMPONENT dev)
-endforeach()
+endforeach(_cmake_file Compilers MacroUtilities)
+
+foreach(_cmake_file FindMKL FindSSE FindTBB)
+    # Install CMake files
+    install(FILES ${PROJECT_SOURCE_DIR}/cmake/Packages/${_cmake_file}.cmake
+        DESTINATION ${CMAKE_INSTALL_CMAKEDIR}
+        COMPONENT dev)
+endforeach(_cmake_file FindMKL FindSSE FindTBB)

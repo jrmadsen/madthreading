@@ -47,21 +47,12 @@
 %}
 
 %import "madthreading/threading/threading.hh"
-%import "madthreading/threading/template_auto_lock.hh"
-
 #include "madthreading/threading/threading.hh"
-
-%template(Pyauto_lock) mad::template_auto_lock<mad::CoreMutex, mad::thread_lock, mad::thread_unlock>;
-typedef mad::template_auto_lock<mad::CoreMutex,
-                              mad::thread_lock,
-                              mad::thread_unlock> Pyauto_lock;
-typedef mad::CoreMutex  CoreMutex;
 %import "madthreading/threading/mutex.hh"
 %include "auto_lock.hh"
 #endif
 
 #include "madthreading/threading/threading.hh"
-#include "madthreading/threading/template_auto_lock.hh"
 #include "madthreading/threading/mutex.hh"
 
 //----------------------------------------------------------------------------//
@@ -69,61 +60,7 @@ typedef mad::CoreMutex  CoreMutex;
 namespace mad
 {
 
-//----------------------------------------------------------------------------//
-
-struct Implauto_lock : public template_auto_lock<mad::CoreMutex,
-                                              mad::thread_lock,
-                                              mad::thread_unlock>
-{
-    //------------------------------------------------------------------------//
-
-    Implauto_lock(mad::CoreMutex* mtx)
-    : template_auto_lock<mad::CoreMutex,
-                       mad::thread_lock,
-                       mad::thread_unlock>(mtx,
-                                           &COREMUTEXLOCK,
-                                           &COREMUTEXUNLOCK)
-    { }
-
-    //------------------------------------------------------------------------//
-
-    Implauto_lock(mad::mutex* mtx)
-    : template_auto_lock<mad::CoreMutex,
-                       mad::thread_lock,
-                       mad::thread_unlock>(mtx->base_mutex_ptr(),
-                                           &COREMUTEXLOCK,
-                                           &COREMUTEXUNLOCK)
-    { }
-
-    //------------------------------------------------------------------------//
-#ifndef SWIG
-    Implauto_lock(mad::CoreMutex& mtx)
-    : template_auto_lock<mad::CoreMutex,
-                       mad::thread_lock,
-                       mad::thread_unlock>(&mtx,
-                                           &COREMUTEXLOCK,
-                                           &COREMUTEXUNLOCK)
-    { }
-
-    //------------------------------------------------------------------------//
-
-    Implauto_lock(mad::mutex& mtx)
-    : template_auto_lock<mad::CoreMutex,
-                       mad::thread_lock,
-                       mad::thread_unlock>(mtx.base_mutex_ptr(),
-                                           &COREMUTEXLOCK,
-                                           &COREMUTEXUNLOCK)
-    { }
-#endif
-    //------------------------------------------------------------------------//
-};
-
-
-//----------------------------------------------------------------------------//
-
-typedef Implauto_lock auto_lock;
-
-//----------------------------------------------------------------------------//
+using auto_lock = std::lock_guard<std::recursive_mutex>;
 
 } // namespace mad
 

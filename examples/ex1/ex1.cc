@@ -45,7 +45,7 @@ template <typename _Tp>
 void _run_itr(_Tp itr)
 {
     static mad::mutex mutex;
-    mad::auto_lock l(&mutex);
+    mad::auto_lock l(mutex);
     tmcout << "Hello World! - iteration #" << *itr << std::endl;
 }
 
@@ -54,7 +54,7 @@ void _run_itr(_Tp itr)
 void full_func(int a1, double a2, long a3, short a4, float a5, unsigned a6)
 {
     static mad::mutex mutex;
-    mad::auto_lock l(&mutex);
+    mad::auto_lock l(mutex);
     tmcout << "Hello World! - " << a1 << ", " << a2 << ", "
            << a3 << ", " << a4 << ", " << a5 << ", " << a6 << std::endl;
 }
@@ -79,13 +79,14 @@ int main(int argc, char** argv)
     //========================================================================//
     auto _run1 = [] (int n)
     {
-        mad::auto_lock l(&mutex);
+        mad::auto_lock l(mutex);
         tmcout << "Hello World! - iteration #" << n << std::endl;
     };
     //------------------------------------------------------------------------//
     tmcout << "\nRunning loop #1 (run_loop)..." << std::endl;
-    tm->run_loop(_run1, 0, niter);
-    tm->join();
+    mad::task_group tg1;
+    tm->run_loop(&tg1, _run1, 0, niter);
+    tg1.join();
     //========================================================================//
 
 
@@ -97,14 +98,15 @@ int main(int argc, char** argv)
     auto _run2 = [&] ()
     {
         int _n = ++n;
-        mad::auto_lock l(&mutex);
+        mad::auto_lock l(mutex);
         tmcout << "Hello World! - iteration #" << _n << std::endl;
     };
     //------------------------------------------------------------------------//
     tmcout << "\nRunning loop #2 (exec)..." << std::endl;
+    mad::task_group tg2;
     for(int i = 0; i < niter; ++i)
-        tm->exec(_run2);
-    tm->join();
+        tm->exec(&tg2, _run2);
+    tg2.join();
 
 
     //========================================================================//
@@ -113,8 +115,9 @@ int main(int argc, char** argv)
     std::list<int> _list;
     fill(_list, 0, niter);
     tmcout << "\nRunning loop #3 (run_loop<list::iterator>)..." << std::endl;
-    tm->run_loop(_run_itr<std::list<int>::iterator>, _list.begin(), _list.end());
-    tm->join();
+    mad::task_group tg3;
+    tm->run_loop(&tg3, _run_itr<std::list<int>::iterator>, _list.begin(), _list.end());
+    tg3.join();
 
 
     //========================================================================//
@@ -124,8 +127,9 @@ int main(int argc, char** argv)
     fill(_deque, niter, niter+niter);
     tmcout << "\nRunning loop #4 (run_loop<deque::iterator>)..." << std::endl;
     auto func = std::bind(_run_itr<std::deque<int>::iterator>, _1);
-    tm->run_loop(func, _deque.begin(), _deque.end());
-    tm->join();
+    mad::task_group tg4;
+    tm->run_loop(&tg4, func, _deque.begin(), _deque.end());
+    tg4.join();
 
 
     //========================================================================//
@@ -140,13 +144,12 @@ int main(int argc, char** argv)
           full_func(arg1, arg2, arg3, arg4, arg5, arg6);
     };
     auto func2 = std::bind(full_func, _1, _2, _3, arg4, arg5, arg6);
-    tm->exec<void>(func1, 1, 1.3, 5L);
-    tm->exec<void>(func2, 3, 4.1, 7L);
-    tm->join();
+    mad::task_group tg5;
+    tm->exec<void>(&tg5, func1, 1, 1.3, 5L);
+    tm->exec<void>(&tg5, func2, 3, 4.1, 7L);
+    tg5.join();
 
 
-#if defined(MAD_USE_CXX98)
-#else
     //========================================================================//
     // RUN #6
     //========================================================================//
@@ -171,14 +174,14 @@ int main(int argc, char** argv)
     auto prec = std::cout.precision();
     std::cout.precision(4);
     std::cout.setf(std::ios::fixed);
+    mad::task_group tg;
     for(int i = 0; i < niter; ++i)
-        tm->exec(_run6,
+        tm->exec(&tg, _run6,
                  canonical(), canonical(), canonical(),
                  canonical(), canonical(), canonical());
-    tm->join();
+    tg.join();
     std::cout.precision(prec);
     std::cout.unsetf(std::ios::fixed);
-#endif
 
     return 0;
 }

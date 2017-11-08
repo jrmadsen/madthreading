@@ -38,20 +38,17 @@ task_group::task_group(thread_pool* tp)
 : m_task_count(0),
   m_id(m_group_count++),
   m_pool(tp),
-  m_save_lock(true),
-  m_join_lock(true)
+  m_save_lock(),
+  m_join_lock()
 {
-    m_save_lock.unlock();
-    m_join_lock.unlock();
+    if(!m_pool)
+        m_pool = mad::thread_manager::instance()->thread_pool();
 }
 
 //============================================================================//
 
 task_group::~task_group()
-{
-    m_join_lock.unlock();
-    m_save_lock.unlock();
-}
+{ }
 
 //============================================================================//
 
@@ -59,13 +56,6 @@ void task_group::join()
 {
 #ifdef VERBOSE_THREAD_POOL
     std::cout << "Joining " << pending() << " tasks..." << std::endl;
-#endif
-
-#ifndef ENABLE_THREADING
-    return;
-#endif
-
-#ifdef VERBOSE_THREAD_POOL
     std::cout << std::boolalpha << "is alive: " << is_alive_flag << std::endl;
 #endif
 
@@ -88,12 +78,9 @@ void task_group::join()
                 tmcout << "# of tasks: " << ntasks << std::endl;
             }
             #endif
-            // if not locked, we need to lock it
-            /*m_join_lock.lock();
             // Wait until signaled that a task has been competed
             // Unlock mutex while wait, then lock it back when signaled
-            m_join_cond.timed_wait(m_join_lock, 5.0);*/
-            m_join_cond.wait(m_join_lock.base_mutex_ptr());
+            m_join_cond.wait(m_join_lock);
         }
 
         // if pending is not greater than zero, we are joined
@@ -111,7 +98,6 @@ void task_group::join()
     }
 
     m_join_lock.unlock();
-    m_save_lock.unlock();
 }
 
 //============================================================================//

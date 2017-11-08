@@ -21,18 +21,6 @@
 // SOFTWARE.
 //
 
-//
-//
-//
-//
-//
-// created by jrmadsen on Sun Jun 21 16:42:04 2015
-//
-//
-//
-//
-
-
 #ifndef mutex_hh_
 #define mutex_hh_
 
@@ -47,77 +35,12 @@
 #endif
 
 #include "madthreading/threading/threading.hh"
-#include "madthreading/threading/condition.hh"
+#include <mutex>
 
-// utility mutex class. Cannot be used with auto_lock currently,
-// but nice in some situations since it doesn't have to initialized
-// like CoreMutex
-// eventually need to make auto_lock accept it
 namespace mad
 {
 
-//----------------------------------------------------------------------------//
-
-class mutex
-{
-public:
-    typedef mad::CoreMutex      base_mutex_type;
-    typedef mad::condition      condition_type;
-
-public:
-    //------------------------------------------------------------------------//
-    mutex(bool recursive = false)
-    : m_is_locked(false)
-    {
-        if(recursive)
-        { CORERECURSIVEMUTEXINIT(m_mutex); }
-        else
-        { COREMUTEXINIT(m_mutex); }
-    }
-    //------------------------------------------------------------------------//
-    virtual ~mutex()
-    {
-        while(m_is_locked)
-            m_condition.wait(&m_mutex);
-        unlock(); // Unlock mutex after shared resource is safe
-        COREMUTEXDESTROY(m_mutex);
-    }
-    //------------------------------------------------------------------------//
-
-public:
-    //------------------------------------------------------------------------//
-    bool is_locked() const volatile
-    {
-        return m_is_locked;
-    }
-    //------------------------------------------------------------------------//
-    void lock()
-    {
-        COREMUTEXLOCK(&m_mutex);
-        m_is_locked = true;
-        m_condition.broadcast();
-    }
-    //------------------------------------------------------------------------//
-    void unlock()
-    {
-        m_is_locked = false;
-        COREMUTEXUNLOCK(&m_mutex);
-        m_condition.broadcast();
-    }
-    //------------------------------------------------------------------------//
-
-    base_mutex_type& base_mutex()       { return m_mutex; }
-    base_mutex_type* base_mutex_ptr()   { return &m_mutex; }
-
-    //------------------------------------------------------------------------//
-
-private:
-    volatile bool       m_is_locked;
-    base_mutex_type     m_mutex;
-    condition_type      m_condition;
-};
-
-//----------------------------------------------------------------------------//
+using mutex = std::recursive_mutex;
 
 } // namespace mad
 

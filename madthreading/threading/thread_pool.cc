@@ -41,11 +41,9 @@
 
 #include <cstdlib>
 
-// CTCAST --> CoreThread cast (needed for Apple)
-#ifndef __APPLE__
-#   define CTCAST(field) field
-#else
-#   define CTCAST(field) (unsigned long)(field)
+#if !defined(WIN32) && !defined(__MACH__)
+#define ALLOW_AFFINITY
+#   include <pthread.h>
 #endif
 
 static mad::mutex io_mutex;
@@ -57,7 +55,7 @@ namespace mad
 
 inline int ncores()
 {
-    return Threading::GetNumberOfCores();
+    return std::thread::hardware_concurrency();
 }
 
 //============================================================================//
@@ -82,17 +80,15 @@ static const int NONINIT = 2;
 
 thread_pool::thread_pool(bool _use_affinity)
 : m_use_affinity(_use_affinity),
-  m_pool_size(Threading::GetNumberOfCores()),
+  m_pool_size(std::thread::hardware_concurrency()),
   m_pool_state(state::NONINIT),
-  m_task_lock(true), // recursive
-  m_back_lock(true),
-  m_back_task_to_do(NULL)
+  m_task_lock(), // recursive
+  m_back_lock(),
+  m_back_task_to_do(nullptr)
 {
-    m_task_lock.unlock();
-    m_back_lock.unlock();
 
 #ifdef VERBOSE_THREAD_POOL
-    std::cout << "Constructing ThreadPool of size "
+    tmcout << "Constructing ThreadPool of size "
               << m_pool_size << std::endl;
 #endif
 
@@ -111,15 +107,13 @@ thread_pool::thread_pool(size_type pool_size, bool _use_affinity)
 : m_use_affinity(_use_affinity),
   m_pool_size(pool_size),
   m_pool_state(state::NONINIT),
-  m_task_lock(true), // recursive
-  m_back_lock(true),
-  m_back_task_to_do(NULL)
+  m_task_lock(), // recursive
+  m_back_lock(),
+  m_back_task_to_do(nullptr)
 {
-    m_task_lock.unlock();
-    m_back_lock.unlock();
 
 #ifdef VERBOSE_THREAD_POOL
-    std::cout << "Constructing ThreadPool of size " << m_pool_size << std::endl;
+    tmcout << "Constructing ThreadPool of size " << m_pool_size << std::endl;
 #endif
 
 #ifdef FPE_DEBUG
@@ -149,7 +143,7 @@ thread_pool::~thread_pool()
     // delete thread-local allocator and erase thread IDS
     if(mad::details::allocator_list_tl::get_allocator_list_if_exists())
     {
-        ulong_type _self = CORETHREADSELFINT();
+        auto _self = std::this_thread::get_id();
         ulong_type _id = mad::thread_pool::GetThreadIDs().find(_self)->second;
         if(tids.find(_self) != tids.end())
             tids.erase(tids.find(_self));
@@ -175,16 +169,16 @@ bool thread_pool::is_initialized() const
 void* thread_pool::start_thread(void* arg)
 {
     {
-        mad::Lock_t lock(&tid_mutex);
-        tids[CORETHREADSELFINT()] = tids.size();
+        mad::Lock_t lock(tid_mutex);
+        tids[std::this_thread::get_id()] = tids.size();
 #ifdef VERBOSE_THREAD_POOL
-        std::cout << "--> [MAIN THREAD QUEUE] thread ids size: " << tids.size()
+        tmcout << "--> [MAIN THREAD QUEUE] thread ids size: " << tids.size()
                   << std::endl;
 #endif
     }
     thread_pool* tp = (thread_pool*) arg;
     tp->execute_thread();
-    return NULL;
+    return nullptr;
 }
 
 //============================================================================//
@@ -192,33 +186,29 @@ void* thread_pool::start_thread(void* arg)
 void* thread_pool::start_background(void* arg)
 {
     { // a background thread is not in thread pool
-        mad::Lock_t lock(&tid_mutex);
-        tids[CORETHREADSELFINT()] = tids.size();
+        mad::Lock_t lock(tid_mutex);
+        tids[std::this_thread::get_id()] = tids.size();
 #ifdef VERBOSE_THREAD_POOL
-        std::cout << "--> [BACK THREAD QUEUE] thread ids size: "
+        tmcout << "--> [BACK THREAD QUEUE] thread ids size: "
                   << tids.size() << std::endl;
 #endif
     }
     thread_pool* tp = (thread_pool*) arg;
     tp->background_thread();
-    return NULL;
+    return nullptr;
 }
 
 //============================================================================//
 
 int thread_pool::initialize_threadpool()
 {
-#ifndef ENABLE_THREADING
-    return 1;
-#endif
-
     if(m_pool_size == 1)
         return 1;
 
     is_alive_flag = true;
 
 #ifdef VERBOSE_THREAD_POOL
-    std::cout << "--> Creating " << m_pool_size
+    tmcout << "--> Creating " << m_pool_size
               << " threads ... " << m_main_threads.size() << " already exist"
               << std::endl;
 #endif
@@ -234,23 +224,26 @@ int thread_pool::initialize_threadpool()
     for (size_type i = 0; i < m_pool_size; i++)
     {
         // add the threads
-        CoreThread tid;
+        thread* tid = new std::thread;
         bool _add_thread = true;
         try
         {
-            // assign to core is affinity is set
+            *tid = std::move(std::thread(thread_pool::start_thread, (void*)(this)));
+#if defined(ALLOW_AFFINITY)
             if(m_use_affinity)
             {
-                CORETHREADCREATEID(&tid,
-                                   thread_pool::start_thread,
-                                   (void*)(this),
-                                   (abs(ncores() - (int)i - 1))%ncores());
-            } else
-            {
-                CORETHREADCREATE(&tid,
-                                 thread_pool::start_thread,
-                                 (void*)(this));
+                // Create a cpu_set_t object representing a set of CPUs. Clear it and mark
+                // only CPU i as set.
+                cpu_set_t cpuset;
+                CPU_ZERO(&cpuset);
+                CPU_SET(i, &cpuset);
+                int rc = pthread_setaffinity_np(tid->native_handle(),
+                                                sizeof(cpu_set_t), &cpuset);
+                if (rc != 0)
+                    std::cerr << "Error calling pthread_setaffinity_np: " << rc
+                              << std::endl;
             }
+#endif
         } catch(std::runtime_error& e)
         {
             std::cerr << e.what() << std::endl; // issue creating thread
@@ -264,7 +257,7 @@ int thread_pool::initialize_threadpool()
         // successful creation of thread
         if(_add_thread)
         {
-            m_main_threads.push_back(tid);
+            m_main_threads.push_back(std::move(tid));
             // TODO: FIGURE THIS OUT
             m_is_joined.push_back(false);
         }
@@ -274,7 +267,7 @@ int thread_pool::initialize_threadpool()
     m_pool_size = m_main_threads.size();
 
 #ifdef VERBOSE_THREAD_POOL
-    std::cout << "--> " << m_pool_size
+    tmcout << "--> " << m_pool_size
               << " threads created by the thread pool" << std::endl;
 #endif
 
@@ -286,7 +279,7 @@ int thread_pool::initialize_threadpool()
         ss << "thread_pool::initialize_threadpool - boolean is_joined vector "
            << "is a different size than threads vector: " << m_is_joined.size()
            << " vs. " << m_main_threads.size() << " (tid: "
-           << CORETHREADSELFINT() << ")";
+           << std::this_thread::get_id() << ")";
 
         throw std::runtime_error(ss.str());
     }
@@ -298,10 +291,6 @@ int thread_pool::initialize_threadpool()
 
 int thread_pool::destroy_threadpool()
 {
-#ifndef ENABLE_THREADING
-    return 0;
-#endif
-
     if(!is_alive_flag)
         return 0;
 
@@ -316,8 +305,8 @@ int thread_pool::destroy_threadpool()
 
     //------------------------------------------------------------------------//
     // notify all threads we are shutting down
-    m_task_cond.broadcast();
-    m_back_cond.broadcast();
+    m_task_cond.notify_all();
+    m_back_cond.notify_all();
     //------------------------------------------------------------------------//
 
     if(m_is_joined.size() != m_main_threads.size())
@@ -326,7 +315,7 @@ int thread_pool::destroy_threadpool()
         ss << "   thread_pool::destroy_thread_pool - boolean is_joined vector "
            << "is a different size than threads vector: " << m_is_joined.size()
            << " vs. " << m_main_threads.size() << " (tid: "
-           << CORETHREADSELFINT() << ")";
+           << std::this_thread::get_id() << ")";
 
         throw std::runtime_error(ss.str());
     }
@@ -339,14 +328,14 @@ int thread_pool::destroy_threadpool()
             continue;
 
         //--------------------------------------------------------------------//
-        // erase thread from thread ID list
-        if(tids.find(CTCAST(m_main_threads[i])) != tids.end())
-            tids.erase(tids.find(CTCAST(m_main_threads[i])));
+        // join
+        if(!(std::this_thread::get_id() == m_main_threads[i]->get_id()))
+            m_main_threads[i]->join();
 
         //--------------------------------------------------------------------//
-        // set cancellation state
-        if(!CORETHREADEQUAL(CORETHREADSELF(), m_main_threads[i]))
-            CORETHREADCANCEL(m_main_threads[i]);
+        // erase thread from thread ID list
+        if(tids.find(m_main_threads[i]->get_id()) != tids.end())
+            tids.erase(tids.find(m_main_threads[i]->get_id()));
 
         //--------------------------------------------------------------------//
         // it's joined
@@ -354,7 +343,7 @@ int thread_pool::destroy_threadpool()
 
         //--------------------------------------------------------------------//
         // try waking up a bunch of threads that are still waiting
-        m_task_cond.broadcast();
+        m_task_cond.notify_all();
         //--------------------------------------------------------------------//
     }
 
@@ -362,34 +351,36 @@ int thread_pool::destroy_threadpool()
     {
         //--------------------------------------------------------------------//
         // erase background threads
-        if(tids.find(CTCAST(m_back_threads[i])) != tids.end())
-            tids.erase(tids.find(CTCAST(m_back_threads[i])));
+        if(tids.find(m_back_threads[i]->get_id()) != tids.end())
+            tids.erase(tids.find(m_back_threads[i]->get_id()));
 
         //--------------------------------------------------------------------//
-        // set cancellation state
-        if(!CORETHREADEQUAL(CORETHREADSELF(), m_back_threads[i]))
-            CORETHREADCANCEL(m_back_threads[i]);
+        // set join
+        if(!(std::this_thread::get_id() == m_back_threads[i]->get_id()))
+            m_back_threads[i]->join();
 
         //--------------------------------------------------------------------//
         // try waking up a bunch of threads that are still waiting
-        m_back_cond.broadcast();
+        m_back_cond.notify_all();
         //--------------------------------------------------------------------//
     }
 
 #ifdef VERBOSE_THREAD_POOL
-    std::cout << "--> " << m_pool_size
+    tmcout << "--> " << m_pool_size
               << " threads exited from the thread pool" << std::endl;
 #endif
 
     // clean up
+    for(auto& itr : m_main_threads)
+        delete itr;
     m_main_threads.clear();
+    for(auto& itr : m_back_threads)
+        delete itr;
     m_back_threads.clear();
     m_is_joined.clear();
 
-    if(m_task_lock.is_locked())
-        m_task_lock.unlock();
-    if(m_back_lock.is_locked())
-        m_back_lock.unlock();
+    m_task_lock.unlock();
+    m_back_lock.unlock();
 
     is_alive_flag = false;
 
@@ -400,7 +391,7 @@ int thread_pool::destroy_threadpool()
 
 void* thread_pool::execute_thread()
 {
-    vtask* task = NULL;
+    vtask* task = nullptr;
     while(true)
     {
         //--------------------------------------------------------------------//
@@ -418,7 +409,7 @@ void* thread_pool::execute_thread()
         {
             // Wait until there is a task in the queue
             // Unlock mutex while wait, then lock it back when signaled
-            m_task_cond.wait(m_task_lock.base_mutex_ptr());
+            m_task_cond.wait(m_task_lock);
         }
 
         // If the thread was waked to notify process shutdown, return from here
@@ -428,11 +419,11 @@ void* thread_pool::execute_thread()
             m_task_lock.unlock();
             //----------------------------------------------------------------//
             if(mad::details::allocator_list_tl::get_allocator_list_if_exists()
-               && tids.find(CORETHREADSELFINT()) != tids.end())
+               && tids.find(std::this_thread::get_id()) != tids.end())
                 mad::details::allocator_list_tl::get_allocator_list()
-                        ->Destroy(tids.find(CORETHREADSELFINT())->second, 1);
+                        ->Destroy(tids.find(std::this_thread::get_id())->second, 1);
             //----------------------------------------------------------------//
-            CORETHREADEXIT(NULL);
+            return nullptr;
         }
 
         // get the task
@@ -444,41 +435,18 @@ void* thread_pool::execute_thread()
         m_task_lock.unlock();
         //--------------------------------------------------------------------//
 
-        // get the task group
-        task_group*& tg = task->group();
-        //--------------------------------------------------------------------//
-
         // execute the task
-        run(task);
+        task_group* tg = run(task);
         //--------------------------------------------------------------------//
 
-        // decrement the task group
-        /*long_type tc = (tg->task_count() -= 1);
-        {
-            mad::auto_lock l(io_mutex);
-            tmcout << "Task count (-) : " << tc << std::endl;
-        }*/
-        tg->task_count() -= 1;
-        tg->join_lock().lock();
-        tg->join_cond().signal();
-        tg->join_lock().unlock();
-        //--------------------------------------------------------------------//
     }
-    return NULL;
+    return nullptr;
 }
 
 //============================================================================//
 
 void thread_pool::signal_background(void* ptr)
 {
-
-#ifndef ENABLE_THREADING
-    m_back_done.find(ptr)->second = false;
-    (*m_back_tasks[ptr])();
-    m_back_done.find(ptr)->second = true;
-    return;
-#endif
-
     if(m_back_tasks.find(ptr) == m_back_tasks.end())
         return;
 
@@ -486,7 +454,7 @@ void thread_pool::signal_background(void* ptr)
     m_back_task_to_do = m_back_tasks[ptr];
     m_back_pointer = ptr;
     m_back_done.find(ptr)->second = false;
-    m_back_cond.signal();
+    m_back_cond.notify_one();
     m_back_lock.unlock();
 }
 
@@ -494,11 +462,11 @@ void thread_pool::signal_background(void* ptr)
 
 void thread_pool::background_thread()
 {
-    vtask* task = NULL;
+    vtask* task = nullptr;
     void*  task_key = 0;
 
     while(m_pool_state == state::NONINIT)
-        m_back_cond.wait(m_back_lock.base_mutex_ptr());
+        m_back_cond.wait(m_back_lock);
 
     while(true)
     {
@@ -517,7 +485,7 @@ void thread_pool::background_thread()
         {
             // Wait until there is a task in the queue
             // Unlock mutex while wait, then lock it back when signaled
-            m_back_cond.wait(m_back_lock.base_mutex_ptr());
+            m_back_cond.wait(m_back_lock);
         }
 
         // If the thread was waked to notify process shutdown, return from here
@@ -527,16 +495,15 @@ void thread_pool::background_thread()
             m_back_lock.unlock();
             //----------------------------------------------------------------//
             if(mad::details::allocator_list::get_allocator_list_if_exists() &&
-               tids.find(CORETHREADSELFINT()) != tids.end())
+               tids.find(std::this_thread::get_id()) != tids.end())
                 mad::details::allocator_list::get_allocator_list()
-                        ->Destroy(tids.find(CORETHREADSELFINT())->second, 1);
+                        ->Destroy(tids.find(std::this_thread::get_id())->second, 1);
             //----------------------------------------------------------------//
-            CORETHREADEXIT(NULL);
         }
 
         task_key = m_back_pointer;
         task = m_back_task_to_do;
-        m_back_task_to_do = NULL;
+        m_back_task_to_do = nullptr;
         //--------------------------------------------------------------------//
         // Unlock
         m_back_lock.unlock();
@@ -565,17 +532,19 @@ void thread_pool::background_thread()
         m_back_done.find(task_key)->second = true;
         m_back_lock.unlock();
 
-        task = NULL;
-        task_key = NULL;
+        task = nullptr;
+        task_key = nullptr;
         //--------------------------------------------------------------------//
     }
-    //return NULL;
+    //return nullptr;
 }
 
 //============================================================================//
 
-void thread_pool::run(vtask*& task)
+mad::task_group* thread_pool::run(vtask*& task)
 {
+    task_group* tg = task->group();
+
     // execute task
     (*task)();
 
@@ -594,6 +563,16 @@ void thread_pool::run(vtask*& task)
             task = 0;
         }
     }
+
+    tg->task_count() -= 1;
+    if(tg->task_count().load() < 2)
+    {
+        tg->join_lock().lock();
+        tg->join_cond().notify_all();
+        tg->join_lock().unlock();
+    }
+
+    return tg;
 }
 
 //============================================================================//
@@ -602,12 +581,7 @@ int thread_pool::add_task(vtask* task)
 {
 
 #ifdef VERBOSE_THREAD_POOL
-    std::cout << "Adding task..." << std::endl;
-#endif
-
-#ifndef ENABLE_THREADING
-    run(task);
-    return 0;
+    tmcout << "Adding task..." << std::endl;
 #endif
 
     if(!is_alive_flag) // if we haven't built thread-pool, just execute
@@ -618,11 +592,6 @@ int thread_pool::add_task(vtask* task)
 
     // do outside of lock because is thread-safe and needs to be updated as
     // soon as possible
-    /*long_type tc = (task->group()->task_count() += 1);
-    {
-        mad::auto_lock l(io_mutex);
-        tmcout << "Task count (+) : " << tc << std::endl;
-    }*/
     task->group()->task_count() += 1;
 
     m_task_lock.lock();
@@ -635,7 +604,7 @@ int thread_pool::add_task(vtask* task)
     m_main_tasks.push_back(task);
 
     // wake up one thread that is waiting for a task to be available
-    m_task_cond.signal();
+    m_task_cond.notify_one();
 
     m_task_lock.unlock();
 
@@ -646,30 +615,30 @@ int thread_pool::add_task(vtask* task)
 
 int thread_pool::add_background_task(void* ptr, vtask* task)
 {
-#ifndef ENABLE_THREADING
-    m_back_tasks[ptr] = task;
-    m_back_done.insert(std::pair<void*, bool>(ptr, true));
-    return 1;
-#endif
-
-    CoreThread tid;
+    thread* tid = new thread();
     bool _add_thread = true;
     try
     {
         // assign to core if affinity is set to on
+        *tid = std::move(std::thread(thread_pool::start_background,
+                                    (void*)(this)));
+#if defined(ALLOW_AFFINITY)
         if(m_use_affinity)
         {
-            CORETHREADCREATEID(&tid,
-                               thread_pool::start_background,
-                               (void*)(this),
-                               (abs(ncores() -
-                                    (int)m_back_threads.size() - 1))%ncores());
-        } else
-        {
-            CORETHREADCREATE(&tid,
-                             thread_pool::start_background,
-                             (void*)(this));
+            static size_type cpu_i = 0;
+            size_type i = (cpu_i++) % std::thread::hardware_concurrency();
+            // Create a cpu_set_t object representing a set of CPUs. Clear it and mark
+            // only CPU i as set.
+            cpu_set_t cpuset;
+            CPU_ZERO(&cpuset);
+            CPU_SET(i, &cpuset);
+            int rc = pthread_setaffinity_np(tid->native_handle(),
+                                            sizeof(cpu_set_t), &cpuset);
+            if (rc != 0)
+                std::cerr << "Error calling pthread_setaffinity_np: " << rc
+                          << std::endl;
         }
+#endif
     } catch(std::runtime_error& e)
     {
         std::cerr << e.what() << std::endl;

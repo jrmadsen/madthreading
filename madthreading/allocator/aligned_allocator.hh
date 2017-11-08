@@ -43,6 +43,18 @@
 
 #include "madthreading/macros.hh"
 
+#ifndef do_pragma
+#   define do_pragma(x) _Pragma(#x)
+#endif
+
+#if defined(__GNUC__) && defined(__x86_64__)
+#define attrib_assume_aligned __attribute__((assume_aligned(64)))
+#define attrib_aligned __attribute__((aligned (64)))
+#else
+#define attrib_assume_aligned
+#define attrib_aligned
+#endif
+
 namespace mad
 {
 //----------------------------------------------------------------------------//
@@ -149,31 +161,75 @@ bool operator !=(const simd_allocator<T1>&,
 }
 //----------------------------------------------------------------------------//
 
-class aligned_allocator
+//========================================================================//
+// cleaner version of:
+//     double* var = static_cast<double*>(mad::aligned_alloc(
+//              n * sizeof(double), mad::SIMD_WIDTH ) );
+
+template <typename _Tp>
+_Tp* simd_alloc(size_t n)
+{
+    return static_cast<_Tp*>(mad::aligned_alloc(n * sizeof(_Tp),
+                                                mad::SIMD_WIDTH));
+}
+
+//========================================================================//
+// template class for memory-aligned c-style array with internal
+// allocation and deallocation
+template <typename _Tp>
+class simd_array
 {
 public:
-    // Constructor and Destructors
-    aligned_allocator();
-    // Virtual destructors are required by abstract classes
-    // so add it by default, just in case
-    virtual ~aligned_allocator();
+    typedef std::size_t size_type;
 
 public:
-    // Public functions
+    simd_array()
+    : m_data(nullptr)
+    { }
 
-protected:
-    // Protected functions
+    simd_array(size_type _n)
+    : m_data(mad::simd_alloc<_Tp>(_n))
+    { }
 
-protected:
-    // Protected variables
+    simd_array(size_type _n, const _Tp& _init)
+    : m_data(mad::simd_alloc<_Tp>(_n))
+    {
+        for(size_type i = 0; i < _n; ++i)
+            m_data[i] = _init;
+    }
+
+    ~simd_array()
+    {
+        mad::aligned_free(m_data);
+    }
+
+    // conversion function to const _Tp*
+    operator const _Tp*() const attrib_assume_aligned { return m_data; }
+    // conversion function to _Tp*
+    operator _Tp*() attrib_assume_aligned { return m_data; }
+
+    //_Tp&        operator [](size_type i)        { return m_data[i]; }
+    //const _Tp&  operator [](size_type i) const  { return m_data[i]; }
+
+    simd_array& operator=(const simd_array& rhs)
+    {
+        if(this != &rhs)
+        {
+            if(m_data)
+                mad::aligned_free(m_data);
+            m_data = static_cast<_Tp*>(rhs.m_data);
+            // otherwise will be deleted
+            const_cast<simd_array&>(rhs).m_data = nullptr;
+        }
+        return *this;
+    }
 
 private:
-    // Private functions
+    _Tp* m_data;
 
-private:
-    // Private variables
+} attrib_aligned;
 
-};
+//========================================================================//
 
 //----------------------------------------------------------------------------//
 }

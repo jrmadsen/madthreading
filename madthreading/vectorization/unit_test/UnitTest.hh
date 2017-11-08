@@ -26,51 +26,52 @@
 //
 //
 //
-// created by jrmadsen on Mon Jul  6 17:22:10 2015
+// created by jmadsen on Thu Apr 21 15:58:28 2016
 //
 //
 //
 //
 
+#ifndef unittest_hh_
+#define unittest_hh_
 
-#ifndef atomic_typedefs_details_hh_
-#define atomic_typedefs_details_hh_
+#include <UnitTest++.h>
+#include <TestReporterStdout.h>
 
+//----------------------------------------------------------------------------//
 
-class atomic_typedefs_details
+int RunAllTests(UnitTest::TestReporter& reporter,
+                char const* suiteName = NULL,
+                int const maxTestTimeInMs = 0 )
 {
-public:
-	// Constructor and Destructors
-	atomic_typedefs_details() { }
-	// Virtual destructors are required by abstract classes 
-	// so add it by default, just in case
-	virtual ~atomic_typedefs_details() { }
-
-public:
-	// Public functions
-
-protected:
-	// Protected functions
-
-protected:
-	// Protected variables
-
-private:
-	// Private functions
-
-private:
-	// Private variables
-
-
-
-};
-
-
+    UnitTest::TestRunner runner( reporter );
+    return runner.RunTestsIf( UnitTest::Test::GetTestList(), suiteName,
+                              UnitTest::True(), maxTestTimeInMs);
+}
 
 //----------------------------------------------------------------------------//
 
+int RunBySuites(int argc, char** argv, UnitTest::TestReporter& reporter)
+{
+    int error = 0;
+    for(int i = 1; i < argc; ++i)
+        error += RunAllTests(reporter, argv[i]);
+
+    return error;
+}
 
 //----------------------------------------------------------------------------//
 
+int RunTests(int argc, char** argv, UnitTest::TestReporter& reporter)
+{
+    bool UseSuites = (argc > 1);
 
-#endif
+    if(UseSuites)
+      return RunBySuites( argc, argv, reporter );
+
+    return RunAllTests(reporter);
+}
+
+//----------------------------------------------------------------------------//
+
+#endif /* UNITTEST_HH_*/

@@ -20,15 +20,8 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
   # Now version selection, focus on version 15 and above as that is the
   # baseline - means that this isn't comprehensive for lower versions
 
-  # c++98 should be supported for all(?) versions we may encounter, and
   # make it the default as required for compilers that recognise standards
   set(CMAKE_CXX_STANDARD_DEFAULT "11")
-
-  set(CMAKE_CXX98_STANDARD_COMPILE_OPTION "-std=c++98")
-  set(CMAKE_CXX98_EXTENSION_COMPILE_OPTION "-std=gnu++98")
-
-  set(CMAKE_CXX0X_STANDARD_COMPILE_OPTION "-std=c++0x")
-  set(CMAKE_CXX0X_EXTENSION_COMPILE_OPTION "-std=gnu++0x")
 
   if(NOT (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0))
 
@@ -119,12 +112,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
     endif()
   endif()
 
-  # always available?
-  set(CMAKE_CXX98_COMPILE_FEATURES cxx_template_template_parameters)
-
   set(CMAKE_CXX_COMPILE_FEATURES
-    ${CMAKE_CXX98_COMPILE_FEATURES}
-    ${CMAKE_CXX0X_COMPILE_FEATURES}
     ${CMAKE_CXX11_COMPILE_FEATURES}
     ${CMAKE_CXX14_COMPILE_FEATURES}
     )
@@ -154,7 +142,7 @@ set(${PROJECT_NAME}_TARGET_COMPILE_FEATURES
   # Version 10.2 is coded without these being required.
   #cxx_deleted_functions
   #cxx_generalized_initializers
-  #cxx_constexpr
+  cxx_constexpr
   #cxx_inheriting_constructors
 )
 
@@ -165,7 +153,7 @@ set(${PROJECT_NAME}_TARGET_COMPILE_FEATURES
 # Mark as advanced because most users will not need it
 enum_option(BUILD_CXXSTD
   DOC "C++ Standard to compile against"
-  VALUES 98 0x 11 14 17 c++98 c++0x c++11 c++14 c++17
+  VALUES 11 14 17 c++11 c++14 c++17
   CASE_INSENSITIVE
 )
 
@@ -176,14 +164,10 @@ add_feature(BUILD_CXXSTD "Compiling against C++ Standard '${BUILD_CXXSTD}'")
 # If a standard higher than 11 has been selected, check that compiler has
 # at least one feature from that standard and append these to the required
 # feature list
-if(BUILD_CXXSTD GREATER 11)
-  if(CMAKE_CXX${BUILD_CXXSTD}_COMPILE_FEATURES)
+if(CMAKE_CXX${BUILD_CXXSTD}_COMPILE_FEATURES)
     list(APPEND ${PROJECT_NAME}_TARGET_COMPILE_FEATURES ${CMAKE_CXX${BUILD_CXXSTD}_COMPILE_FEATURES})
-  else()
+else()
     message(FATAL_ERROR "${PROJECT_NAME} requested to be compiled against C++ standard '${BUILD_CXXSTD}'\nbut detected compiler '${CMAKE_CXX_COMPILER_ID}', version '${CMAKE_CXX_COMPILER_VERSION}'\ndoes not support any features of that standard")
-  endif()
 endif()
 
-string(TOUPPER "${BUILD_CXXSTD}" UBUILD_CXXSTD)
-add_definitions(-DMAD_USE_CXX${UBUILD_CXXSTD})
 set(BUILD_CXXSTD "c++${BUILD_CXXSTD}")

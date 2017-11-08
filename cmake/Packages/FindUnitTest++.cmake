@@ -49,53 +49,49 @@
 
 #------------------------------------------------------------------------------#
 
+find_path(UnitTest++_ROOT
+    NAMES
+        include/UnitTest++/UnitTest++.h
+        include/unittest++/UnitTest++.h
+    HINTS
+        ${UnitTest++_ROOT}
+        ${UNITTEST++_ROOT}
+        ${UnitTestpp_ROOT}
+        ${UNITTESTPP_ROOT}
+        ENV UnitTestpp_ROOT
+        ENV UNITTESTPP_ROOT
+        ENV CPATH
+    PATH_SUFFIXES
+        include
+    DOC
+        "Path to the UnitTest++ headers")
+
+#------------------------------------------------------------------------------#
+
 find_path(UnitTest++_INCLUDE_DIR
-          NAMES
-              UnitTest++/UnitTest++.h
-              unittest++/UnitTest++.h
-          HINTS
-              ${UnitTest++_ROOT}
-              ${UNITTEST++_ROOT}
-              ${UnitTestpp_ROOT}
-              ${UNITTESTPP_ROOT}
-              ENV UnitTestpp_ROOT
-              ENV UNITTESTPP_ROOT
-              ENV PATH
-              ENV LD_LIBRARY_PATH
-              ENV LIBRARY_PATH
-              ENV DYLD_LIBRARY_PATH
-          PATH_SUFFIXES
-              include
-              ../include
-          DOC
-              "Path to the UnitTest++ headers")
+    NAMES UnitTest++.h
+    HINTS ${UnitTest++_ROOT} ENV CPATH
+    PATHS ${UnitTest++_ROOT}
+    PATH_SUFFIXES
+        include
+        include/UnitTest++
+        include/unittest++
+    DOC
+        "Path to the UnitTest++ headers")
 
 #------------------------------------------------------------------------------#
 
 find_library(UnitTest++_LIBRARY
-             NAMES
-                 UnitTest++
-                 unittest++
-             HINTS
-                 ${UnitTest++_ROOT}
-                 ${UNITTEST++_ROOT}
-                 ENV UnitTest++_ROOT
-                 ENV UnitTest++_ROOT
-                 ${UnitTestpp_ROOT}
-                 ${UNITTESTPP_ROOT}
-                 ENV UnitTestpp_ROOT
-                 ENV UNITTESTPP_ROOT
-                 ENV PATH
-                 ENV LD_LIBRARY_PATH
-                 ENV LIBRARY_PATH
-                 ENV DYLD_LIBRARY_PATH
-             PATH_SUFFIXES
-                 lib
-                 lib64
-                 ../lib
-                 ../lib64
-             DOC
-                 "Path to the UnitTest++ library")
+    NAMES
+        UnitTest++
+        unittest++
+    HINTS ${UnitTest++_ROOT}
+        ENV LD_LIBRARY_PATH
+        ENV LIBRARY_PATH
+        ENV DYLD_LIBRARY_PATH
+    PATHS ${UnitTest++_ROOT}
+    PATH_SUFFIXES lib lib64
+    DOC "Path to the UnitTest++ library")
 #------------------------------------------------------------------------------#
 
 include(FindPackageHandleStandardArgs)
