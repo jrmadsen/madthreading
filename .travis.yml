@@ -1,40 +1,58 @@
-# We simply apt install the compiled dependencies.
-language: c++
+# Madthreading Travis CI file
 
 os:
     - linux
 
 # These use container-based images (faster boot) and Ubuntu 14.04 LTS
-sudo: enabled
+sudo: false
 dist: trusty
+
+# C++ language
+language: cpp
 
 # The apt packages here install our compiled code dependencies.
 addons:
     apt:
-        sources:
-            - ubuntu-toolchain-r-test
         packages:
             - build-essential
-            - cmake3
-            - gcc-4.9
-            - g++-4.9
-            - gcc-5
-            - g++-5
-            - gcc-6
-            - g++-6
+            - cmake
             - libunittest++-dev
             - libtbb-dev
             - libgomp1
-            - swig3.0
+            - swig
 
 matrix:
-  include:
-    - env:
-          - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9)"
-    - env:
-          - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
-    - env:
-          - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6)"
+    include:
+        - os: linux
+          addons:
+              apt:
+                  sources:
+                      - ubuntu-toolchain-r-test
+                  packages:
+                      - gcc-5
+                      - g++-5
+          env:
+              - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
+        - os: linux
+          addons:
+              apt:
+                  sources:
+                      - ubuntu-toolchain-r-test
+                  packages:
+                      - gcc-6
+                      - g++-6
+          env:
+              - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6)"
+        - os: linux
+          addons:
+              apt:
+                  sources:
+                      - ubuntu-toolchain-r-test
+                  packages:
+                      - gcc-7
+                      - g++-7
+          env:
+              - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
         
 
 before_install:
