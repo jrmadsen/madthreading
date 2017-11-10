@@ -157,8 +157,11 @@ install:
         -DUSE_SSE=${ENABLE_SSE} \
         -DGENERATE_PYTHON_INTERFACES=OFF \
         -DUnitTest++_ROOT=/${HOME}/unittest-cpp ${PWD}/..
+    - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
     - make -j2
-
+    - make install -j2
+    
+    
 script:
     - FILE=ex1 ; \
                             if [ -f ./${FILE} ]; then ./${FILE} ; fi
