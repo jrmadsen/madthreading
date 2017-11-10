@@ -6,137 +6,222 @@ dist: trusty
 
 # C++ language
 language: cpp
-
+  
 # The apt packages here install our compiled code dependencies.
 matrix:
-    include:
-        - os: linux
-          addons:
-              apt:
-                  sources:
-                      - ubuntu-toolchain-r-test
-                  packages:
-                      - gcc-4.9
-                      - g++-4.9
-                      - build-essential
-                      - cmake3
-                      - libunittest++-dev
-                      - libtbb-dev
-                      - libgomp1
-                      - swig3.0
-          env:
-              - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9) && ENABLE_TBB=ON && CXXSTD=11"
-        - os: linux
-          addons:
-              apt:
-                  sources:
-                      - ubuntu-toolchain-r-test
-                  packages:
-                      - gcc-5
-                      - g++-5
-                      - build-essential
-                      - cmake3
-                      - libunittest++-dev
-                      - libtbb-dev
-                      - libgomp1
-                      - swig3.0
-          env:
-              - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && ENABLE_TBB=ON && CXXSTD=14"
-        - os: linux
-          addons:
-              apt:
-                  sources:
-                      - ubuntu-toolchain-r-test
-                  packages:
-                      - gcc-6
-                      - g++-6
-                      - build-essential
-                      - cmake3
-                      - libunittest++-dev
-                      - libtbb-dev
-                      - libgomp1
-                      - swig3.0
-          env:
-              - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && ENABLE_TBB=ON && CXXSTD=14"
-        - os: linux
-          addons:
-              apt:
-                  sources:
-                      - ubuntu-toolchain-r-test
-                  packages:
-                      - gcc-7
-                      - g++-7
-                      - build-essential
-                      - cmake3
-                      - libunittest++-dev
-                      - libtbb-dev
-                      - libgomp1
-                      - swig3.0
-          env:
-              - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && ENABLE_TBB=ON && CXXSTD=14"
-        - os: linux
-          addons:
-              apt:
-                  sources:
-                      - llvm-toolchain-trusty-4.0
-                  packages:
-                      - clang-4.0
-                      - clang++-4.0
-                      - build-essential
-                      - cmake3
-                      - libunittest++-dev
-                      - libtbb-dev
-                      - libgomp1
-                      - swig3.0
-          env:
-              - MATRIX_EVAL="CC=clang-4.0 && CXX=clang++-4.0 && ENABLE_TBB=OFF && CXXSTD=11"
-        - os: linux
-          addons:
-              apt:
-                  sources:
-                      - llvm-toolchain-trusty-5.0
-                  packages:
-                      - clang-5.0
-                      - clang++-5.0
-                      - build-essential
-                      - cmake3
-                      - libunittest++-dev
-                      - libtbb-dev
-                      - libgomp1
-                      - swig3.0
-          env:
-              - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0 && ENABLE_TBB=OFF && CXXSTD=14"
-        
+  include:
+    # GCC 4.9
+    - os: linux
+      env:
+        - MATRIX_EVAL="CC=gcc-4.9 && \
+                        CXX=g++-4.9 && \
+                        CXXSTD=14 && \
+                        ENABLE_SSE=ON && \
+                        ENABLE_TBB=ON && \
+                        ENABLE_OMP=ON"
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-4.9
+            - g++-4.9
+            - build-essential
+            - cmake3
+            - libunittest++-dev
+            - libtbb-dev
+            - libgomp1
+            - swig3.0
+    # GCC 5
+    - os: linux
+      env:
+        - MATRIX_EVAL="CC=gcc-5 && \
+                        CXX=g++-5 && \
+                        CXXSTD=14 && \
+                        ENABLE_SSE=ON && \
+                        ENABLE_TBB=ON && \
+                        ENABLE_OMP=ON"
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-5
+            - g++-5
+            - build-essential
+            - cmake3
+            - libunittest++-dev
+            - libtbb-dev
+            - libgomp1
+            - swig3.0
+    # GCC 6
+    - os: linux
+      env:
+        - MATRIX_EVAL="CC=gcc-6 && \
+                        CXX=g++-6 && \
+                        CXXSTD=14 && \
+                        ENABLE_SSE=OFF && \
+                        ENABLE_TBB=ON && \
+                        ENABLE_OMP=ON"
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-6
+            - g++-6
+            - build-essential
+            - cmake3
+            - libunittest++-dev
+            - libtbb-dev
+            - libgomp1
+            - swig3.0
+    # GCC 7
+    - os: linux
+      env:
+        - MATRIX_EVAL="CC=gcc-7 && \
+                        CXX=g++-7 && \
+                        CXXSTD=14 && \
+                        ENABLE_SSE=OFF && \
+                        ENABLE_TBB=ON && \
+                        ENABLE_OMP=ON"
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-7
+            - g++-7
+            - build-essential
+            - cmake3
+            - libunittest++-dev
+            - libtbb-dev
+            - libgomp1
+            - swig3.0
+    # Clang 4.0
+    - os: linux
+      env:
+        - MATRIX_EVAL="CC=clang-4.0 && \
+                        CXX=clang++-4.0 && \
+                        CXXSTD=14 && \
+                        ENABLE_SSE=OFF && \
+                        ENABLE_TBB=OFF && \
+                        ENABLE_OMP=OFF"
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-4.0
+          packages:
+            - clang-4.0
+            - clang++-4.0
+            - build-essential
+            - cmake3
+            - libunittest++-dev
+            - libtbb-dev
+            - swig3.0
+    # Clang 5.0
+    - os: linux
+      env:
+        - MATRIX_EVAL="CC=clang-5.0 && \
+                        CXX=clang++-5.0 && \
+                        CXXSTD=14 && \
+                        ENABLE_SSE=OFF && \
+                        ENABLE_TBB=OFF && \
+                        ENABLE_OMP=OFF"
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - clang-5.0
+            - clang++-5.0
+            - build-essential
+            - cmake3
+            - libunittest++-dev
+            - libtbb-dev
+            - swig3.0
+    # macOS
+    - os: osx
+      env:
+        - MATRIX_EVAL="CC=clang && \
+                        CXX=clang++ && \
+                        CXXSTD=11 && \
+                        ENABLE_SSE=OFF && \
+                        ENABLE_TBB=OFF && \
+                        ENABLE_OMP=OFF && \
+                        UnitTestpp_ROOT=${HOME}/unittest-cpp"
+      script:
+        - export DIR=${HOME}/unittest-src
+        - git clone https://github.com/unittest-cpp/unittest-cpp.git ${DIR}
+        - mkdir -p ${DIR}/build-unittest-cpp
+        - cd ${DIR}/build-unittest-cpp
+        - cmake \
+            -DCMAKE_INSTALL_PREFIX=$HOME/unittest-cpp \
+            -DCMAKE_BUILD_TYPE=Release \
+            ${DIR}
+        - make -j2 
+        - make install -j2
+        - cd ${HOME}
+         
 
 before_install:
     - eval "${MATRIX_EVAL}"
     
 install:
     - mkdir -p build-madthreading/release
+    - SOURCE_DIR=${PWD}
     - cd build-madthreading/release
-    - cmake -DCMAKE_INSTALL_PREFIX=$HOME/madthreading/current \
-        -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=ON -DENABLE_UNIT_TEST=ON \
-        -DUSE_TBB=${ENABLE_TBB} -DUSE_OPENMP=ON -DUSE_TCMALLOC=OFF \
-        -DBUILD_CXXSTD=${CXXSTD} -DGENERATE_PYTHON_INTERFACES=OFF ../..
+    - cmake \
+        -DCMAKE_INSTALL_PREFIX=$HOME/madthreading/current \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_EXAMPLES=ON \
+        -DBUILD_CXXSTD=${CXXSTD} \
+        -DENABLE_UNIT_TEST=ON \
+        -DUSE_TBB=${ENABLE_TBB} \
+        -DUSE_OPENMP=${ENABLE_OMP} \
+        -DUSE_TCMALLOC=OFF \
+        -DUSE_SSE=${ENABLE_SSE} \
+        -DGENERATE_PYTHON_INTERFACES=OFF \
+        ${SOURCE_DIR}
     - make -j4
     - make install -j4
 
 script:
-    - ./ex1
-    - ./ex2
-    - ./ex3a
-    - ./ex3b
-    - ./ex5
-    - if [ -f ./omp_pi_loop ]; then ./omp_pi_loop ; fi
-    - if [ -f ./omp_pi_spmd_final ]; then ./omp_pi_spmd_final ; fi
-    - if [ -f ./omp_pi_spmd_simple ]; then ./omp_pi_spmd_simple ; fi
-    - if [ -f ./omp_pi_task ]; then ./omp_pi_task ; fi
-    - ./pi_serial
-    - ./pi_cxx11
-    - ./pi_lambda_serial
-    - if [ -f ./pi_lambda_tbb ]; then ./pi_lambda_tbb ; fi
-    - if [ -f ./pi_tbb ]; then ./pi_tbb ; fi
-    - ./pi_pthreads
-    - ./pi_thread_pool
-    - ./pi_thread_pool_tree_1
-    - ./pi_thread_pool_tree_2
+    - FILE=ex1 ; \
+                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
+    - FILE=ex2 ; \
+                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
+    - FILE=ex3a ; \
+                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
+    - FILE=ex3b ; \
+                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
+    - FILE=ex4 ; \
+                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
+    - FILE=ex5 ; \
+                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
+    - FILE=omp_pi_loop ; \
+                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
+    - FILE=omp_pi_spmd_final ; \
+                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
+    - FILE=omp_pi_spmd_simple ; \
+                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
+    - FILE=omp_pi_task ; \
+                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
+    - FILE=pi_serial ; \
+                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
+    - FILE=pi_cxx11 ; \
+                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
+    - FILE=pi_lambda_serial ; \
+                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
+    - FILE=pi_lambda_tbb ; \
+                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
+    - FILE=pi_tbb ; \
+                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
+    - FILE=pi_pthreads ; \
+                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
+    - FILE=pi_thread_pool ; \
+                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
+    - FILE=pi_thread_pool_tree_1 ; \
+                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
+    - FILE=pi_thread_pool_tree_2 ; \
+                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
