@@ -146,8 +146,7 @@ install:
     - mkdir -p build-madthreading
     - cd build-madthreading
     - echo "--> ${PWD}"
-    - cmake \
-        -DCMAKE_INSTALL_PREFIX=$HOME/madthreading/current \
+    - cmake -DCMAKE_INSTALL_PREFIX=${HOME}/madthreading/current \
         -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_EXAMPLES=ON \
         -DBUILD_CXXSTD=${CXXSTD} \
@@ -158,8 +157,7 @@ install:
         -DUSE_SSE=${ENABLE_SSE} \
         -DGENERATE_PYTHON_INTERFACES=OFF \
         -DUnitTest++_ROOT=/${HOME}/unittest-cpp ${PWD}/..
-    - make -j4
-    - make install -j4
+    - make -j2
 
 script:
     - FILE=ex1 ; \
