@@ -16,14 +16,30 @@ matrix:
                   sources:
                       - ubuntu-toolchain-r-test
                   packages:
-                      - gcc-5
-                      - g++-5
+                      - gcc-4.9
+                      - g++-4.9
                       - build-essential
-                      - cmake
+                      - cmake3
                       - libunittest++-dev
                       - libtbb-dev
                       - libgomp1
-                      - swig
+                      - swig3.0
+          env:
+              - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9)"
+        - os: linux
+          addons:
+              apt:
+                  sources:
+                      - ubuntu-toolchain-r-test
+                  packages:
+                      - gcc-5
+                      - g++-5
+                      - build-essential
+                      - cmake3
+                      - libunittest++-dev
+                      - libtbb-dev
+                      - libgomp1
+                      - swig3.0
           env:
               - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
         - os: linux
@@ -35,11 +51,11 @@ matrix:
                       - gcc-6
                       - g++-6
                       - build-essential
-                      - cmake
+                      - cmake3
                       - libunittest++-dev
                       - libtbb-dev
                       - libgomp1
-                      - swig
+                      - swig3.0
           env:
               - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6)"
         - os: linux
@@ -51,24 +67,58 @@ matrix:
                       - gcc-7
                       - g++-7
                       - build-essential
-                      - cmake
+                      - cmake3
                       - libunittest++-dev
                       - libtbb-dev
                       - libgomp1
-                      - swig
+                      - swig3.0
           env:
               - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
+        - os: linux
+          addons:
+              apt:
+                  sources:
+                      - llvm-toolchain-trusty-4.0
+                  packages:
+                      - clang-4.0
+                      - clang++-4.0
+                      - build-essential
+                      - cmake3
+                      - libunittest++-dev
+                      - libtbb-dev
+                      - libgomp1
+                      - swig3.0
+          env:
+              - MATRIX_EVAL="CC=clang-4.0 && CXX=clang++-4.0"
+        - os: linux
+          addons:
+              apt:
+                  sources:
+                      - llvm-toolchain-trusty-5.0
+                  packages:
+                      - clang-5.0
+                      - clang++-5.0
+                      - build-essential
+                      - cmake3
+                      - libunittest++-dev
+                      - libtbb-dev
+                      - libgomp1
+                      - swig3.0
+          env:
+              - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
         
 
 before_install:
     - eval "${MATRIX_EVAL}"
+    - apt-get -yq update
+    - apt-get -y upgrade
     
 install:
     - mkdir -p build-madthreading/release
     - cd build-madthreading/release
     - cmake -DCMAKE_INSTALL_PREFIX=$HOME/madthreading/current \
         -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=ON -DENABLE_UNIT_TEST=ON \
-        -DUSE_TBB=ON -DUSE_OPENMP=ON -DUSE_TCMALLOC=OFF -DBUILD_CXXSTD=14 \
+        -DUSE_TBB=ON -DUSE_OPENMP=ON -DUSE_TCMALLOC=OFF -DBUILD_CXXSTD=11 \
         -DGENERATE_PYTHON_INTERFACES=OFF ../..
     - make -j4
     - make install -j4
