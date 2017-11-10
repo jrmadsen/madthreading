@@ -1,9 +1,5 @@
 # Madthreading Travis CI file
 
-# These use container-based images (faster boot) and Ubuntu 14.04 LTS
-sudo: false
-dist: trusty
-
 # C++ language
 language: cpp
   
@@ -14,27 +10,11 @@ matrix:
     - os: osx
       osx_image: xcode9.1
       env:
-        - MATRIX_EVAL="CC=$(which clang) && \
-                        CXX=$(which clang++) && \
-                        CXXSTD=11 && \
-                        ENABLE_SSE=OFF && \
-                        ENABLE_TBB=OFF && \
-                        ENABLE_OMP=OFF && \
-                        UnitTestpp_ROOT=${HOME}/unittest-cpp"
-      script:
-        - export DIR=${HOME}/unittest-src
-        - git clone https://github.com/unittest-cpp/unittest-cpp.git ${DIR}
-        - mkdir -p ${DIR}/build-unittest-cpp
-        - cd ${DIR}/build-unittest-cpp
-        - cmake \
-            -DCMAKE_INSTALL_PREFIX=$HOME/unittest-cpp \
-            -DCMAKE_BUILD_TYPE=Release \
-            ${DIR}
-        - make -j2 
-        - make install -j2
-        - cd ${HOME}  
+        - MATRIX_EVAL="CC=$(which clang) && CXX=$(which clang++) && CXXSTD=11 && ENABLE_SSE=OFF && ENABLE_TBB=OFF && ENABLE_OMP=OFF"
     # GCC 4.9
     - os: linux
+      dist: trusty
+      sudo: false
       addons:
         apt:
           sources:
@@ -49,14 +29,11 @@ matrix:
             - libgomp1
             - swig3.0
       env:
-        - MATRIX_EVAL="CC=$(which gcc-4.9) && \
-                        CXX=$(which g++-4.9) && \
-                        CXXSTD=14 && \
-                        ENABLE_SSE=ON && \
-                        ENABLE_TBB=ON && \
-                        ENABLE_OMP=ON"
+        - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9) && CXXSTD=14 && ENABLE_SSE=ON && ENABLE_TBB=ON && ENABLE_OMP=ON"
     # GCC 5
     - os: linux
+      dist: trusty
+      sudo: false
       addons:
         apt:
           sources:
@@ -71,14 +48,11 @@ matrix:
             - libgomp1
             - swig3.0
       env:
-        - MATRIX_EVAL="CC=$(which gcc-5) && \
-                        CXX=$(which g++-5) && \
-                        CXXSTD=14 && \
-                        ENABLE_SSE=ON && \
-                        ENABLE_TBB=ON && \
-                        ENABLE_OMP=ON"
+        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && CXXSTD=14 && ENABLE_SSE=ON && ENABLE_TBB=ON && ENABLE_OMP=ON"
     # GCC 6
     - os: linux
+      dist: trusty
+      sudo: false
       addons:
         apt:
           sources:
@@ -93,14 +67,11 @@ matrix:
             - libgomp1
             - swig3.0
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && \
-                        CXX=$(which g++-6) && \
-                        CXXSTD=14 && \
-                        ENABLE_SSE=OFF && \
-                        ENABLE_TBB=ON && \
-                        ENABLE_OMP=ON"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && CXXSTD=14 && ENABLE_SSE=OFF && ENABLE_TBB=ON && ENABLE_OMP=ON"
     # GCC 7
     - os: linux
+      dist: trusty
+      sudo: false
       addons:
         apt:
           sources:
@@ -115,14 +86,11 @@ matrix:
             - libgomp1
             - swig3.0
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && \
-                        CXX=$(which g++-7) && \
-                        CXXSTD=14 && \
-                        ENABLE_SSE=OFF && \
-                        ENABLE_TBB=ON && \
-                        ENABLE_OMP=ON"
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && CXXSTD=14 && ENABLE_SSE=OFF && ENABLE_TBB=ON && ENABLE_OMP=ON"
     # Clang 4.0
     - os: linux
+      dist: trusty
+      sudo: false
       addons:
         apt:
           sources:
@@ -136,14 +104,11 @@ matrix:
             - libtbb-dev
             - swig3.0
       env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && \
-                        CXX=$(which clang++-4.0) && \
-                        CXXSTD=14 && \
-                        ENABLE_SSE=OFF && \
-                        ENABLE_TBB=OFF && \
-                        ENABLE_OMP=OFF"
+        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && CXXSTD=14 && ENABLE_SSE=OFF && ENABLE_TBB=OFF && ENABLE_OMP=OFF"
     # Clang 5.0
     - os: linux
+      dist: trusty
+      sudo: false
       addons:
         apt:
           sources:
@@ -157,17 +122,24 @@ matrix:
             - libtbb-dev
             - swig3.0
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && \
-                        CXX=$(which clang++-5.0) && \
-                        CXXSTD=14 && \
-                        ENABLE_SSE=OFF && \
-                        ENABLE_TBB=OFF && \
-                        ENABLE_OMP=OFF"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && CXXSTD=14 && ENABLE_SSE=OFF && ENABLE_TBB=OFF && ENABLE_OMP=OFF"
          
 
 before_install:
     - eval "${MATRIX_EVAL}"
-    
+    - DIR=${HOME}/unittest-src
+    - git clone https://github.com/unittest-cpp/unittest-cpp.git ${DIR}
+    - mkdir -p ${DIR}/build-unittest-cpp
+    - cd ${DIR}/build-unittest-cpp
+    - cmake \
+        -DCMAKE_INSTALL_PREFIX=$HOME/unittest-cpp \
+        -DCMAKE_BUILD_TYPE=Release \
+        ${DIR}
+    - make -j2 
+    - make install -j2
+    - cd ${HOME}  
+
+
 install:
     - mkdir -p build-madthreading/release
     - SOURCE_DIR=${PWD}
@@ -183,6 +155,7 @@ install:
         -DUSE_TCMALLOC=OFF \
         -DUSE_SSE=${ENABLE_SSE} \
         -DGENERATE_PYTHON_INTERFACES=OFF \
+        -DUnitTest++_ROOT=/${HOME}/unittest-cpp \
         ${SOURCE_DIR}
     - make -j4
     - make install -j4
