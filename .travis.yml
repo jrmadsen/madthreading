@@ -163,41 +163,25 @@ install:
     
     
 script:
-    - FILE=ex1 ; \
-                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
-    - FILE=ex2 ; \
-                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
-    - FILE=ex3a ; \
-                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
-    - FILE=ex3b ; \
-                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
-    - FILE=ex4 ; \
-                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
-    - FILE=ex5 ; \
-                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
-    - FILE=omp_pi_loop ; \
-                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
-    - FILE=omp_pi_spmd_final ; \
-                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
-    - FILE=omp_pi_spmd_simple ; \
-                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
-    - FILE=omp_pi_task ; \
-                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
-    - FILE=pi_serial ; \
-                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
-    - FILE=pi_cxx11 ; \
-                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
-    - FILE=pi_lambda_serial ; \
-                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
-    - FILE=pi_lambda_tbb ; \
-                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
-    - FILE=pi_tbb ; \
-                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
-    - FILE=pi_pthreads ; \
-                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
-    - FILE=pi_thread_pool ; \
-                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
-    - FILE=pi_thread_pool_tree_1 ; \
-                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
-    - FILE=pi_thread_pool_tree_2 ; \
-                            if [ -f ./${FILE} ]; then ./${FILE} ; fi
+    - echo -e '#!/bin/bash\n\nset -o errexit\n' > ./run_exe.sh
+    - echo -e 'RET=0\nif [ -f "./${1}" ]; then\n    ./${1}\n    RET=$?\nfi\n\nreturn ${RET}\n' >> ./run_exe.sh
+    - chmod +x ./run_exe.sh
+    - ./run_exe.sh ex1
+    - ./run_exe.sh ex2
+    - ./run_exe.sh ex3a
+    - ./run_exe.sh ex3b
+    - ./run_exe.sh ex4
+    - ./run_exe.sh ex5
+    - ./run_exe.sh omp_pi_loop
+    - ./run_exe.sh omp_pi_spmd_final
+    - ./run_exe.sh omp_pi_spmd_simple
+    - ./run_exe.sh omp_pi_task
+    - ./run_exe.sh pi_serial
+    - ./run_exe.sh pi_cxx11
+    - ./run_exe.sh pi_lambda_serial
+    - ./run_exe.sh pi_lambda_tbb
+    - ./run_exe.sh pi_tbb
+    - ./run_exe.sh pi_pthreads
+    - ./run_exe.sh pi_thread_pool
+    - ./run_exe.sh pi_thread_pool_tree_1
+    - ./run_exe.sh pi_thread_pool_tree_2
