@@ -127,16 +127,16 @@ script:
     - ./ex3a
     - ./ex3b
     - ./ex5
-    - ./omp_pi_loop
-    - ./omp_pi_spmd_final
-    - ./omp_pi_spmd_simple
-    - ./omp_pi_task
+    - if [ -f ./omp_pi_loop ]; then ./omp_pi_loop ; fi
+    - if [ -f ./omp_pi_spmd_final ]; then ./omp_pi_spmd_final ; fi
+    - if [ -f ./omp_pi_spmd_simple ]; then ./omp_pi_spmd_simple ; fi
+    - if [ -f ./omp_pi_task ]; then ./omp_pi_task ; fi
+    - ./pi_serial
     - ./pi_cxx11
     - ./pi_lambda_serial
-    - ./pi_lambda_tbb
+    - if [ -f ./pi_lambda_tbb ]; then ./pi_lambda_tbb ; fi
+    - if [ -f ./pi_tbb ]; then ./pi_tbb ; fi
     - ./pi_pthreads
-    - ./pi_serial
-    - ./pi_tbb
     - ./pi_thread_pool
     - ./pi_thread_pool_tree_1
     - ./pi_thread_pool_tree_2
