@@ -133,8 +133,7 @@ before_install:
     - mkdir -p unittest-src/build-unittest-cpp
     - cd unittest-src/build-unittest-cpp
     - echo "--> ${PWD}"
-    - cmake -DCMAKE_INSTALL_PREFIX=$HOME/unittest-cpp \
-        -DCMAKE_BUILD_TYPE=Release ${PWD}/..
+    - cmake -DCMAKE_INSTALL_PREFIX=$HOME/unittest-cpp -DCMAKE_BUILD_TYPE=Release ${PWD}/..
     - make -j2 
     - make install -j2
     - cd ${DEFAULT_DIR}
@@ -147,24 +146,19 @@ install:
     - cd build-madthreading
     - echo "--> ${PWD}"
     - cmake -DCMAKE_INSTALL_PREFIX=${HOME}/madthreading/current \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DBUILD_EXAMPLES=ON \
-        -DBUILD_CXXSTD=${CXXSTD} \
-        -DENABLE_UNIT_TEST=ON \
-        -DUSE_TBB=${ENABLE_TBB} \
-        -DUSE_OPENMP=${ENABLE_OMP} \
-        -DUSE_TCMALLOC=OFF \
-        -DUSE_SSE=${ENABLE_SSE} \
+        -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=ON \
+        -DBUILD_CXXSTD=${CXXSTD} -DENABLE_UNIT_TEST=ON \
+        -DUSE_TBB=${ENABLE_TBB} -DUSE_OPENMP=${ENABLE_OMP} \
+        -DUSE_TCMALLOC=OFF -DUSE_SSE=${ENABLE_SSE} \
         -DGENERATE_PYTHON_INTERFACES=OFF \
         -DUnitTest++_ROOT=/${HOME}/unittest-cpp ${PWD}/..
     - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
     - make -j2
-    - make install -j2
     
     
 script:
     - echo -e '#!/bin/bash\n\nset -o errexit\n' > ./run_exe.sh
-    - echo -e 'RET=0\nif [ -f "./${1}" ]; then\n    ./${1}\n    RET=$?\nfi\n\nreturn ${RET}\n' >> ./run_exe.sh
+    - echo -e 'RET=0\nif [ -f "./${1}" ]; then\n    ./${1}\n    RET=$?\nfi\n\nexit ${RET}\n' >> ./run_exe.sh
     - chmod +x ./run_exe.sh
     - ./run_exe.sh ex1
     - ./run_exe.sh ex2
