@@ -110,8 +110,6 @@ matrix:
 
 before_install:
     - eval "${MATRIX_EVAL}"
-    - apt-get -yq update
-    - apt-get -y upgrade
     
 install:
     - mkdir -p build-madthreading/release
