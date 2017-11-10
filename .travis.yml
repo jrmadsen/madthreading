@@ -10,141 +10,12 @@ language: cpp
 # The apt packages here install our compiled code dependencies.
 matrix:
   include:
-    # GCC 4.9
-    - os: linux
-      env:
-        - MATRIX_EVAL="CC=gcc-4.9 && \
-                        CXX=g++-4.9 && \
-                        CXXSTD=14 && \
-                        ENABLE_SSE=ON && \
-                        ENABLE_TBB=ON && \
-                        ENABLE_OMP=ON"
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-4.9
-            - g++-4.9
-            - build-essential
-            - cmake3
-            - libunittest++-dev
-            - libtbb-dev
-            - libgomp1
-            - swig3.0
-    # GCC 5
-    - os: linux
-      env:
-        - MATRIX_EVAL="CC=gcc-5 && \
-                        CXX=g++-5 && \
-                        CXXSTD=14 && \
-                        ENABLE_SSE=ON && \
-                        ENABLE_TBB=ON && \
-                        ENABLE_OMP=ON"
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-5
-            - g++-5
-            - build-essential
-            - cmake3
-            - libunittest++-dev
-            - libtbb-dev
-            - libgomp1
-            - swig3.0
-    # GCC 6
-    - os: linux
-      env:
-        - MATRIX_EVAL="CC=gcc-6 && \
-                        CXX=g++-6 && \
-                        CXXSTD=14 && \
-                        ENABLE_SSE=OFF && \
-                        ENABLE_TBB=ON && \
-                        ENABLE_OMP=ON"
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-6
-            - g++-6
-            - build-essential
-            - cmake3
-            - libunittest++-dev
-            - libtbb-dev
-            - libgomp1
-            - swig3.0
-    # GCC 7
-    - os: linux
-      env:
-        - MATRIX_EVAL="CC=gcc-7 && \
-                        CXX=g++-7 && \
-                        CXXSTD=14 && \
-                        ENABLE_SSE=OFF && \
-                        ENABLE_TBB=ON && \
-                        ENABLE_OMP=ON"
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-7
-            - g++-7
-            - build-essential
-            - cmake3
-            - libunittest++-dev
-            - libtbb-dev
-            - libgomp1
-            - swig3.0
-    # Clang 4.0
-    - os: linux
-      env:
-        - MATRIX_EVAL="CC=clang-4.0 && \
-                        CXX=clang++-4.0 && \
-                        CXXSTD=14 && \
-                        ENABLE_SSE=OFF && \
-                        ENABLE_TBB=OFF && \
-                        ENABLE_OMP=OFF"
-      addons:
-        apt:
-          sources:
-            - llvm-toolchain-trusty-4.0
-          packages:
-            - clang-4.0
-            - clang++-4.0
-            - build-essential
-            - cmake3
-            - libunittest++-dev
-            - libtbb-dev
-            - swig3.0
-    # Clang 5.0
-    - os: linux
-      env:
-        - MATRIX_EVAL="CC=clang-5.0 && \
-                        CXX=clang++-5.0 && \
-                        CXXSTD=14 && \
-                        ENABLE_SSE=OFF && \
-                        ENABLE_TBB=OFF && \
-                        ENABLE_OMP=OFF"
-      addons:
-        apt:
-          sources:
-            - llvm-toolchain-trusty-5.0
-          packages:
-            - clang-5.0
-            - clang++-5.0
-            - build-essential
-            - cmake3
-            - libunittest++-dev
-            - libtbb-dev
-            - swig3.0
     # macOS
     - os: osx
+      osx_image: xcode9.1
       env:
-        - MATRIX_EVAL="CC=clang && \
-                        CXX=clang++ && \
+        - MATRIX_EVAL="CC=$(which clang) && \
+                        CXX=$(which clang++) && \
                         CXXSTD=11 && \
                         ENABLE_SSE=OFF && \
                         ENABLE_TBB=OFF && \
@@ -161,7 +32,137 @@ matrix:
             ${DIR}
         - make -j2 
         - make install -j2
-        - cd ${HOME}
+        - cd ${HOME}  
+    # GCC 4.9
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-4.9
+            - g++-4.9
+            - build-essential
+            - cmake3
+            - libunittest++-dev
+            - libtbb-dev
+            - libgomp1
+            - swig3.0
+      env:
+        - MATRIX_EVAL="CC=$(which gcc-4.9) && \
+                        CXX=$(which g++-4.9) && \
+                        CXXSTD=14 && \
+                        ENABLE_SSE=ON && \
+                        ENABLE_TBB=ON && \
+                        ENABLE_OMP=ON"
+    # GCC 5
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-5
+            - g++-5
+            - build-essential
+            - cmake3
+            - libunittest++-dev
+            - libtbb-dev
+            - libgomp1
+            - swig3.0
+      env:
+        - MATRIX_EVAL="CC=$(which gcc-5) && \
+                        CXX=$(which g++-5) && \
+                        CXXSTD=14 && \
+                        ENABLE_SSE=ON && \
+                        ENABLE_TBB=ON && \
+                        ENABLE_OMP=ON"
+    # GCC 6
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-6
+            - g++-6
+            - build-essential
+            - cmake3
+            - libunittest++-dev
+            - libtbb-dev
+            - libgomp1
+            - swig3.0
+      env:
+        - MATRIX_EVAL="CC=$(which gcc-6) && \
+                        CXX=$(which g++-6) && \
+                        CXXSTD=14 && \
+                        ENABLE_SSE=OFF && \
+                        ENABLE_TBB=ON && \
+                        ENABLE_OMP=ON"
+    # GCC 7
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-7
+            - g++-7
+            - build-essential
+            - cmake3
+            - libunittest++-dev
+            - libtbb-dev
+            - libgomp1
+            - swig3.0
+      env:
+        - MATRIX_EVAL="CC=$(which gcc-7) && \
+                        CXX=$(which g++-7) && \
+                        CXXSTD=14 && \
+                        ENABLE_SSE=OFF && \
+                        ENABLE_TBB=ON && \
+                        ENABLE_OMP=ON"
+    # Clang 4.0
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-4.0
+          packages:
+            - clang-4.0
+            - clang++-4.0
+            - build-essential
+            - cmake3
+            - libunittest++-dev
+            - libtbb-dev
+            - swig3.0
+      env:
+        - MATRIX_EVAL="CC=$(which clang-4.0) && \
+                        CXX=$(which clang++-4.0) && \
+                        CXXSTD=14 && \
+                        ENABLE_SSE=OFF && \
+                        ENABLE_TBB=OFF && \
+                        ENABLE_OMP=OFF"
+    # Clang 5.0
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - clang-5.0
+            - clang++-5.0
+            - build-essential
+            - cmake3
+            - libunittest++-dev
+            - libtbb-dev
+            - swig3.0
+      env:
+        - MATRIX_EVAL="CC=$(which clang-5.0) && \
+                        CXX=$(which clang++-5.0) && \
+                        CXXSTD=14 && \
+                        ENABLE_SSE=OFF && \
+                        ENABLE_TBB=OFF && \
+                        ENABLE_OMP=OFF"
          
 
 before_install:
