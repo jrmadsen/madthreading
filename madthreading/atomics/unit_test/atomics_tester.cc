@@ -217,8 +217,8 @@ SUITE( Atomic_Tests )
 
             // have each thread run function
             for(uint32 i = 0; i < nthreads; ++i)
-                threads[i] = std::move(std::thread(increment_int_with_lock,
-                                 (void*) &basic));
+                threads[i] = std::thread(increment_int_with_lock,
+                                 (void*) &basic);
 
             // ensure above is done before checking
             for(uint32 i = 0; i < nthreads; ++i)
@@ -240,8 +240,8 @@ SUITE( Atomic_Tests )
 
             // have each thread run function
             for(uint32 i = 0; i < nthreads; ++i)
-                threads[i] = std::move(std::thread(increment_atomic_int,
-                                 (void*) &basic));
+                threads[i] = std::thread(increment_atomic_int,
+                                 (void*) &basic);
 
             // ensure above is done before checking
             for(uint32 i = 0; i < nthreads; ++i)
@@ -263,8 +263,8 @@ SUITE( Atomic_Tests )
 
             // have each thread run function
             for(uint32 i = 0; i < nthreads; ++i)
-                threads[i] = std::move(std::thread(pre_increment_atomic_int,
-                                 (void*) &basic));
+                threads[i] = std::thread(pre_increment_atomic_int,
+                                 (void*) &basic);
 
             // ensure above is done before checking
             for(uint32 i = 0; i < nthreads; ++i)
@@ -286,8 +286,8 @@ SUITE( Atomic_Tests )
 
             // have each thread run function
             for(uint32 i = 0; i < nthreads; ++i)
-                threads[i] = std::move(std::thread(post_increment_atomic_int,
-                                 (void*) &basic));
+                threads[i] = std::thread(post_increment_atomic_int,
+                                 (void*) &basic);
 
             // ensure above is done before checking
             for(uint32 i = 0; i < nthreads; ++i)
@@ -309,8 +309,8 @@ SUITE( Atomic_Tests )
 
             // have each thread run function
             for(uint32 i = 0; i < nthreads; ++i)
-                threads[i] = std::move(std::thread(increment_float_with_lock,
-                                 (void*) &basic));
+                threads[i] = std::thread(increment_float_with_lock,
+                                 (void*) &basic);
 
             // ensure above is done before checking
             for(uint32 i = 0; i < nthreads; ++i)
@@ -332,8 +332,8 @@ SUITE( Atomic_Tests )
 
             // have each thread run function
             for(uint32 i = 0; i < nthreads; ++i)
-                threads[i] = std::move(std::thread(increment_atomic_float,
-                                 (void*) &basic));
+                threads[i] = std::thread(increment_atomic_float,
+                                 (void*) &basic);
 
             // ensure above is done before checking
             for(uint32 i = 0; i < nthreads; ++i)

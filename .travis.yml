@@ -25,7 +25,7 @@ matrix:
                       - libgomp1
                       - swig3.0
           env:
-              - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9)"
+              - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9) && ENABLE_TBB=ON && CXXSTD=11"
         - os: linux
           addons:
               apt:
@@ -41,7 +41,7 @@ matrix:
                       - libgomp1
                       - swig3.0
           env:
-              - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
+              - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && ENABLE_TBB=ON && CXXSTD=14"
         - os: linux
           addons:
               apt:
@@ -57,7 +57,7 @@ matrix:
                       - libgomp1
                       - swig3.0
           env:
-              - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6)"
+              - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && ENABLE_TBB=ON && CXXSTD=14"
         - os: linux
           addons:
               apt:
@@ -73,7 +73,7 @@ matrix:
                       - libgomp1
                       - swig3.0
           env:
-              - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
+              - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && ENABLE_TBB=ON && CXXSTD=14"
         - os: linux
           addons:
               apt:
@@ -89,7 +89,7 @@ matrix:
                       - libgomp1
                       - swig3.0
           env:
-              - MATRIX_EVAL="CC=clang-4.0 && CXX=clang++-4.0"
+              - MATRIX_EVAL="CC=clang-4.0 && CXX=clang++-4.0 && ENABLE_TBB=OFF && CXXSTD=11"
         - os: linux
           addons:
               apt:
@@ -105,7 +105,7 @@ matrix:
                       - libgomp1
                       - swig3.0
           env:
-              - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
+              - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0 && ENABLE_TBB=OFF && CXXSTD=14"
         
 
 before_install:
@@ -116,8 +116,8 @@ install:
     - cd build-madthreading/release
     - cmake -DCMAKE_INSTALL_PREFIX=$HOME/madthreading/current \
         -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=ON -DENABLE_UNIT_TEST=ON \
-        -DUSE_TBB=ON -DUSE_OPENMP=ON -DUSE_TCMALLOC=OFF -DBUILD_CXXSTD=11 \
-        -DGENERATE_PYTHON_INTERFACES=OFF ../..
+        -DUSE_TBB=${ENABLE_TBB} -DUSE_OPENMP=ON -DUSE_TCMALLOC=OFF \
+        -DBUILD_CXXSTD=${CXXSTD} -DGENERATE_PYTHON_INTERFACES=OFF ../..
     - make -j4
     - make install -j4
 
