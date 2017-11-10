@@ -127,21 +127,25 @@ matrix:
 
 before_install:
     - eval "${MATRIX_EVAL}"
+    - DEFAULT_DIR="${PWD}"
+    - echo "--> ${PWD}"
     - git clone https://github.com/unittest-cpp/unittest-cpp.git unittest-src
     - mkdir -p unittest-src/build-unittest-cpp
     - cd unittest-src/build-unittest-cpp
-    - cmake \
-        -DCMAKE_INSTALL_PREFIX=$HOME/unittest-cpp \
-        -DCMAKE_BUILD_TYPE=Release \
-        ../
+    - echo "--> ${PWD}"
+    - cmake -DCMAKE_INSTALL_PREFIX=$HOME/unittest-cpp \
+        -DCMAKE_BUILD_TYPE=Release ${PWD}/..
     - make -j2 
     - make install -j2
-    - cd ${HOME}  
+    - cd ${DEFAULT_DIR}
+    - echo "--> ${PWD}"
 
 
 install:
+    - echo "--> ${PWD}"
     - mkdir -p build-madthreading
     - cd build-madthreading
+    - echo "--> ${PWD}"
     - cmake \
         -DCMAKE_INSTALL_PREFIX=$HOME/madthreading/current \
         -DCMAKE_BUILD_TYPE=Release \
@@ -153,8 +157,7 @@ install:
         -DUSE_TCMALLOC=OFF \
         -DUSE_SSE=${ENABLE_SSE} \
         -DGENERATE_PYTHON_INTERFACES=OFF \
-        -DUnitTest++_ROOT=/${HOME}/unittest-cpp \
-        ../
+        -DUnitTest++_ROOT=/${HOME}/unittest-cpp ${PWD}/..
     - make -j4
     - make install -j4
 
