@@ -103,8 +103,9 @@ matrix:
             - libunittest++-dev
             - libtbb-dev
             - swig3.0
+            - libomp-dev
       env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && CXXSTD=14 && ENABLE_SSE=OFF && ENABLE_TBB=OFF && ENABLE_OMP=OFF"
+        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && CXXSTD=14 && ENABLE_SSE=OFF && ENABLE_TBB=OFF && ENABLE_OMP=ON"
     # Clang 5.0
     - os: linux
       dist: trusty
@@ -121,8 +122,9 @@ matrix:
             - libunittest++-dev
             - libtbb-dev
             - swig3.0
+            - libomp-dev
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && CXXSTD=14 && ENABLE_SSE=OFF && ENABLE_TBB=OFF && ENABLE_OMP=OFF"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && CXXSTD=14 && ENABLE_SSE=OFF && ENABLE_TBB=OFF && ENABLE_OMP=ON"
          
 
 before_install:
@@ -133,7 +135,7 @@ before_install:
     - mkdir -p unittest-src/build-unittest-cpp
     - cd unittest-src/build-unittest-cpp
     - echo "--> ${PWD}"
-    - cmake -DCMAKE_INSTALL_PREFIX=$HOME/unittest-cpp -DCMAKE_BUILD_TYPE=Release ${PWD}/..
+    - cmake -DCMAKE_INSTALL_PREFIX=$HOME/unittest-cpp -DCMAKE_BUILD_TYPE=Release -DUTPP_INCLUDE_TESTS_IN_BUILD=OFF ${PWD}/..
     - make -j2 
     - make install -j2
     - cd ${DEFAULT_DIR}

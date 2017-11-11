@@ -42,13 +42,11 @@
 %{
     #define SWIG_FILE_WITH_INIT
     #include "madthreading/threading/threading.hh"
-    #include "madthreading/threading/template_auto_lock.hh"
     #include "madthreading/threading/auto_lock.hh"
 %}
 
-%import "madthreading/threading/threading.hh"
-#include "madthreading/threading/threading.hh"
-%import "madthreading/threading/mutex.hh"
+%include "madthreading/threading/threading.hh"
+%include "madthreading/threading/mutex.hh"
 %include "auto_lock.hh"
 #endif
 

@@ -44,13 +44,10 @@
 %{
     #define SWIG_FILE_WITH_INIT
     #include "madthreading/atomics/atomic_typedefs.hh"
-    #if defined(_MUTEXED_POD_ATOMICS_)
-    #   include "madthreading/threading/mutex.hh"
-    #endif
     #include "madthreading/atomics/atomic.hh"
 %}
 
-#include "atomic_typedefs.hh"
+%include "atomic_typedefs.hh"
 %include "atomic.hh"
 #endif
 //----------------------------------------------------------------------------//

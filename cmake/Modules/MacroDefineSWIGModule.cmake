@@ -54,6 +54,9 @@ macro(DEFINE_PYTHON_SWIG_MODULE)
     #
     INCLUDE(${SWIG_USE_FILE})
     #
+    # Finding the interpreter is easier and helps finding the python libs
+    FIND_PACKAGE(PythonInterp ${MODULE_PYTHON_VERSION})
+    #
     FIND_PACKAGE(PythonLibs ${MODULE_PYTHON_VERSION} REQUIRED)
     #
     if(NOT PythonLibs_FOUND)

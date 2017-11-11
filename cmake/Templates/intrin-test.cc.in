@@ -1,0 +1,9 @@
+
+#include <x86intrin.h>
+
+int main()
+{
+    @INTRIN_ARG@ intrin_val;
+    @INTRIN_RET@ intrin_ret = @INTRIN_FUNC@(intrin_val);
+    return 0;
+}

@@ -192,6 +192,12 @@ function(ArchitectureFlags VAR)
         set(OFA_map_core2 "-xSSE3")
         set(OFA_map_kaby-lake "-xAVX")
         set(_ARCH_FLAGS "${OFA_map_${TARGET_ARCHITECTURE}}")
+        if("${OFA_map_${TARGET_ARCHITECTURE}}" MATCHES "AVX2" OR
+                "${OFA_map_${TARGET_ARCHITECTURE}}" MATCHES "AVX512")
+            set(AVX2_FOUND ON CACHE BOOL "AVX2 available on host")
+        elseif("${OFA_map_${TARGET_ARCHITECTURE}}" MATCHES "AVX")
+            set(AVX_FOUND ON CACHE BOOL "AVX available on host")
+        endif()
     else() # not MSVC and not ICC => GCC, Clang, Open64
         set(_ARCH_FLAGS "-march=native")
     endif()
