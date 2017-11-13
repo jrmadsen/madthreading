@@ -149,14 +149,15 @@ install:
     - mkdir -p build-madthreading
     - cd build-madthreading
     - echo "--> ${PWD}"
-    - cmake -DCMAKE_INSTALL_PREFIX=${HOME}/madthreading/current \
-        -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=ON \
-        -DBUILD_CXXSTD=${CXXSTD} -DENABLE_UNIT_TEST=ON \
-        -DUSE_TBB=${ENABLE_TBB} -DUSE_OPENMP=${ENABLE_OMP} \
-        -DUSE_TCMALLOC=OFF -DUSE_SSE=${ENABLE_SSE} \
-        -DGENERATE_PYTHON_INTERFACES=OFF \
-        -DUnitTest++_ROOT=${HOME}/unittest-cpp \
-        -DUnitTest++_INCLUDE_DIR=${HOME}/unittest-cpp/include/UnitTest++ ${PWD}/..
+    - cmake -DCMAKE_INSTALL_PREFIX=${HOME}/madthreading/current
+        -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=ON
+        -DBUILD_CXXSTD=${CXXSTD} -DENABLE_UNIT_TEST=ON
+        -DUSE_TBB=${ENABLE_TBB} -DUSE_OPENMP=${ENABLE_OMP}
+        -DUSE_TCMALLOC=OFF -DUSE_SSE=${ENABLE_SSE}
+        -DGENERATE_PYTHON_INTERFACES=OFF
+        -DUnitTest++_ROOT=${HOME}/unittest-cpp
+        -DUnitTest++_INCLUDE_DIR=${HOME}/unittest-cpp/include/UnitTest++
+        ${PWD}/..
     - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
     - make -j2
     
