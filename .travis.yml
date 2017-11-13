@@ -156,8 +156,7 @@ install:
         -DUSE_TCMALLOC=OFF -DUSE_SSE=${ENABLE_SSE} \
         -DGENERATE_PYTHON_INTERFACES=OFF \
         -DUnitTest++_ROOT=${HOME}/unittest-cpp \
-        -DUnitTest++_INCLUDE_DIR=${HOME}/unittest-cpp/include/UnitTest++ \
-        ${PWD}/..
+        -DUnitTest++_INCLUDE_DIR=${HOME}/unittest-cpp/include/UnitTest++ ${PWD}/..
     - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
     - make -j2
     
