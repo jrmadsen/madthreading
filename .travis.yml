@@ -104,7 +104,7 @@ matrix:
             - libunittest++-dev
             - libtbb-dev
             - swig3.0
-            - libomp-dev
+            - libiomp-dev
       env:
         - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && CXXSTD=14 && ENABLE_SSE=OFF && ENABLE_TBB=OFF && ENABLE_OMP=ON"
     # Clang 5.0
@@ -124,7 +124,7 @@ matrix:
             - libunittest++-dev
             - libtbb-dev
             - swig3.0
-            - libomp-dev
+            - libiomp-dev
       env:
         - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && CXXSTD=14 && ENABLE_SSE=OFF && ENABLE_TBB=OFF && ENABLE_OMP=ON"
          
