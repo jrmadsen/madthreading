@@ -95,6 +95,7 @@ matrix:
         apt:
           sources:
             - llvm-toolchain-trusty-4.0
+            - ubuntu-toolchain-r-test
           packages:
             - clang-4.0
             - clang++-4.0
@@ -114,6 +115,7 @@ matrix:
         apt:
           sources:
             - llvm-toolchain-trusty-5.0
+            - ubuntu-toolchain-r-test
           packages:
             - clang-5.0
             - clang++-5.0
