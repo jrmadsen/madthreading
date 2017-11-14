@@ -1,7 +1,7 @@
 # Madthreading Travis CI file
 
 # C++ language
-language: cpp
+language: python
 
 python:
   - 3.5
