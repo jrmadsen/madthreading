@@ -2,9 +2,6 @@
 
 # C++ language
 language: python
-
-python:
-  - 3.5
   
 # The apt packages here install our compiled code dependencies.
 matrix:
@@ -12,6 +9,7 @@ matrix:
     # macOS
     - os: osx
       osx_image: xcode9.1
+      sudo: enabled
       env:
         - MATRIX_EVAL="CC=$(which clang) && CXX=$(which clang++) && CXXSTD=11 && ENABLE_SSE=OFF && ENABLE_TBB=OFF && ENABLE_OMP=OFF"
     # GCC 4.9
@@ -125,6 +123,9 @@ matrix:
       env:
         - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && CXXSTD=14 && ENABLE_SSE=OFF && ENABLE_TBB=OFF && ENABLE_OMP=ON"
          
+
+python:
+  - 3.5
 
 before_install:
     - eval "${MATRIX_EVAL}"
