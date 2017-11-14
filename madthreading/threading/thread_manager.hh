@@ -209,10 +209,10 @@ public:
     {
         long _id = thread_manager::id(thread_self);
         if(_id < 0)
-            return "0";
+            return "";
         thread_manager* _tm = thread_manager::Instance();
         if(!_tm)
-            return _id;
+            return "";
         short _w = 4;
         _w = std::min(_w, (short) std::ceil(std::log10(_tm->size())));
         std::stringstream ss;
