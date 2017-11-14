@@ -128,6 +128,14 @@ matrix:
 
 before_install:
     - eval "${MATRIX_EVAL}"
+    - export CC=${CC}
+    - export CXX=${CXX}
+    - echo "CC = ${CC} $(${CC} -dumpversion)"
+    - echo "CXX = ${CXX} $(${CXX} -dumpversion)"
+    - export ENABLE_OMP=${ENABLE_OMP}
+    - export ENABLE_TBB=${ENABLE_TBB}
+    - export ENABLE_SSE=${ENABLE_SSE}
+    - export CXXSTD=${CXXSTD}
     - DEFAULT_DIR="${PWD}"
     - echo "--> ${PWD}"
     - git clone https://github.com/unittest-cpp/unittest-cpp.git unittest-src
@@ -142,12 +150,16 @@ before_install:
 
 
 install:
+    - env
     - echo "--> ${PWD}"
     - mkdir -p build-madthreading
     - cd build-madthreading
+    - echo "CC = ${CC} $(${CC} -dumpversion)"
+    - echo "CXX = ${CXX} $(${CXX} -dumpversion)"
     - echo "--> ${PWD}"
     - cmake -DCMAKE_INSTALL_PREFIX=${HOME}/madthreading/current
         -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=ON
+        -DCMAKE_C_COMPILER=${CC} -DCMAKE_CXX_COMPILER=${CXX}
         -DBUILD_CXXSTD=${CXXSTD} -DENABLE_UNIT_TEST=ON
         -DUSE_TBB=${ENABLE_TBB} -DUSE_OPENMP=${ENABLE_OMP}
         -DUSE_TCMALLOC=OFF -DUSE_SSE=${ENABLE_SSE}
