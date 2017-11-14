@@ -11,6 +11,8 @@ matrix:
       osx_image: xcode9.1
       env:
         - MATRIX_EVAL="CC=$(which clang) && CXX=$(which clang++) && CXXSTD=11 && ENABLE_SSE=OFF && ENABLE_TBB=OFF && ENABLE_OMP=OFF"
+      python:
+        - 3.5
     # GCC 4.9
     - os: linux
       dist: trusty
@@ -27,7 +29,8 @@ matrix:
             - libunittest++-dev
             - libtbb-dev
             - libgomp1
-            - swig3.0
+            - python3.5-dev
+            - python3.5-minimal
       env:
         - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9) && CXXSTD=14 && ENABLE_SSE=ON && ENABLE_TBB=ON && ENABLE_OMP=ON"
     # GCC 5
@@ -46,7 +49,8 @@ matrix:
             - libunittest++-dev
             - libtbb-dev
             - libgomp1
-            - swig3.0
+            - python3.5-dev           
+            - python3.5-minimal
       env:
         - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && CXXSTD=14 && ENABLE_SSE=ON && ENABLE_TBB=ON && ENABLE_OMP=ON"
     # GCC 6
@@ -65,7 +69,8 @@ matrix:
             - libunittest++-dev
             - libtbb-dev
             - libgomp1
-            - swig3.0
+            - python3.5-dev           
+            - python3.5-minimal
       env:
         - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && CXXSTD=14 && ENABLE_SSE=OFF && ENABLE_TBB=ON && ENABLE_OMP=ON"
     # GCC 7
@@ -84,7 +89,8 @@ matrix:
             - libunittest++-dev
             - libtbb-dev
             - libgomp1
-            - swig3.0
+            - python3.5-dev           
+            - python3.5-minimal
       env:
         - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && CXXSTD=14 && ENABLE_SSE=OFF && ENABLE_TBB=ON && ENABLE_OMP=ON"
     # Clang 4.0
@@ -103,7 +109,8 @@ matrix:
             - cmake3
             - libunittest++-dev
             - libtbb-dev
-            - swig3.0
+            - python3.5-dev           
+            - python3.5-minimal
             - libiomp-dev
       env:
         - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && CXXSTD=14 && ENABLE_SSE=OFF && ENABLE_TBB=OFF && ENABLE_OMP=ON"
@@ -123,7 +130,8 @@ matrix:
             - cmake3
             - libunittest++-dev
             - libtbb-dev
-            - swig3.0
+            - python3.5-dev
+            - python3.5-minimal
             - libiomp-dev
       env:
         - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && CXXSTD=14 && ENABLE_SSE=OFF && ENABLE_TBB=OFF && ENABLE_OMP=ON"
