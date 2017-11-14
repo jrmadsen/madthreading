@@ -2,9 +2,6 @@
 
 language: python
 
-python:
-  - "3.5"
-
 # The apt packages here install our compiled code dependencies.
 matrix:
   include:
@@ -18,6 +15,8 @@ matrix:
     - os: linux
       dist: trusty
       sudo: false
+      python:
+        - "3.5"
       addons:
         apt:
           sources:
@@ -36,6 +35,8 @@ matrix:
     - os: linux
       dist: trusty
       sudo: false
+      python:
+        - "3.5"
       addons:
         apt:
           sources:
@@ -54,6 +55,8 @@ matrix:
     - os: linux
       dist: trusty
       sudo: false
+      python:
+        - "3.5"
       addons:
         apt:
           sources:
@@ -72,6 +75,8 @@ matrix:
     - os: linux
       dist: trusty
       sudo: false
+      python:
+        - "3.5"
       addons:
         apt:
           sources:
@@ -90,6 +95,8 @@ matrix:
     - os: linux
       dist: trusty
       sudo: false
+      python:
+        - "3.5"
       addons:
         apt:
           sources:
@@ -109,6 +116,8 @@ matrix:
     - os: linux
       dist: trusty
       sudo: false
+      python:
+        - "3.5"
       addons:
         apt:
           sources:
