@@ -32,27 +32,6 @@
 #ifndef allocator_hh_
 #define allocator_hh_
 
-//----------------------------------------------------------------------------//
-#ifdef SWIG
-%module allocator
-%{
-    #include "madthreading/threading/tls.hh"
-    #include "madthreading/allocator/allocator.hh"
-%}
-
-#ifdef ThreadLocal
-#   undef ThreadLocal
-#endif
-#ifdef ThreadLocalStatic
-#   undef ThreadLocalStatic
-#endif
-#define ThreadLocal thread_local
-#define ThreadLocalStatic static thread_local
-
-%include "allocator.hh"
-#endif
-//----------------------------------------------------------------------------//
-
 #include <new>
 #include <memory>
 #include <cstddef>
@@ -177,10 +156,8 @@ public:
     }
     //------------------------------------------------------------------------//
     // Rebind allocator to type U
-#ifndef SWIG
     template <class U>
     struct rebind { typedef allocator<U> other; };
-#endif
     //------------------------------------------------------------------------//
     // Pool of elements of sizeof(T)
     allocator_pool m_mem;
@@ -205,7 +182,6 @@ private:
     static alloc_type* this_alloc;
 
 public:
-#ifndef SWIG
     //------------------------------------------------------------------------//
     void* operator new(size_t /*size*/) throw (std::bad_alloc)
     {
@@ -233,7 +209,6 @@ public:
             this_alloc->free_single((T*)(ptr));
     }
     //------------------------------------------------------------------------//
-#endif
 };
 
 //============================================================================//
@@ -249,12 +224,9 @@ class PoolAllocator_tl
 {
 private:
     typedef details::allocator<T, true>  alloc_type;
-#ifndef SWIG
     ThreadLocalStatic alloc_type* this_alloc;
-#endif
 
 public:
-#ifndef SWIG
     //------------------------------------------------------------------------//
     void* operator new(size_t /*size*/) throw (std::bad_alloc)
     {
@@ -282,14 +254,11 @@ public:
             this_alloc->free_single((T*)(ptr));
     }
     //------------------------------------------------------------------------//
-#endif
 };
 
 //============================================================================//
-#ifndef SWIG
 template <typename T> ThreadLocal
 typename PoolAllocator_tl<T>::alloc_type* PoolAllocator_tl<T>::this_alloc = 0;
-#endif
 //============================================================================//
 
 #ifdef USE_TBB

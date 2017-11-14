@@ -36,15 +36,6 @@
 #ifndef memory_hh_
 #define memory_hh_
 
-//----------------------------------------------------------------------------//
-#ifdef SWIG
-%module memory
-%{
-    #include "memory.hh"
-%}
-#endif
-//----------------------------------------------------------------------------//
-
 #include <unistd.h>
 #include <ios>
 #include <iostream>

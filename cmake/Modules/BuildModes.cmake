@@ -25,87 +25,40 @@
 #
 
 #-----------------------------------------------------------------------
-# Add TestRelease{Debug} Modes and cache init flags
-#
-set(CMAKE_CXX_FLAGS_TESTRELEASE "${CMAKE_CXX_FLAGS_TESTRELEASE_INIT}"
-  CACHE STRING "Flags used by the compiler during TestRelease builds"
-  )
-
-#-----------------------------------------------------------------------
-# Add Maintainer Mode
-#
-set(CMAKE_CXX_FLAGS_MAINTAINER "${CMAKE_CXX_FLAGS_MAINTAINER_INIT}"
-  CACHE STRING "Flags used by the compiler during Maintainer builds"
-  )
-
-#-----------------------------------------------------------------------
-# Add VerboseDebug Mode
-#
-set(CMAKE_CXX_FLAGS_VERBOSEDEBUG "${CMAKE_CXX_FLAGS_VERBOSEDEBUG_INIT}"
-  CACHE STRING "Flags used by the compiler during verbose debugging builds"
-  )
-
-
-#-----------------------------------------------------------------------
-# Mark all the additional mode flags as advanced because most users will
-# never need to see them
-mark_as_advanced(
-  CMAKE_CXX_FLAGS_TESTRELEASE
-  CMAKE_CXX_FLAGS_MAINTAINER
-  CMAKE_CXX_FLAGS_VERBOSEDEBUG
-  )
-
-#-----------------------------------------------------------------------
-# Add the new configuration types ONLY if the build tool supports multiple
-# configurations
-#
-if(CMAKE_CONFIGURATION_TYPES)
-  list(APPEND CMAKE_CONFIGURATION_TYPES TestRelease)
-  list(APPEND CMAKE_CONFIGURATION_TYPES Maintainer)
-  list(APPEND CMAKE_CONFIGURATION_TYPES VerboseDebug)
-  list(REMOVE_DUPLICATES CMAKE_CONFIGURATION_TYPES)
-  set(CMAKE_CONFIGURATION_TYPES "${CMAKE_CONFIGURATION_TYPES}"
-    CACHE STRING "${CMAKE_PROJECT_NAME} configurations for multimode build tools"
-    FORCE
-    )
-endif()
-
-#-----------------------------------------------------------------------
 # Update build type information ONLY for single mode build tools, adding
 # default type if none has been set, but otherwise leaving value alone.
 # NB: this doesn't allow "None" for the build type - would need something
 # more sophiticated using an internal cache variable.
 # Good enough for now!
 #
-if(NOT CMAKE_CONFIGURATION_TYPES)
-  if(NOT CMAKE_BUILD_TYPE)
+if(NOT CMAKE_BUILD_TYPE)
     # Default to a Release build if nothing else...
     set(CMAKE_BUILD_TYPE Release
-      CACHE STRING "Choose the type of build, options are: None Release TestRelease MinSizeRel Debug RelWithDebInfo MinSizeRel Maintainer."
-      FORCE
-      )
-  else()
+      CACHE STRING "Choose the type of build, options are: Release Debug RelWithDebInfo MinSizeRel."
+      FORCE)
+else()
     # Force to the cache, but use existing value.
     set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}"
-      CACHE STRING "Choose the type of build, options are: None Release TestRelease MinSizeRel Debug RelWithDebInfo MinSizeRel Maintainer."
-      FORCE
-      )
-  endif()
+        CACHE STRING "Choose the type of build, options are: Release Debug RelWithDebInfo MinSizeRel."
+        FORCE)
 endif()
 
 #-----------------------------------------------------------------------
 # Update build flags for each build type
 #
-set(CONFIG_TYPES Debug Release RelWithDebInfo MinSizeRel VerboseDebug
+set(CONFIG_TYPES Debug Release RelWithDebInfo MinSizeRel
     CACHE STRING "Configuration types")
 mark_as_advanced(CONFIG_TYPES)
-foreach(type ${CONFIG_TYPES})
-    string(TOUPPER "${type}" UTYPE)
-    unset(CMAKE_CXX_FLAGS_${UTYPE} CACHE)
-    set(CMAKE_CXX_FLAGS_${UTYPE} "${CMAKE_CXX_FLAGS_${UTYPE}_INIT} ${CMAKE_CXX_FLAGS_EXTRA}")
-    string(REPLACE "  " " " CMAKE_CXX_FLAGS_${UTYPE} "${CMAKE_CXX_FLAGS_${UTYPE}}")
-    string(REPLACE "  " " " CMAKE_CXX_FLAGS_${UTYPE} "${CMAKE_CXX_FLAGS_${UTYPE}}")
-endforeach()
+foreach(LANG C CXX)
+    # configuration types
+    foreach(type ${CONFIG_TYPES})
+        string(TOUPPER "${type}" UTYPE)
+        unset(CMAKE_${LANG}_FLAGS_${UTYPE} CACHE)
+        set(CMAKE_${LANG}_FLAGS_${UTYPE} "${CMAKE_${LANG}_FLAGS_${UTYPE}_INIT} ${CMAKE_${LANG}_FLAGS_EXTRA}")
+        string(REPLACE "  " " " CMAKE_${LANG}_FLAGS_${UTYPE} "${CMAKE_${LANG}_FLAGS_${UTYPE}}")
+        string(REPLACE "  " " " CMAKE_${LANG}_FLAGS_${UTYPE} "${CMAKE_${LANG}_FLAGS_${UTYPE}}")
+    endforeach()
+    unset(CMAKE_${LANG}_FLAGS CACHE)
+    set(CMAKE_${LANG}_FLAGS "${CMAKE_${LANG}_FLAGS_INIT}")
+endforeach(LANG C CXX)
 
-unset(CMAKE_CXX_FLAGS CACHE)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_INIT}")

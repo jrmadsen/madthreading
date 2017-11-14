@@ -9,17 +9,15 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules
 set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX
     ${CMAKE_SOURCE_DIR}/cmake/Modules/MakeRulesCXX.cmake)
 
-
+include(MakeRulesC)
 include(MakeRulesCXX)
 include(GenericCMakeFunctions)
 SET_PROJECT_VERSION("2" "0" "1" "Multithreading API using C++11 threads. Task-based with thread-pool")
 SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
 SET(CMAKE_INSTALL_MESSAGE LAZY)
 
-message("")
 message(STATUS "Project: ${PROJECT_NAME}")
 message(STATUS "Version: ${${PROJECT_NAME}_VERSION}")
-message("")
 
 include(VersionUpdate)
 include(InstallDirs)
@@ -53,36 +51,34 @@ endforeach()
 include(ConfigureCXXSTD)
 set(CMAKE_CXX_FLAGS "-std=${BUILD_CXXSTD} ${CMAKE_CXX_FLAGS}")
 
+if(USE_PYBIND11)
+    add_subdirectory(pybind11)
+endif(USE_PYBIND11)
 add_subdirectory(madthreading)
 add_subdirectory(unit_test)
 
 #------------------------------------------------------------------------------#
 
-option(GENERATE_PYTHON_INTERFACES "Generate Python interfaces via SWIG" OFF)
-add_feature(GENERATE_PYTHON_INTERFACES "Generate Python interfaces via SWIG")
+if(USE_PYBIND11)
 
-#------------------------------------------------------------------------------#
-
-if(GENERATE_PYTHON_INTERFACES)
-
-    # used by SWIG Modules
+    # used by module
     set(PROJECT_LIBRARIES ${PROJECT_NAME}-shared ${EXTRA_LIBS})
 
     string(REPLACE "-Wshadow " "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 
     # modules
-    get_property(SWIG_MODULE_FILES GLOBAL
-        PROPERTY SWIG_MODULE_FILES)
+    get_property(MODULE_FILES GLOBAL PROPERTY MODULE_FILES)
 
     # remove duplicates
-    if(NOT "${SWIG_MODULE_FILES}" STREQUAL "")
-        list(REMOVE_DUPLICATES SWIG_MODULE_FILES)
+    if(NOT "${MODULE_FILES}" STREQUAL "")
+        list(REMOVE_DUPLICATES MODULE_FILES)
     endif()
 
     # iterate
-    foreach(_swig_file ${SWIG_MODULE_FILES})
-        include(${_swig_file})
+    foreach(_module ${MODULE_FILES})
+        include(${_module})
     endforeach()
+
 endif()
 
 #------------------------------------------------------------------------------#

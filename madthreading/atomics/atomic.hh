@@ -32,25 +32,6 @@
 #ifndef atomic_hh_
 #define atomic_hh_
 
-#ifdef SWIG
-#   ifdef USE_BOOST_SERIALIZATION
-#       undef USE_BOOST_SERIALIZATION
-#   endif
-#endif
-
-//----------------------------------------------------------------------------//
-#ifdef SWIG
-%module atomic
-%{
-    #define SWIG_FILE_WITH_INIT
-    #include "madthreading/atomics/atomic_typedefs.hh"
-    #include "madthreading/atomics/atomic.hh"
-%}
-
-%include "atomic_typedefs.hh"
-%include "atomic.hh"
-#endif
-//----------------------------------------------------------------------------//
 
 #include "madthreading/atomics/atomic_typedefs.hh"
 
@@ -252,20 +233,6 @@ private:
 #endif
 };
 
-#ifdef SWIG
-
-%template(atomic_s)     mad::atomic<short>;
-%template(atomic_i)     mad::atomic<int>;
-%template(atomic_l)     mad::atomic<long>;
-%template(atomic_u)     mad::atomic<unsigned>;
-%template(atomic_us)    mad::atomic<unsigned short>;
-%template(atomic_ui)    mad::atomic<unsigned int>;
-%template(atomic_ul)    mad::atomic<unsigned long>;
-%template(atomic_f)     mad::atomic<float>;
-%template(atomic_d)     mad::atomic<double>;
-%template(atomic_ld)    mad::atomic<long double>;
-
-#endif
 
 namespace atomics
 {

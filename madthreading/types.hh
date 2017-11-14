@@ -32,15 +32,6 @@
 #ifndef types_hh_
 #define types_hh_
 
-//----------------------------------------------------------------------------//
-#ifdef SWIG
-%module types
-%{
-    #include "madthreading/types.hh"
-%}
-#endif
-//----------------------------------------------------------------------------//
-
 #include "madthreading/allocator/allocator.hh"
 #include "madthreading/threading/threading.hh"
 #include "madthreading/threading/auto_lock.hh"

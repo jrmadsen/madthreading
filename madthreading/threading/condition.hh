@@ -32,19 +32,6 @@
 #ifndef condition_hh_
 #define condition_hh_
 
-#ifdef SWIG
-%module condition
-%{
-    #define SWIG_FILE_WITH_INIT
-    #include <time.h>
-    #include "madthreading/threading/threading.hh"
-    #include "madthreading/threading/condition.hh"
-%}
-
-%import "madthreading/threading/threading.hh"
-%include "condition.hh"
-#endif
-
 #include "madthreading/threading/threading.hh"
 #include <condition_variable>
 

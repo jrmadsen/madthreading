@@ -20,27 +20,46 @@ endfunction()
 
 ################################################################################
 
-message(STATUS "")
-
 ################################################################################
 
 
 include(MacroUtilities)
 include(GenericCMakeFunctions)
 include(CMakeDependentOption)
-
+include(Compilers)
 
 ################################################################################
 #
-#        Compilers
+#        PyBind11
 #
 ################################################################################
-if(CMAKE_CXX_COMPILER MATCHES "icc.*")
-    set(CMAKE_COMPILER_IS_INTEL_ICC ON)
-endif()
-if(CMAKE_CXX_COMPILER MATCHES "icpc.*")
-    set(CMAKE_COMPILER_IS_INTEL_ICPC ON)
-endif()
+# git submodule
+add_option(USE_PYBIND11 "Generate Python interfaces with PyBind11" ON)
+if(USE_PYBIND11)
+    set(PYBIND11_DIR ${CMAKE_SOURCE_DIR}/pybind11)
+    set(PYBIND11_INCLUDE_DIR ${PYBIND11_DIR}/include)
+
+    # set PYBIND11_FOUND
+    set(PYBIND11_FOUND OFF)
+    if(EXISTS "${PYBIND11_DIR}" AND EXISTS "${PYBIND11_INCLUDE_DIR}" AND
+    IS_DIRECTORY "${PYBIND11_DIR}" AND IS_DIRECTORY "${PYBIND11_INCLUDE_DIR}")
+
+        set(PYBIND11_FOUND ON)
+
+    endif(EXISTS "${PYBIND11_DIR}" AND EXISTS "${PYBIND11_INCLUDE_DIR}" AND
+    IS_DIRECTORY "${PYBIND11_DIR}" AND IS_DIRECTORY "${PYBIND11_INCLUDE_DIR}")
+
+    # check if found
+    if(NOT PYBIND11_FOUND)
+        message(STATUS "PyBind11 is a git submodule and has not been cloned")
+        message(STATUS "run: git submodule update --init --remote --recursive")
+        message(FATAL_ERROR "PyBind11 not found")
+    endif(NOT PYBIND11_FOUND)
+
+    set(USE_PYBIND11 ON)
+    set(PYBIND11_INCLUDE_DIRS ${PYBIND11_DIR}/include)
+    list(APPEND EXTERNAL_INCLUDE_DIRS ${PYBIND11_INCLUDE_DIRS})
+endif(USE_PYBIND11)
 
 
 ################################################################################

@@ -35,15 +35,6 @@
 #ifndef atomic_typedefs_hh_
 #define atomic_typedefs_hh_
 
-//----------------------------------------------------------------------------//
-#ifdef SWIG
-%module atomic_typedefs
-%{
-    #include "madthreading/atomics/atomic_typedefs.hh"
-%}
-#endif
-//----------------------------------------------------------------------------//
-
 //============================================================================//
 
 #include <functional>

@@ -32,15 +32,6 @@
 #ifndef allocator_pool_hh_
 #define allocator_pool_hh_
 
-//----------------------------------------------------------------------------//
-#ifdef SWIG
-%module allocator_pool
-%{
-    #include "madthreading/allocator/allocator_pool.hh"
-%}
-#endif
-//----------------------------------------------------------------------------//
-
 #include <cstddef>
 
 namespace mad

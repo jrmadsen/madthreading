@@ -36,25 +36,6 @@
 #ifndef thread_pool_hh_
 #define thread_pool_hh_
 
-//----------------------------------------------------------------------------//
-#ifdef SWIG
-%module thread_pool
-%{
-    #define SWIG_FILE_WITH_INIT
-    #include "madthreading/threading/threading.hh"
-    #include "madthreading/threading/mutex.hh"
-    #include "madthreading/threading/condition.hh"
-    #include "madthreading/allocator/allocator.hh"
-    #include "madthreading/atomics/atomic.hh"
-    #include "madthreading/threading/task/task.hh"
-    #include "madthreading/threading/task/task_tree.hh"
-    #include "madthreading/threading/thread_pool.hh"
-%}
-
-%include "thread_pool.hh"
-#endif
-//----------------------------------------------------------------------------//
-
 #include "madthreading/threading/threading.hh"
 #include "madthreading/threading/mutex.hh"
 #include "madthreading/threading/condition.hh"

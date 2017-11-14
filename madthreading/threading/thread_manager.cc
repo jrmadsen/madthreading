@@ -40,11 +40,21 @@ thread_manager* thread_manager::fgInstance = nullptr;
 
 //============================================================================//
 
-thread_manager* thread_manager::Instance() { return fgInstance; }
+thread_manager* thread_manager::Instance() { return instance(); }
 
 //============================================================================//
 
-thread_manager* thread_manager::instance() { return fgInstance; }
+thread_manager* thread_manager::instance()
+{
+    if(!fgInstance)
+    {
+        auto nthreads = std::thread::hardware_concurrency();
+        std::cout << "Allocating mad::thread_manager with " << nthreads
+                  << " thread(s)..." << std::endl;
+        new thread_manager(nthreads);
+    }
+    return fgInstance;
+}
 
 
 //============================================================================//
@@ -52,9 +62,9 @@ thread_manager* thread_manager::instance() { return fgInstance; }
 void thread_manager::check_instance(thread_manager* local_instance)
 {
     static std::string exist_msg
-            = "Instance of singleton \"thread_manager\" already exists!";
+            = "Instance of singleton \"mad::thread_manager\" already exists!";
     static std::string null_msg
-            = "Local instance to \"thread_manager\" is a null pointer!";
+            = "Local instance to \"mad::thread_manager\" is a null pointer!";
 
     if(fgInstance)
         throw std::runtime_error(exist_msg);
@@ -69,25 +79,25 @@ void thread_manager::check_instance(thread_manager* local_instance)
 thread_manager* thread_manager::get_thread_manager(const uint32_t& nthreads,
                                                    const int& verbose)
 {
-    mad::thread_manager* tm = mad::thread_manager::instance();
+    mad::thread_manager* tm = fgInstance;
     if(!tm)
     {
         if(verbose > 0)
-            tmcout << "Allocating thread manager with " << nthreads
-                   << " thread(s)..." << std::endl;
+            std::cout << "Allocating mad::thread_manager with " << nthreads
+                      << " thread(s)..." << std::endl;
         tm = new thread_manager(nthreads);
     }
     else if(tm->size() != nthreads)
     {
         if(verbose > 0)
-            tmcout << "thread_manager exists - Allocating " << nthreads
+            tmcout << "mad::thread_manager exists - Allocating " << nthreads
                    << "..." << std::endl;
         tm->allocate_threads(nthreads);
     }
     else
     {
         if(verbose > 0)
-            tmcout << "Using existing thread_manager with "
+            tmcout << "Using existing mad::thread_manager with "
                    << tm->size() << " thread(s)..." << std::endl;
     }
     return tm;

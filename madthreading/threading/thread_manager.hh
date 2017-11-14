@@ -32,42 +32,6 @@
 #ifndef thread_manager_hh_
 #define thread_manager_hh_
 
-//----------------------------------------------------------------------------//
-#ifdef SWIG
-
-%define MACRO(cl)
-%pythoncode
-%{
-    def cl():
-        return
-%}
-%enddef
-
-%module thread_manager
-%{
-    #define SWIG_FILE_WITH_INIT
-    #include "madthreading/threading/tls.hh"
-    #include "madthreading/allocator/allocator.hh"
-    #include "madthreading/threading/thread_pool.hh"
-    #include "madthreading/threading/task/task_tree.hh"
-    #include "madthreading/threading/task/task_group.hh"
-    #include "madthreading/threading/thread_manager.hh"
-%}
-
-#define ThreadLocalStatic static thread_local
-#define ThreadLocal thread_local
-
-%import "madthreading/threading/thread_pool.hh"
-%import "madthreading/threading/task/task_tree.hh"
-%import "madthreading/threading/task/task_group.hh"
-%include "thread_manager.hh"
-
-MACRO(tmid)
-MACRO(_tid_)
-
-#endif
-//----------------------------------------------------------------------------//
-
 #include "madthreading/macros.hh"
 #include "madthreading/threading/threading.hh"
 #include "madthreading/threading/thread_pool.hh"
@@ -247,6 +211,8 @@ public:
         if(_id < 0)
             return "0";
         thread_manager* _tm = thread_manager::Instance();
+        if(!_tm)
+            return _id;
         short _w = 4;
         _w = std::min(_w, (short) std::ceil(std::log10(_tm->size())));
         std::stringstream ss;
@@ -310,7 +276,6 @@ public:
         m_data->tp()->add_task(new task_type(tg, function, args...));
     }
     //------------------------------------------------------------------------//
-#ifndef SWIG
     template <typename _Func, typename... _Args>
     _inline_
     void exec(mad::task_group* tg, _Func function, _Args... args)
@@ -318,7 +283,6 @@ public:
         typedef task<void, _Args...> task_type;
         m_data->tp()->add_task(new task_type(tg, function, args...));
     }
-#endif
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func>
     _inline_
@@ -328,7 +292,6 @@ public:
         m_data->tp()->add_task(new task_type(tg, function));
     }
     //------------------------------------------------------------------------//
-#ifndef SWIG
     template <typename _Func>
     _inline_
     void exec(mad::task_group* tg, _Func function)
@@ -336,7 +299,6 @@ public:
         typedef task<void> task_type;
         m_data->tp()->add_task(new task_type(tg, function));
     }
-#endif
     //------------------------------------------------------------------------//
 
 public:
@@ -354,7 +316,6 @@ public:
         m_data->tp()->add_tasks(_tasks);
     }
     //------------------------------------------------------------------------//
-#ifndef SWIG
     template <typename _Func, typename... _Args>
     _inline_
     void run(mad::task_group* tg, _Func function, _Args... args)
@@ -365,7 +326,6 @@ public:
             _tasks[i] = new task_type(tg, function, args...);
         m_data->tp()->add_tasks(_tasks);
     }
-#endif
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func>
     _inline_
@@ -378,7 +338,6 @@ public:
         m_data->tp()->add_tasks(_tasks);
     }
     //------------------------------------------------------------------------//
-#ifndef SWIG
     template <typename _Func>
     _inline_
     void run(mad::task_group* tg, _Func function)
@@ -390,7 +349,6 @@ public:
             _tasks[i] = new task_type(tg, function);
         m_data->tp()->add_tasks(_tasks);
     }
-#endif
     //------------------------------------------------------------------------//
 
 public:
@@ -421,7 +379,6 @@ public:
             m_data->tp()->add_task(new task_type(tg, function, i));
     }
     //------------------------------------------------------------------------//
-#ifndef SWIG
     template <typename _Ret, typename _Func, typename InputIterator>
     _inline_
     void run_loop(mad::task_group* tg,
@@ -445,7 +402,6 @@ public:
         for(size_type i = _s; i < _e; ++i)
             m_data->tp()->add_task(new task_type(tg, function, i));
     }
-#endif
     //------------------------------------------------------------------------//
 
 public:
@@ -476,7 +432,6 @@ public:
         }
     }
     //------------------------------------------------------------------------//
-#ifndef SWIG
     template <typename _Func, typename _Arg1, typename _Arg>
     _inline_
     void run_loop(mad::task_group* tg,
@@ -499,7 +454,6 @@ public:
             m_data->tp()->add_task(t);
         }
     }
-#endif
     //------------------------------------------------------------------------//
     template <typename _Ret,
               typename _Func,
@@ -570,7 +524,6 @@ public:
         m_data->tp()->add_background_task(_id, t);
     }
     //------------------------------------------------------------------------//
-#ifndef SWIG
     template <typename _Arg, typename _Func>
     _inline_
     void add_background_task(mad::task_group* tg,
@@ -580,7 +533,6 @@ public:
         task_type* t = new task_type(tg, function, argument);
         m_data->tp()->add_background_task(_id, t);
     }
-#endif
     //------------------------------------------------------------------------//
     template <typename _Func>
     _inline_
@@ -731,11 +683,6 @@ protected:
 #define tmwout std::wcout << tmid
 #define tmwerr std::wcerr << tmid
 
-#ifdef SWIG
-%template(id)           mad::thread_manager::id<unsigned long>;
-%template(sid)          mad::thread_manager::sid<unsigned long>;
-%template(id_string)    mad::thread_manager::id_string<unsigned long>;
-#endif
 //----------------------------------------------------------------------------//
 
 #endif

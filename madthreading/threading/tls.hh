@@ -32,17 +32,6 @@
 #ifndef tls_hh_
 #define tls_hh_
 
-//----------------------------------------------------------------------------//
-#ifdef SWIG
-%module tls
-%{
-    #include "madthreading/threading/tls.hh"
-%}
-
-%include "tls.hh"
-#endif
-//----------------------------------------------------------------------------//
-
 // Defines ThreadLocal and ThreadLocalStatic for thread local storage
 // prefix the declaration with these, e.g.:
 //      ThreadLocalStatic int this_threads_counter;

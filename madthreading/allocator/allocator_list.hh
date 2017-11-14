@@ -32,28 +32,6 @@
 #ifndef allocator_list_hh_
 #define allocator_list_hh_
 
-//----------------------------------------------------------------------------//
-#ifdef SWIG
-%module allocator_list
-%{
-    #include "madthreading/threading/tls.hh"
-    #include "madthreading/allocator/allocator_list.hh"
-%}
-
-#ifdef ThreadLocal
-#   undef ThreadLocal
-#endif
-#ifdef ThreadLocalStatic
-#   undef ThreadLocalStatic
-#endif
-#define ThreadLocal thread_local
-#define ThreadLocalStatic static thread_local
-
-%include "allocator_list.hh"
-
-#endif
-//----------------------------------------------------------------------------//
-
 #include <deque>
 #include <vector>
 #include "madthreading/threading/tls.hh"

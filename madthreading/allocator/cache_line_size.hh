@@ -35,15 +35,6 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
 
-//----------------------------------------------------------------------------//
-#ifdef SWIG
-%module cache_line_size
-%{
-    #include "madthreading/allocator/cache_line_size.hh"
-%}
-#endif
-//----------------------------------------------------------------------------//
-
 // Returns the cache line size (in bytes) of the processor, or 0 on failure
 
 #include <stddef.h>
@@ -91,7 +82,7 @@ static size_t mad::cache::cache_line_size()
     return line_size;
 }
 
-#elif defined(__linux__) || defined(SWIG)
+#elif defined(__linux__)
 
 #include <stdio.h>
 static inline size_t mad::cache::cache_line_size()

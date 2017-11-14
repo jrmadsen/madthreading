@@ -24,16 +24,6 @@
 #ifndef mutex_hh_
 #define mutex_hh_
 
-#ifdef SWIG
-%module mutex
-%{
-    #define SWIG_FILE_WITH_INIT
-    #include "madthreading/threading/mutex.hh"
-%}
-
-%include "mutex.hh"
-#endif
-
 #include "madthreading/threading/threading.hh"
 #include <mutex>
 
