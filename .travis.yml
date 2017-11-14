@@ -1,6 +1,5 @@
 # Madthreading Travis CI file
 
-# C++ language
 language: python
   
 # The apt packages here install our compiled code dependencies.
@@ -8,8 +7,8 @@ matrix:
   include:
     # macOS
     - os: osx
+      language: cpp
       osx_image: xcode9.1
-      sudo: enabled
       env:
         - MATRIX_EVAL="CC=$(which clang) && CXX=$(which clang++) && CXXSTD=11 && ENABLE_SSE=OFF && ENABLE_TBB=OFF && ENABLE_OMP=OFF"
     # GCC 4.9
@@ -34,6 +33,9 @@ matrix:
     - os: linux
       dist: trusty
       sudo: false
+      language: python
+      python:
+        - 3.5
       addons:
         apt:
           sources:
@@ -52,6 +54,9 @@ matrix:
     - os: linux
       dist: trusty
       sudo: false
+      language: python
+      python:
+        - 3.5
       addons:
         apt:
           sources:
@@ -70,6 +75,9 @@ matrix:
     - os: linux
       dist: trusty
       sudo: false
+      language: python
+      python:
+        - 3.5
       addons:
         apt:
           sources:
@@ -88,6 +96,9 @@ matrix:
     - os: linux
       dist: trusty
       sudo: false
+      language: python
+      python:
+        - 3.5
       addons:
         apt:
           sources:
@@ -107,6 +118,9 @@ matrix:
     - os: linux
       dist: trusty
       sudo: false
+      language: python
+      python:
+        - 3.5
       addons:
         apt:
           sources:
@@ -123,10 +137,7 @@ matrix:
       env:
         - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && CXXSTD=14 && ENABLE_SSE=OFF && ENABLE_TBB=OFF && ENABLE_OMP=ON"
          
-
-python:
-  - 3.5
-
+         
 before_install:
     - eval "${MATRIX_EVAL}"
     - export CC=${CC}
@@ -149,8 +160,8 @@ before_install:
     - cd ${DEFAULT_DIR}
     - echo "--> ${PWD}"
 
-
 install:
+    - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then export USE_PYBIND=ON ; else export USE_PYBIND=OFF ; fi
     - env
     - echo "--> ${PWD}"
     - mkdir -p build-madthreading
@@ -164,8 +175,7 @@ install:
         -DBUILD_CXXSTD=${CXXSTD} -DENABLE_UNIT_TEST=ON
         -DUSE_TBB=${ENABLE_TBB} -DUSE_OPENMP=${ENABLE_OMP}
         -DUSE_TCMALLOC=OFF -DUSE_SSE=${ENABLE_SSE}
-        -DGENERATE_PYTHON_INTERFACES=OFF
-        -DUnitTest++_ROOT=${HOME}/unittest-cpp
+        -DUSE_PYBIND11=${USE_PYBIND} -DUnitTest++_ROOT=${HOME}/unittest-cpp
         -DUnitTest++_INCLUDE_DIR=${HOME}/unittest-cpp/include/UnitTest++
         ${PWD}/..
     - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
