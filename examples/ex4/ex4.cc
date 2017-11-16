@@ -4,7 +4,6 @@
 //
 //
 
-
 #ifdef USE_OPENMP
     #include <omp.h>
 #endif
@@ -22,6 +21,9 @@
 #include <madthreading/utility/timer.hh>
 #include <madthreading/allocator/aligned_allocator.hh>
 #include "../Common.hh"
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 
 using namespace std;
 
@@ -321,3 +323,4 @@ int main(int argc, char** argv)
 
 //============================================================================//
 
+#pragma GCC diagnostic pop

@@ -431,7 +431,7 @@ void* thread_pool::execute_thread()
         //--------------------------------------------------------------------//
 
         // execute the task
-        task_group* tg = run(task);
+        run(task);
         //--------------------------------------------------------------------//
 
     }
@@ -536,7 +536,7 @@ void thread_pool::background_thread()
 
 //============================================================================//
 
-mad::task_group* thread_pool::run(vtask*& task)
+void thread_pool::run(vtask*& task)
 {
     task_group* tg = task->group();
 
@@ -550,8 +550,6 @@ mad::task_group* thread_pool::run(vtask*& task)
         tg->join_cond().notify_all();
         tg->join_lock().unlock();
     }
-
-    return tg;
 }
 
 //============================================================================//

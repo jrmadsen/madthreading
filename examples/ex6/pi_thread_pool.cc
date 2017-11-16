@@ -19,7 +19,7 @@ using namespace mad;
 
 //============================================================================//
 
-int main(int argc, char** argv)
+int main(int, char** argv)
 {
     ulong_type num_steps = GetEnvNumSteps(500000000UL);
     double_type step = 1.0/static_cast<double_type>(num_steps);

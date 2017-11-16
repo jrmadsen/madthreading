@@ -23,7 +23,7 @@ using namespace mad;
 
 //============================================================================//
 
-int main(int argc, char** argv)
+int main(int, char** argv)
 {
     typedef tbb::blocked_range<ulong_type> range_t;
     typedef range_t::const_iterator const_iterator;
@@ -45,7 +45,7 @@ int main(int argc, char** argv)
         return tl_sum;
     };
     //------------------------------------------------------------------------//
-    auto join = [] (double_type x, double_type y) { return x+y; };
+    auto join = [] (double_type _x, double_type _y) { return _x+_y; };
     //------------------------------------------------------------------------//
 
     //========================================================================//

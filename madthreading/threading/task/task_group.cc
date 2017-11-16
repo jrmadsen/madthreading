@@ -49,8 +49,8 @@ task_group::task_group(thread_pool* tp)
 
 task_group::~task_group()
 {
-    //for(auto& itr : m_task_list)
-    //    delete itr;
+    for(auto& itr : m_task_list)
+        delete itr;
 }
 
 //============================================================================//
@@ -90,6 +90,9 @@ void task_group::join()
         if(!(0 < pending()))
             break;
     }
+
+    for(auto& itr : m_task_list)
+        itr->get();
 
     if(m_task_count > 0)
     {

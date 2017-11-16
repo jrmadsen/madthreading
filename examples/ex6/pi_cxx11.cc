@@ -17,7 +17,7 @@ using namespace mad;
 
 typedef atomic<double_type>     atomic_double_type;
 
-int main(int argc, char** argv)
+int main(int, char** argv)
 {
 
     ulong_type num_steps = GetEnvNumSteps(500000000UL);

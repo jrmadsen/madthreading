@@ -46,7 +46,6 @@
 #include <future>
 #include <thread>
 
-
 namespace mad
 {
 
@@ -101,15 +100,16 @@ template <typename _Ret, typename... _Args>
 class task : public vtask
 {
 public:
-    typedef _Ret                                result_type;
-    typedef std::function<_Ret(_Args...)>       function_type;
-    typedef std::future<result_type>            future_type;
-    typedef std::packaged_task<_Ret()>          packaged_task_type;
+    typedef _Ret                            result_type;
+    typedef std::function<_Ret(_Args...)>   function_type;
+    typedef std::future<result_type>        future_type;
+    typedef std::packaged_task<_Ret()>      packaged_task_type;
 
 public:
     // pass a free function pointer
     task(task_group* tg, function_type fn_ptr, _Args... args)
     : vtask(tg),
+      m_future_retrieved(false),
       m_function(fn_ptr),
       m_ptask(std::bind(m_function, std::forward<_Args>(std::move(args))...)),
       m_result(new result_type())
@@ -125,18 +125,30 @@ public:
                                 std::forward<_Args>(std::move(args))...));
     }
 
-    virtual void* get() const { return (void*) m_result; }
     virtual void set_result(void* ptr) { *m_result = *(result_type*) ptr; }
+    virtual void* get() const
+    {
+        if(!m_future_retrieved)
+            *m_result = m_future.get();
+        m_future_retrieved = true;
+        return (void*) m_result;
+    }
+
+    inline result_type get_result() const
+    {
+        return *((result_type*)(this->get()));
+    }
 
 public:
     virtual void operator()()
     {
         m_future = m_ptask.get_future();
         m_ptask();
-        *m_result = m_future.get();
+        m_future_retrieved = false;
     }
 
 private:
+    mutable bool                    m_future_retrieved;
     function_type                   m_function;
     packaged_task_type              m_ptask;
     mutable future_type             m_future;
@@ -153,12 +165,14 @@ public:
     typedef void                            _Ret;
     typedef _Ret                            result_type;
     typedef std::function<_Ret(_Args...)>   function_type;
+    typedef std::future<result_type>        future_type;
     typedef std::packaged_task<_Ret()>      packaged_task_type;
 
 public:
     // pass a free function pointer
     task(task_group* tg, function_type fn_ptr, _Args... args)
     : vtask(tg),
+      m_future_retrieved(false),
       m_function(fn_ptr),
       m_ptask(std::bind(m_function, std::forward<_Args>(std::move(args))...))
     { }
@@ -174,15 +188,27 @@ public:
 
     }
 
+    virtual void* get() const
+    {
+        if(!m_future_retrieved)
+            m_future.get();
+        m_future_retrieved = true;
+        return nullptr;
+    }
+
 public:
     virtual void operator()()
     {
+        m_future = m_ptask.get_future();
         m_ptask();
+        m_future_retrieved = false;
     }
 
 private:
-    function_type       m_function;
-    packaged_task_type  m_ptask;
+    mutable bool                    m_future_retrieved;
+    function_type                   m_function;
+    packaged_task_type              m_ptask;
+    mutable future_type             m_future;
 };
 
 //============================================================================//
@@ -192,27 +218,42 @@ template <>
 class task<void> : public vtask
 {
 public:
-    typedef void _Ret;
-    typedef _Ret result_type;
-    typedef std::function<_Ret()> function_type;
+    typedef void                            _Ret;
+    typedef _Ret                            result_type;
+    typedef std::function<result_type()>    function_type;
+    typedef std::future<result_type>        future_type;
+    typedef std::packaged_task<_Ret()>      packaged_task_type;
 
 public:
     // pass a free function pointer
     task(task_group* tg, function_type fn_ptr)
     : vtask(tg),
-      m_function(fn_ptr)
+      m_future_retrieved(false),
+      m_ptask(fn_ptr)
     { }
 
     virtual ~task() { }
 
+    virtual void* get() const
+    {
+        if(!m_future_retrieved)
+            m_future.get();
+        m_future_retrieved = true;
+        return nullptr;
+    }
+
 public:
     virtual void operator()()
     {
-        m_function();
+        m_future = m_ptask.get_future();
+        m_ptask();
+        m_future_retrieved = false;
     }
 
 private:
-    function_type           m_function;
+    mutable bool                    m_future_retrieved;
+    packaged_task_type              m_ptask;
+    mutable future_type             m_future;
 };
 
 //============================================================================//

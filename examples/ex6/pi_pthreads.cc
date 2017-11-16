@@ -59,7 +59,7 @@ void* proxy(void* threadargs)
 
 //============================================================================//
 
-int main(int argc, char** argv)
+int main(int, char** argv)
 {
     typedef ProxyStruct::range_type range_t;
 

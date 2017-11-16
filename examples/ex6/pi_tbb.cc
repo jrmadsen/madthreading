@@ -65,7 +65,7 @@ private:
 
 //============================================================================//
 
-int main(int argc, char** argv)
+int main(int, char** argv)
 {
     typedef ComputePi::range_t range_t;
 

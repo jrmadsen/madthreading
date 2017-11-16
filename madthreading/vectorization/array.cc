@@ -54,7 +54,7 @@ const static size_t array_thread_thresh = 100;
 
 //============================================================================//
 // Get the number of threads
-static size_t num_threads()
+/*static size_t num_threads()
 {
     size_t _nthreads = 1;
 
@@ -67,15 +67,14 @@ static size_t num_threads()
 #endif
 
     return _nthreads;
-}
+}*/
 
 //============================================================================//
 // Dot product of lists of arrays.
 void mad::array::list_dot(size_t n, size_t m, size_t d, const double* a,
                           const double* b, double* dotprod)
 {
-    int nt = num_threads();
-
+    #pragma omp simd
     for(size_t i = 0; i < n; ++i)
     {
         dotprod[i] = 0.0;
@@ -90,6 +89,7 @@ void mad::array::list_dot(size_t n, size_t m, size_t d, const double* a,
 // Inverse of a quaternion array.
 void mad::array::inv(size_t n, double* q)
 {
+    #pragma omp simd
     for(size_t i = 0; i < n; ++i)
         for(size_t j = 0; j < 3; ++j)
             q[4 * i + j] *= -1;
@@ -119,6 +119,7 @@ void mad::array::normalize(size_t n, size_t m, size_t d,
 
     mad::array::amplitude(n, m, d, q_in, norm);
 
+    #pragma omp simd
     for(size_t i = 0; i < n; ++i)
     {
         for(size_t j = 0; j < d; ++j)
@@ -139,6 +140,7 @@ void mad::array::normalize_inplace(size_t n, size_t m, size_t d, double* q)
 
     mad::array::amplitude(n, m, d, q, norm);
 
+    #pragma omp simd
     for(size_t i = 0; i < n; ++i)
     {
         for(size_t j = 0; j < d; ++j)

@@ -52,7 +52,7 @@ const static size_t array_thread_thresh = 100;
 
 //============================================================================//
 // Get the number of threads
-static size_t num_threads()
+/*static size_t num_threads()
 {
     size_t _nthreads = 1;
 
@@ -65,7 +65,7 @@ static size_t num_threads()
 #endif
 
     return _nthreads;
-}
+}*/
 
 //============================================================================//
 
@@ -582,11 +582,6 @@ void mad::func::fast_erfinv(int n, const double* in, double* out)
     // With numerical constants obtained from:
     // https://people.maths.ox.ac.uk/gilesm/codes/erfinv/
     //
-
-    int nt = 1;
-#ifdef _OPENMP
-    nt = omp_get_num_threads();
-#endif
 
     simd_array<double> arg(n);
     simd_array<double> lg(n);

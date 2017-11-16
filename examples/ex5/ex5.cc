@@ -32,7 +32,7 @@ using namespace mad;
 
 //============================================================================//
 
-int main(int argc, char** argv)
+int main(int, char**)
 {
     ulong_type num_threads = thread_manager::GetEnvNumThreads(1);
     thread_manager* tm = new thread_manager(num_threads);

@@ -145,9 +145,9 @@ SUITE( Vectorization_Tests )
     TEST( multarray )
     {
         size_t n = 3;
-        double in1[4*n];
-        double in2[4*n];
-        double result[4*n];
+        mad::simd_array<double> in1(4*n);
+        mad::simd_array<double> in2(4*n);
+        mad::simd_array<double> result(4*n);
         double null[4];
 
         null[0] = 0.0;
@@ -199,9 +199,9 @@ SUITE( Vectorization_Tests )
     TEST( rotarray )
     {
         size_t n = 2;
-        double qin[4*n];
-        double vin[3*n];
-        double result[3*n];
+        mad::simd_array<double> qin(4*n);
+        mad::simd_array<double> vin(3*n);
+        mad::simd_array<double> result(3*n);
 
         for ( size_t i = 0; i < 4; ++i ) {
             qin[i] = q1[i];

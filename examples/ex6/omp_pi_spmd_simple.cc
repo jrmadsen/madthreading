@@ -51,7 +51,7 @@ using namespace mad;
 
 //============================================================================//
 
-int main (int argc, char** argv)
+int main (int, char** argv)
 {
     double_type full_sum = 0.0;
     ulong_type num_steps = GetEnvNumSteps(500000000UL);

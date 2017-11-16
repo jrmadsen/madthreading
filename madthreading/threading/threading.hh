@@ -69,20 +69,8 @@ namespace Threading
 
 //----------------------------------------------------------------------------//
 
-enum
-{
-    SEQUENTIAL_ID = -2,
-    MASTER_ID = -1,
-    WORKER_ID = 0,
-    GENERICTHREAD_ID = -1000
-};
-
 mad::Pid_t GetPidId();
 int GetNumberOfCores();
-int GetThreadId();
-bool IsWorkerThread();
-bool IsMasterThread();
-void SetThreadId( int aNewValue );
 
 //----------------------------------------------------------------------------//
 

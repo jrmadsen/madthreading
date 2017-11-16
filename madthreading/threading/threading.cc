@@ -46,12 +46,6 @@
 namespace mad
 {
 
-namespace
-{
-    ThreadLocal int ThreadID = Threading::MASTER_ID;
-    bool isMTAppType = false;
-}
-
 Pid_t Threading::GetPidId()
 {
     // In multithreaded mode return Thread ID
@@ -62,10 +56,5 @@ int Threading::GetNumberOfCores()
 {
     return std::thread::hardware_concurrency();
 }
-
-void Threading::SetThreadId(int value ) { ThreadID = value; }
-int Threading::GetThreadId() { return ThreadID; }
-bool Threading::IsWorkerThread() { return (ThreadID>=0); }
-bool Threading::IsMasterThread() { return (ThreadID==MASTER_ID); }
 
 } // namespace mad

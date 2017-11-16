@@ -141,7 +141,7 @@ public:
 protected:
     void* execute_thread(); // function thread sits in
     void  background_thread(); // function background threads sit in
-    task_group*  run(task_type*&);
+    void  run(task_type*&);
     bool  is_initialized() const;
 
 protected:
