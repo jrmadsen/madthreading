@@ -51,10 +51,10 @@ template <typename _Tp, typename _Arg1, typename _Arg2,
 class task_tree_node : public vtask
 {
 public:
-    typedef task_tree_node<_Tp, _Arg1, _Arg2>    this_type;
-    typedef task<_Tp, _Arg1, _Arg2>              task_type;
-    typedef _Tp                                  result_type;
-    FUNCTION_TYPEDEF_1(join_function_type, void, _Tp_join);
+    typedef task_tree_node<_Tp, _Arg1, _Arg2>   this_type;
+    typedef task<_Tp, _Arg1, _Arg2>             task_type;
+    typedef _Tp                                 result_type;
+    typedef std::function<void(_Tp_join)>       join_function_type;
     friend class task<_Tp, _Arg1, _Arg2>;
 
 public:
@@ -70,8 +70,6 @@ public:
       m_task(task), m_value(val)
     {
         m_task->set_result(&m_value);
-        //m_force_delete = true;
-        m_is_stored_elsewhere = true;
     }
 
     virtual ~task_tree_node()
@@ -82,6 +80,7 @@ public:
     void operator()()
     {
         (*m_task)();
+        m_value = *((_Tp_join*) (m_task->get()));
         join_function(m_value);
     }
 

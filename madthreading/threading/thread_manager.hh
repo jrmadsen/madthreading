@@ -496,16 +496,6 @@ public:
         }
         m_data->tp()->add_tasks(tree->root());
         tg->join();
-
-        typedef typename std::deque<task_type*>::iterator   task_deque_itr;
-        typedef typename mad::task_group::iterator          tgrp_saved_itr;
-        for(task_deque_itr titr = _tasks.begin(); titr != _tasks.end(); ++titr)
-        {
-            tgrp_saved_itr itr = (*titr)->group()->get_saved_tasks().begin();
-            for(; itr != (*titr)->group()->get_saved_tasks().end(); ++itr)
-                delete *itr;
-            (*titr)->group()->get_saved_tasks().clear();
-        }
         delete tree;
     }
     //------------------------------------------------------------------------//
@@ -601,14 +591,9 @@ public:
 
         tg->join();
         return_container ret_data;
-        for(mad::task_group::iterator itr = tg->begin();
-            itr != tg->end(); ++itr)
-        {
+        for(auto itr = tg->begin(); itr != tg->end(); ++itr)
             ret_data.insert(ret_data.end(),
                             *(static_cast<_Ret*>((*itr)->get())));
-            delete *itr;
-        }
-        tg->get_saved_tasks().clear();
         return _operator(ret_data, _def);
     }
     //------------------------------------------------------------------------//
@@ -618,13 +603,8 @@ public:
               _Func _operator)
     {
         tg->join();
-        for(mad::task_group::iterator itr = tg->begin();
-            itr != tg->end(); ++itr)
-        {
+        for(auto itr = tg->begin(); itr != tg->end(); ++itr)
             _operator(*(static_cast<_Ret*>((*itr)->get())));
-            delete *itr;
-        }
-        tg->get_saved_tasks().clear();
     }
 
     //------------------------------------------------------------------------//

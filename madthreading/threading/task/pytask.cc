@@ -19,8 +19,12 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/embed.h>
 
-#include <madthreading/threading/task/task_group.hh>
 #include <functional>
+#include <future>
+
+#include <madthreading/threading/task/task.hh>
+#include <madthreading/threading/task/task_tree.hh>
+#include <madthreading/threading/task/task_group.hh>
 
 //----------------------------------------------------------------------------//
 
@@ -30,15 +34,29 @@ typedef mad::task_group::task_count_type task_count_type;
 
 typedef const task_count_type& (mad::task_group::*task_count_func_type)() const;
 typedef const mad::ulong_type& (mad::task_group::*id_func_type)() const;
+typedef void (std::promise<int>::*int_promise_func_type)(const int&);
 
 PYBIND11_MODULE(pytask, t)
 {
     py::class_<mad::task_group> task_group(t, "task_group");
-
     task_group.def(py::init<>())
               .def("join", &mad::task_group::join, "Join function")
-              .def("task_count", (task_count_func_type) &mad::task_group::task_count, "Get the task count")
+              .def("task_count",
+                   (task_count_func_type) &mad::task_group::task_count,
+                   "Get the task count")
               .def("id", (id_func_type) &mad::task_group::id, "Get the ID");
+
+    py::class_<std::future<int>> fint (t, "int_future");
+    fint.def("get", &std::future<int>::get, "Return the result")
+        .def("wait", &std::future<int>::wait,
+             "Wait for the result to become avail");
+
+    py::class_<std::promise<int>> fprom (t, "int_promise");
+    fprom.def("get_future", &std::promise<int>::get_future,
+              "returns a future associated with the promised result")
+         .def("set_value",
+              (int_promise_func_type) &std::promise<int>::set_value,
+              "sets the result to specific value");
 }
 
 //----------------------------------------------------------------------------//

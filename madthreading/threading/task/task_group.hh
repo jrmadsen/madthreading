@@ -39,6 +39,7 @@ class vtask;
 class task_group
 {
 public:
+    typedef task_group                                      this_type;
     typedef long                                            long_type;
     typedef unsigned long                                   ulong_type;
     typedef mad::vtask                                      task_type;
@@ -68,27 +69,27 @@ public:
 
     // get the locks/conditions
     Lock_t& join_lock()      { return m_join_lock; }
-    Lock_t& save_task()      { return m_save_lock; }
     Condition_t& join_cond() { return m_join_cond; }
 
     const Lock_t& join_lock() const      { return m_join_lock; }
-    const Lock_t& save_task() const      { return m_save_lock; }
     const Condition_t& join_cond() const { return m_join_cond; }
 
+    // add task
+    this_type& operator+=(task_type* _task);
+    this_type& operator()(task_type* _task) { return *this += _task; }
+    this_type& add(task_type* _task) { return *this += _task; }
+
     // Get tasks with non-void return types
-    TaskContainer_t& get_saved_tasks() { return m_save_tasks; }
-    const TaskContainer_t& get_saved_tasks() const { return m_save_tasks; }
+    TaskContainer_t& get_tasks() { return m_task_list; }
+    const TaskContainer_t& get_tasks() const { return m_task_list; }
 
     // iterate over tasks with return type
-    iterator begin()                { return m_save_tasks.begin(); }
-    iterator end()                  { return m_save_tasks.end(); }
-    const_iterator begin() const    { return m_save_tasks.begin(); }
-    const_iterator end()   const    { return m_save_tasks.end(); }
-    const_iterator cbegin() const   { return m_save_tasks.begin(); }
-    const_iterator cend()   const   { return m_save_tasks.end(); }
-
-    // save a task with a return type
-    int save_task(task_type* task);
+    iterator begin()                { return m_task_list.begin(); }
+    iterator end()                  { return m_task_list.end(); }
+    const_iterator begin() const    { return m_task_list.begin(); }
+    const_iterator end()   const    { return m_task_list.end(); }
+    const_iterator cbegin() const   { return m_task_list.begin(); }
+    const_iterator cend()   const   { return m_task_list.end(); }
 
     const ulong_type& id() const { return m_id; }
     void set_pool(thread_pool* tp) { m_pool = tp; }
@@ -108,10 +109,17 @@ private:
     Condition_t         m_join_cond;
     Lock_t              m_save_lock;
     Lock_t              m_join_lock;
-    TaskContainer_t     m_save_tasks;
+    TaskContainer_t     m_task_list;
 
 };
 
+//----------------------------------------------------------------------------//
+inline task_group::this_type&
+task_group::operator+=(task_type* _task)
+{
+    m_task_list.push_back(_task);
+    return *this;
+}
 //----------------------------------------------------------------------------//
 
 } // namespace mad

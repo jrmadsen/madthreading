@@ -543,22 +543,6 @@ mad::task_group* thread_pool::run(vtask*& task)
     // execute task
     (*task)();
 
-    if(task->force_delete()) // should we delete
-    {
-        delete task;
-        task = 0;
-    } else
-    {
-        // does the task store anything?
-        if(task->get() && !task->is_stored_elsewhere())
-            task->group()->save_task(task);
-        else if(!task->is_stored_elsewhere())
-        {
-            delete task;
-            task = 0;
-        }
-    }
-
     tg->task_count() -= 1;
     if(tg->task_count().load() < 2)
     {

@@ -48,7 +48,10 @@ task_group::task_group(thread_pool* tp)
 //============================================================================//
 
 task_group::~task_group()
-{ }
+{
+    //for(auto& itr : m_task_list)
+    //    delete itr;
+}
 
 //============================================================================//
 
@@ -98,17 +101,6 @@ void task_group::join()
     }
 
     m_join_lock.unlock();
-}
-
-//============================================================================//
-
-int task_group::save_task(vtask* task)
-{
-    mad::auto_lock l(m_save_lock);
-    // TODO: put a limit on how many tasks can be added at most
-    m_save_tasks.push_back(task);
-
-    return 0;
 }
 
 //============================================================================//

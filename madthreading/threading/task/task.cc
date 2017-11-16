@@ -39,13 +39,11 @@ namespace mad
 
 //============================================================================//
 
-vtask::vtask(task_group* tg, void* result)
-: m_group(tg),
-  m_force_delete(false),
-  m_is_stored_elsewhere(false),
-  m_result(result)
+vtask::vtask(task_group* tg)
+: m_group(tg)
 {
     _check_group();
+    *m_group += this;
 }
 
 //============================================================================//
@@ -54,8 +52,6 @@ void vtask::_check_group()
 {
     if(!m_group)
         throw std::runtime_error("Null pointer to task_group");
-    //tmcout << "Task " << this << " has task group : " << m_group
-    //       << " (id = " << m_group->id() << ")" << std::endl;
 }
 
 //============================================================================//
