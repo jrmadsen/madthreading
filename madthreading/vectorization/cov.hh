@@ -28,6 +28,7 @@
 #include <iomanip>
 #include <atomic>
 #include <iostream>
+#include <stdexcept>
 
 namespace mad 
 { 
