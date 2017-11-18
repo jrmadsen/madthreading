@@ -258,11 +258,10 @@ endif(USE_SSE)
 #
 ################################################################################
 
+add_option(USE_ARCHITECTURE "Enable architecture optimizations" OFF)
 include(Architecture)
 
-if("${CMAKE_BUILD_TYPE}" STREQUAL "Release" OR
-   "${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo" OR
-   DEFINED TARGET_ARCHITECTURE)
+if(USE_ARCHITECTURE)
 
     ArchitectureFlags(ARCH_FLAGS)
     add(CMAKE_C_FLAGS_EXTRA "${ARCH_FLAGS}")

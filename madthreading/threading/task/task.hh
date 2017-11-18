@@ -35,7 +35,6 @@
 #include "madthreading/threading/threading.hh"
 #include "madthreading/threading/auto_lock.hh"
 #include "madthreading/allocator/allocator.hh"
-#include "madthreading/threading/task/task_group.hh"
 
 #include <functional>
 #include <utility>
@@ -45,6 +44,8 @@
 #include <array>
 #include <future>
 #include <thread>
+
+namespace mad  { class task_group; }
 
 namespace mad
 {
@@ -83,8 +84,7 @@ public:
 
 public:
     // get the task group
-    task_group*&      group()       { return m_group; }
-    const task_group* group() const { return m_group; }
+    task_group* group() const { return m_group; }
 
 protected:
     void _check_group();

@@ -32,7 +32,6 @@
 #ifndef condition_hh_
 #define condition_hh_
 
-#include "madthreading/threading/threading.hh"
 #include <condition_variable>
 
 namespace mad

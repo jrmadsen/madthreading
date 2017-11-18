@@ -36,6 +36,7 @@ namespace mad
 
 namespace func
 {
+
 //----------------------------------------------------------------------------//
 
 void sin(int n, const double* ang, double* sinout);

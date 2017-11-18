@@ -36,7 +36,6 @@
 #ifndef autolock_hh_
 #define autolock_hh_
 
-#include "madthreading/threading/threading.hh"
 #include "madthreading/threading/mutex.hh"
 
 //----------------------------------------------------------------------------//
@@ -44,7 +43,7 @@
 namespace mad
 {
 
-using auto_lock = std::lock_guard<std::recursive_mutex>;
+using auto_lock = std::lock_guard<mad::mutex>;
 
 } // namespace mad
 

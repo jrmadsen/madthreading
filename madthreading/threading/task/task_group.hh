@@ -18,6 +18,7 @@
 #include "madthreading/allocator/allocator.hh"
 #include "madthreading/atomics/atomic.hh"
 #include "madthreading/types.hh"
+#include "madthreading/threading/task/task.hh"
 
 #include <iostream>
 #include <deque>
@@ -32,7 +33,6 @@ namespace mad
 {
 
 class thread_pool;
-class vtask;
 
 //----------------------------------------------------------------------------//
 
@@ -97,6 +97,9 @@ public:
     thread_pool*& pool()       { return m_pool; }
     thread_pool*  pool() const { return m_pool; }
 
+    template <typename _Tp, typename _Func>
+    _Tp join(_Func func, _Tp result = _Tp());
+
 protected:
     // check if any tasks are still pending
     int pending() { return m_task_count; }
@@ -121,7 +124,19 @@ task_group::operator+=(task_type* _task)
     return *this;
 }
 //----------------------------------------------------------------------------//
+template <typename _Tp, typename _Func> inline
+_Tp mad::task_group::join(_Func func, _Tp result)
+{
+    this->join();
+    for(const auto& itr : *this)
+    {
+        result = func(result, *( (_Tp*) (itr->get() ) ));
+    }
+    return result;
+}
+//----------------------------------------------------------------------------//
 
 } // namespace mad
+
 
 #endif

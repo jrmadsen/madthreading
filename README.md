@@ -78,6 +78,8 @@ not available, provides a mutexed-based interface that works like an atomic.
 There are two forms of tasks: standard and a tree type design. The tree
 type design is intended to be closer to the TBB design.
 
+ ##################################################
+
 Examples:
   - ex1  : simple usage examples
   - ex2  : simple MT pi calculation using run_loop
@@ -98,4 +100,135 @@ Examples:
     - mad thread-pool (run_loop)
     - mad thread-pool (task_tree)
     - mad thread-pool (task_tree w/ grainsize)
+
+ ##################################################
     
+Examples of OpenMP issues:
+
+- On GCC 4.8.2 (possibly fixed, I showed this to a developer during a tutorial)
+  - Here is the code he gave me (included in examples/ex6/omp_pi_loop.cc). This code utilized ~400% of the CPUs on 4 threads (on a 4 core machine), in other words, perfect speed-up:
+
+
+```c++
+#pragma omp parallel
+{
+    #pragma omp for reduction(+:sum)
+    for(ulong_type i = 0; i < num_steps; ++i)
+    {
+        double_type x = (i-0.5)*step;
+        sum = sum + 4.0/(1.0+x*x);
+    }
+}
+```
+
+  - I made one change, because I like to try things, which was completely valid for the C++ standard (C++11), which was the use of lambda (which would be inlined):
+
+```c++
+#pragma omp parallel
+{
+    auto calc_x = [step] (ulong_type i) { return (i-0.5)*step; };
+    #pragma omp for reduction(+:sum)
+    for(ulong_type i = 0; i < num_steps; ++i)
+    {
+        double_type x = calc_x(i);
+        sum = sum + 4.0/(1.0+x*x);
+    }
+}
+```
+
+  - My CPU utilization dropped down from ~400% to ~250%. I was shocked. 
+  - My first thought wasn't that it was OpenMP's fault but mine. 
+  - I tried different captures, different placements of the lambda (inside and outside parallel section, inside the loop, etc.) and none of that fixed the performance. 
+  - Then I thought, maybe since GCC just implemented C++11 in 4.7, the problem might be on the GCC side.
+  - I tested the comparison with TBB and found no difference. 
+  - So I brought it to the OpenMP developer and showed him and he verified everything and tried fixing the performance himself to no avail. 
+  - He wrote down the compiler version and said he'd look into it. 
+
+
+This experience started me down the road to the opinion I have of OpenMP today:
+
+- **OpenMP is convenient but far too opaque in what is being done "under the hood" to allow straight-forward diagnosis of performance issues.**
+- **False-sharing is very easy to introduce, requires a lot of experience to quickly diagnose, and is a byproduct of the OpenMP pragma style. It is much less common with other models because of how you are forced to build the code (functionally).**
+- **Thus, you could end up spending far too much of your own time either (a) trying to fix something that shouldn't have to be fixed, (b) searching for the performance bottleneck that would exist in other threading models, or (c) both.**
+
+
+
+- On GCC 5.4.1 with a very large amount of data. It took 118 seconds at 8% CPU
+utilization with two threads (max = 200%).
+
+```c++
+// > [cxx] ctoast_cov_accumulate_zmap
+// : 118.837 wall,   4.820 user +   4.650 system =   9.470 CPU [seconds] (  8.0%)
+// (total # of laps: 32)
+#pragma omp parallel default(shared)
+{
+    int64_t i, j, k;
+    int64_t hpx;
+    int64_t zpx;
+
+    int threads = 1;
+    int trank = 0;
+
+    #ifdef _OPENMP
+    threads = omp_get_num_threads();
+    trank = omp_get_thread_num();
+    #endif
+
+    int tpix;
+
+    for (i = 0; i < nsamp; ++i) 
+    {
+        if ((indx_submap[i] >= 0) && (indx_pix[i] >= 0)) 
+        {
+            hpx = (indx_submap[i] * subsize) + indx_pix[i];
+            tpix = hpx % threads;
+            if ( tpix == trank ) 
+            {
+                zpx = (indx_submap[i] * subsize * nnz) + (indx_pix[i] * nnz);
+
+                for ( j = 0; j < nnz; ++j )
+                    zdata[zpx + j] += scale * signal[i] * weights[i * nnz + j];
+            }
+        }
+    }
+}
+```
+
+The fix is below. It ran in 1.474 seconds at 200% CPU utilization. It was 
+amazingly simple...
+
+```c++
+// > [cxx] accumulate_zmap_direct
+// :   1.474 wall,   2.930 user +   0.020 system =   2.950 CPU [seconds] (200.1%)
+// (total # of laps: 32)
+#pragma omp parallel default(shared)
+{
+    int threads = 1;
+    int trank = 0;
+
+#ifdef _OPENMP
+    threads = omp_get_num_threads();
+    trank = omp_get_thread_num();
+#endif
+
+    for (int64_t i = 0; i < nsamp; ++i )
+    {
+        if ((indx_submap[i] >= 0) && (indx_pix[i] >= 0))
+        {
+            int64_t hpx = (indx_submap[i] * subsize) + indx_pix[i];
+            int64_t tpix = hpx % threads;
+            if ( tpix == trank )
+            {
+                int64_t zpx = (indx_submap[i] * subsize * nnz)
+                              + (indx_pix[i] * nnz);
+
+                for (int64_t j = 0; j < nnz; ++j )
+                    zdata[zpx + j] += scale * signal[i] * weights[i * nnz + j];
+            }
+        }
+    }
+}
+```
+
+Notice the difference? "i", "j", "k", "hpx", "tpix", and "zpx" are locally declared instead of at the start of the parallel block. How did this make such a big difference? I HAVE NO IDEA BECAUSE I COULDN'T SEE WHAT OPENMP WAS DOING!
+

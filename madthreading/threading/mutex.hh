@@ -24,7 +24,6 @@
 #ifndef mutex_hh_
 #define mutex_hh_
 
-#include "madthreading/threading/threading.hh"
 #include <mutex>
 
 namespace mad

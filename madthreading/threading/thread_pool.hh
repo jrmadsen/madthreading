@@ -41,6 +41,7 @@
 #include "madthreading/threading/condition.hh"
 #include "madthreading/allocator/allocator.hh"
 #include "madthreading/atomics/atomic.hh"
+#include "madthreading/threading/task/task_group.hh"
 #include "madthreading/threading/task/task.hh"
 #include "madthreading/threading/task/task_tree.hh"
 #include "madthreading/types.hh"
