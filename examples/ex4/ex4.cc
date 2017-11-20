@@ -270,7 +270,7 @@ int main(int argc, char** argv)
 
     //========================================================================//
     {
-        timer::timer t;
+        mad::util::timer t;
         tv_vec sum(size, 0.0);
         for(uint64_t i = 0; i < num_steps; ++i)
             sum += (static_cast<double>(i)-0.5)*step;
@@ -279,7 +279,7 @@ int main(int argc, char** argv)
     }
     //========================================================================//
     {
-        timer::timer t;
+        mad::util::timer t;
         tv_array sum(size, 0.0);
         for(uint64_t i = 0; i < num_steps; ++i)
             sum += (static_cast<double>(i)-0.5)*step;
@@ -293,7 +293,7 @@ int main(int argc, char** argv)
     tv_array aincr = tv_array(size, 0.0);
     //========================================================================//
     {
-        timer::timer t;
+        mad::util::timer t;
         tv_vec sum(size, 0.0);
         for(uint64_t i = 0; i < num_steps; ++i)
         {
@@ -305,7 +305,7 @@ int main(int argc, char** argv)
     }
     //========================================================================//
     {
-        timer::timer t;
+        mad::util::timer t;
         tv_array sum(size, 0.0);
         for(uint64_t i = 0; i < num_steps; ++i)
         {

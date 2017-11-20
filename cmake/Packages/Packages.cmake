@@ -261,7 +261,7 @@ endif(USE_SSE)
 add_option(USE_ARCHITECTURE "Enable architecture optimizations" OFF)
 include(Architecture)
 
-if(USE_ARCHITECTURE)
+if(USE_ARCHITECTURE OR USE_SSE)
 
     ArchitectureFlags(ARCH_FLAGS)
     add(CMAKE_C_FLAGS_EXTRA "${ARCH_FLAGS}")
