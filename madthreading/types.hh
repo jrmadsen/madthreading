@@ -32,6 +32,8 @@
 #ifndef types_hh_
 #define types_hh_
 
+#include <cstdint>
+
 #include "madthreading/threading/threading.hh"
 #include "madthreading/allocator/allocator.hh"
 #include "madthreading/threading/auto_lock.hh"
@@ -52,24 +54,24 @@ namespace mad
     class splitter { };
 #endif
 
-    typedef atomic<short>           short_ts;
-    typedef atomic<unsigned short>  ushort_ts;
-    typedef atomic<int>             int_ts;
-    typedef atomic<unsigned>        uint_ts;
-    typedef atomic<unsigned>        unsigned_ts;
-    typedef atomic<long>            long_ts;
-    typedef atomic<unsigned long>   ulong_ts;
+    typedef atomic<int16_t>         short_ts;
+    typedef atomic<uint16_t>        ushort_ts;
+    typedef atomic<int32_t>         int_ts;
+    typedef atomic<int32_t>         uint_ts;
+    typedef atomic<int32_t>         unsigned_ts;
+    typedef atomic<int64_t>         long_ts;
+    typedef atomic<uint64_t>        ulong_ts;
 
     typedef atomic<float>           float_ts;
     typedef atomic<double>          double_ts;
 
-    typedef short                   short_type;
-    typedef unsigned short          ushort_type;
-    typedef int                     int_type;
-    typedef unsigned                uint_type;
-    typedef unsigned                unsigned_type;
-    typedef long                    long_type;
-    typedef unsigned long           ulong_type;
+    typedef int16_t                 short_type;
+    typedef uint16_t                ushort_type;
+    typedef int32_t                 int_type;
+    typedef int32_t                 uint_type;
+    typedef int32_t                 unsigned_type;
+    typedef int64_t                 long_type;
+    typedef uint64_t                ulong_type;
 
     typedef float                   float_type;
     typedef double                  double_type;

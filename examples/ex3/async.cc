@@ -27,7 +27,7 @@
 
 #include "madthreading/threading/thread_manager.hh"
 
-constexpr int64_t fibonacci_max = 44;
+constexpr int64_t fibonacci_max = 45;
 
 //============================================================================//
 //  Declaration of helper function
@@ -59,7 +59,7 @@ int64_t async_work()
     output_message(_ncall);
     // do fibonacci. Do not do with value larger than 43 since those take
     // alot of time
-    return fibonacci(_ncall % fibonacci_max);
+    return fibonacci(40);
 }
 
 //----------------------------------------------------------------------------//
@@ -71,9 +71,8 @@ std::future<int64_t> async_run()
     // async will use a thread pool and defer executation until a later
     // time or when the std::future it returns calls its member function
     // "get()"
-    mad::thread_manager* tm = mad::thread_manager::get_thread_manager();
+    mad::thread_manager* tm = mad::thread_manager::get_thread_manager(4);
     return tm->async<int64_t>(async_work);
-    //return std::async(std::launch::async | std::launch::deferred, async_work);
 }
 
 //============================================================================//
@@ -128,11 +127,7 @@ void write(const std::string& str)
 
     auto vstr = delimit(str, ' ');
     for(const auto& itr : vstr)
-    {
-        auto_lock_t l(os_mutex);
         std::cout << itr << " ";
-    }
-    auto_lock_t l(os_mutex);
     std::cout << std::endl;
 }
 
@@ -143,10 +138,12 @@ int64_t get_tid()
     static std::atomic<int64_t> tid;
     static std::map<std::thread::id, int64_t> tids;
 
+    if(tids.find(std::this_thread::get_id()) != tids.end())
+        return tids[std::this_thread::get_id()];
+
     static mutex_t _mutex;
     auto_lock_t l(_mutex);
-    if(tids.find(std::this_thread::get_id()) == tids.end())
-        tids[std::this_thread::get_id()] = ++tid;
+    tids[std::this_thread::get_id()] = ++tid;
     return tids[std::this_thread::get_id()];
 }
 

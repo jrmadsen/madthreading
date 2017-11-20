@@ -76,7 +76,7 @@ void thread_manager::check_instance(thread_manager* local_instance)
 
 //============================================================================//
 
-thread_manager* thread_manager::get_thread_manager(const uint32_t& nthreads,
+thread_manager* thread_manager::get_thread_manager(const int64_t& nthreads,
                                                    const int& verbose)
 {
     mad::thread_manager* tm = fgInstance;

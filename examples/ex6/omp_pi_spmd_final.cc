@@ -77,7 +77,7 @@ int main (int, char** argv)
         ulong_type nthreads = omp_get_num_threads();
         double_type partial_sum = 0.0;
 
-        pragma_simd
+        pragma_simd()
         for(i = id; i < num_steps; i += nthreads)
         {
             double_type x = (i+0.5)*step;

@@ -27,7 +27,7 @@ int main(int, char** argv)
     //========================================================================//
     timer::timer t;
 
-    pragma_simd
+    pragma_simd()
     for(ulong_type i = 0; i < num_steps; ++i)
     {
         sum += 4.0/(1.0 + x(i)*x(i));

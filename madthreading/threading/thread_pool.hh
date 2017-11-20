@@ -58,8 +58,6 @@ namespace mad
 class thread_pool
 {
 public:
-    typedef long                                            long_type;
-    typedef unsigned long                                   ulong_type;
     typedef mad::details::vtask                             task_type;
     typedef std::size_t                                     size_type;
     typedef std::shared_ptr<task_type>                      task_ptr;
@@ -72,7 +70,7 @@ public:
     typedef mad::condition                                  condition_t;
     typedef std::map<void*, task_type*>                     TaskMap_t;
     typedef std::map<void*, volatile bool>                  JoinMap_t;
-    typedef std::map<std::thread::id, ulong_type>           tid_type;
+    typedef std::map<std::thread::id, uint64_t>             tid_type;
 
 public:
     // Constructor and Destructors
@@ -108,7 +106,7 @@ public:
 
 public:
     // read FORCE_NUM_THREADS environment variable
-    static long_type GetEnvNumThreads(long_type _default = -1);
+    static int64_t GetEnvNumThreads(int64_t _default = -1);
     static const tid_type& GetThreadIDs() { return tids; }
     static volatile bool& is_alive() { return is_alive_flag; }
 

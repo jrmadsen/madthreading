@@ -23,7 +23,7 @@ int main(int, char** argv)
     //========================================================================//
     timer::timer t;
 
-    pragma_simd
+    pragma_simd()
     for(ulong_type i = 0; i < num_steps; ++i)
     {
         double_type x = (i-0.5)*step;

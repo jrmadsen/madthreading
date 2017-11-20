@@ -44,10 +44,10 @@ empty.
 Passing tasks to thread-manager is done through three primary interfaces:
 
 ```c++
- mad::thread_manager::exec(mad::task_group*, ...)       // pass one task to the stack
- mad::thread_manager::run(mad::task_group*, ...)        // similar to exec but N times
-                                                        // where N = mad::thread_manager::size()
- mad::thread_manager::run_loop(mad::task_group*, ...)   // generic construct
+ mad::thread_manager::async(...)                              // run a function asynchronously
+ mad::thread_manager::exec(mad::task_group<_Ret>*, ...)       // pass one task to the stack
+ mad::thread_manager::run(mad::task_group<_Ret>*, ...)        // similar to exec but N times, where N = mad::thread_manager::size()
+ mad::thread_manager::run_loop(mad::task_group<_Ret>*, ...)   // generic construct
 ```
 
 Tasks are not generally explicitly created (although they can be). You are required to pass a pointer

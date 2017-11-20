@@ -168,12 +168,6 @@ public:
     static thread_manager* Instance();
     /// get the singleton pointer
     static thread_manager* instance();
-    /// get the singleton pointer if exists and allocate nthreads in the
-    /// thread pool.
-    /// if an instance has not been created, create one with thread pool of
-    /// nthreads
-    static thread_manager* get_thread_manager(const uint32_t& nthread = ncores(),
-                                              const int& verbose = 0);
 
     /// function for returning the thread id
     template <typename _Tp>
@@ -447,16 +441,23 @@ public:
 public:
     //------------------------------------------------------------------------//
     // looks for environment variable FORCE_NUM_THREADS
-    static int GetEnvNumThreads(int _default = -1)
+    static int64_t GetEnvNumThreads(int64_t _default = -1)
     {
         return mad::thread_pool::GetEnvNumThreads(_default);
     }
     //------------------------------------------------------------------------//
-    static int get_env_num_threads(int _default = -1)
+    static int64_t get_env_num_threads(int64_t _default = -1)
     {
         return mad::thread_pool::GetEnvNumThreads(_default);
     }
     //------------------------------------------------------------------------//
+    /// get the singleton pointer if exists and allocate nthreads in the
+    /// thread pool.
+    /// if an instance has not been created, create one with thread pool of
+    /// nthreads
+    static thread_manager* get_thread_manager(const int64_t& nthread
+                                              = get_env_num_threads(),
+                                              const int& verbose = 0);
 
 public:
     // Protected functions

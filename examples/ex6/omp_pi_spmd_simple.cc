@@ -70,7 +70,7 @@ int main (int, char** argv)
 
         sum[id] = 0.0;
 
-        pragma_simd
+        pragma_simd()
         for(ulong_type i = id; i < num_steps; i += nthreads)
         {
             double_type x = (i+0.5)*step;

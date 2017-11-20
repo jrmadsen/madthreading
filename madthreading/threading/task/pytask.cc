@@ -29,14 +29,14 @@
 
 namespace py = pybind11;
 
-typedef mad::details::vtask vtask;
-typedef mad::details::vtask_group vtask_group;
-typedef vtask_group::task_count_type task_count_type;
-typedef mad::task_group<void> void_task_group;
+typedef mad::details::vtask             vtask;
+typedef mad::details::vtask_group       vtask_group;
+typedef vtask_group::task_count_type    task_count_type;
+typedef mad::task_group<void>           void_task_group;
 
 typedef const task_count_type& (vtask_group::*task_count_func_type)() const;
 typedef const mad::ulong_type& (vtask_group::*id_func_type)() const;
-typedef void (std::promise<int>::*int_promise_func_type)(const int&);
+typedef void (std::promise<int64_t>::*int64_promise_func_type)(const int64_t&);
 typedef void (void_task_group::*join_void_func)();
 
 PYBIND11_MODULE(pytask, t)
@@ -53,16 +53,16 @@ PYBIND11_MODULE(pytask, t)
                    (id_func_type) &vtask_group::id,
                    "Get the ID");
 
-    py::class_<std::future<int>> fint (t, "int_future");
-    fint.def("get", &std::future<int>::get, "Return the result")
-        .def("wait", &std::future<int>::wait,
+    py::class_<std::future<int64_t>> fint (t, "int64_future");
+    fint.def("get", &std::future<int64_t>::get, "Return the result")
+        .def("wait", &std::future<int64_t>::wait,
              "Wait for the result to become avail");
 
-    py::class_<std::promise<int>> fprom (t, "int_promise");
-    fprom.def("get_future", &std::promise<int>::get_future,
+    py::class_<std::promise<int64_t>> fprom (t, "int64_promise");
+    fprom.def("get_future", &std::promise<int64_t>::get_future,
               "returns a future associated with the promised result")
          .def("set_value",
-              (int_promise_func_type) &std::promise<int>::set_value,
+              (int64_promise_func_type) &std::promise<int64_t>::set_value,
               "sets the result to specific value");
 }
 

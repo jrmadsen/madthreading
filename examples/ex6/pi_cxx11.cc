@@ -31,7 +31,7 @@ int main(int, char** argv)
     auto compute_block = [x, &sum] (const ulong_type& s, const ulong_type& e)
     {
         double_type tl_sum = 0.0;
-        pragma_simd
+        pragma_simd()
         for(ulong_type i = s; i < e; ++i)
             tl_sum += 4.0/(1.0 + x(i)*x(i));
         sum += tl_sum;
