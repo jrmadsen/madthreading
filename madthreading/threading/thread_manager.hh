@@ -239,26 +239,6 @@ public:
     void allocate_threads(size_type _n) { m_data->allocate_threads(_n); }
     //------------------------------------------------------------------------//
 
-private:
-    #define is_same_t(_Tp, _Up) std::is_same<_Tp, _Up>::value
-    #define is_integral_t(_Tp) std::is_integral<_Tp>::value
-    #define is_iterator_t(_Tp) std::is_same<typename std::iterator_traits<_Tp>::value_type, int>::value
-    #define enable_if_t(_Bp, _Tp) typename std::enable_if<_Bp, _Tp>::type
-    //template <bool _Bp, typename _Tp = void>
-    //using enable_if_t = typename std::enable_if<_Bp, _Tp>::type;
-
-    template <typename _Tp, enable_if_t(is_iterator_t(_Tp), int) = 0>
-    size_type distance(_Tp lhs, _Tp rhs) const
-    {
-        return std::distance(lhs, rhs);
-    }
-
-    template <typename _Tp, enable_if_t(is_integral_t(_Tp), int) = 0>
-    size_type distance(_Tp lhs, _Tp rhs) const
-    {
-        return rhs - lhs;
-    }
-
 public:
     //------------------------------------------------------------------------//
     // direct insertion of a task
@@ -291,20 +271,20 @@ public:
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func, typename... _Args>
     _inline_
-    void exec(mad::task_group<_Ret>* tg, _Func function, _Args... args)
+    void exec(mad::task_group<_Ret>* tg, _Func func, _Args... args)
     {
         typedef task<_Ret, _Args...> task_type;
         typedef std::shared_ptr<task_type> task_pointer;
-        m_data->tp()->add_task(task_pointer(new task_type(tg, function, args...)));
+        m_data->tp()->add_task(task_pointer(new task_type(tg, func, args...)));
     }
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func>
     _inline_
-    void exec(mad::task_group<_Ret>* tg, _Func function)
+    void exec(mad::task_group<_Ret>* tg, _Func func)
     {
         typedef task<_Ret> task_type;
         typedef std::shared_ptr<task_type> task_pointer;
-        m_data->tp()->add_task(task_pointer(new task_type(tg, function)));
+        m_data->tp()->add_task(task_pointer(new task_type(tg, func)));
     }
     //------------------------------------------------------------------------//
 
@@ -314,25 +294,25 @@ public:
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func, typename... _Args>
     _inline_
-    void run(mad::task_group<_Ret>* tg, _Func function, _Args... args)
+    void run(mad::task_group<_Ret>* tg, _Func func, _Args... args)
     {
         typedef task<_Ret, _Args...> task_type;
         typedef std::shared_ptr<task_type> task_pointer;
         task_list_t _tasks(size(), nullptr);
         for(size_type i = 0; i < size(); ++i)
-            _tasks[i] = task_pointer(new task_type(tg, function, args...));
+            _tasks[i] = task_pointer(new task_type(tg, func, args...));
         m_data->tp()->add_tasks(_tasks);
     }
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func>
     _inline_
-    void run(mad::task_group<_Ret>* tg, _Func function)
+    void run(mad::task_group<_Ret>* tg, _Func func)
     {
         typedef task<_Ret> task_type;
         typedef std::shared_ptr<task_type> task_pointer;
         task_list_t _tasks(size(), nullptr);
         for(size_type i = 0; i < size(); ++i)
-            _tasks[i] = task_pointer(new task_type(tg, function));
+            _tasks[i] = task_pointer(new task_type(tg, func));
         m_data->tp()->add_tasks(_tasks);
     }
     //------------------------------------------------------------------------//
@@ -341,37 +321,36 @@ public:
     //------------------------------------------------------------------------//
     // public run_loop functions
     //------------------------------------------------------------------------//
-    //------------------------------------------------------------------------//
-    // Specialization for above when run_loop(func, 0, container->size())
+    // when run_loop(func, 0, container->size())
     // is called. Generally, the "0" is defaulted to a signed type
     // so template deduction fails
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func, typename _Arg1, typename _Arg>
     _inline_
     void run_loop(mad::task_group<_Ret>* tg,
-                  _Func function, const _Arg1& _s, const _Arg& _e)
+                  _Func func, const _Arg1& _s, const _Arg& _e)
     {
         typedef task<_Ret, _Arg> task_type;
         typedef std::shared_ptr<task_type> task_pointer;
         for(size_type i = _s; i < _e; ++i)
-            m_data->tp()->add_task(task_pointer(new task_type(tg, function, i)));
+            m_data->tp()->add_task(task_pointer(new task_type(tg, func, i)));
     }
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func, typename InputIterator>
     _inline_
     void run_loop(mad::task_group<_Ret>* tg,
-                  _Func function, InputIterator _s, InputIterator _e)
+                  _Func func, InputIterator _s, InputIterator _e)
     {
         typedef task<_Ret, InputIterator> task_type;
         typedef std::shared_ptr<task_type> task_pointer;
         for(InputIterator itr = _s; itr != _e; ++itr)
-            m_data->tp()->add_task(task_pointer(new task_type(tg, function, itr)));
+            m_data->tp()->add_task(task_pointer(new task_type(tg, func, itr)));
     }
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func, typename _Arg1, typename _Arg>
     _inline_
     void run_loop(mad::task_group<_Ret>* tg,
-                  _Func function,
+                  _Func func,
                   const _Arg1& _s,
                   const _Arg& _e,
                   uint64_t chunks)
@@ -388,44 +367,9 @@ public:
             _Arg _l = _f + _diff; // last
             if(i+1 == _n)
                 _l = _e;
-            m_data->tp()->add_task(task_pointer(new task_type(tg, function, _f, _l)));
+            m_data->tp()->add_task(task_pointer(new task_type(tg, func, _f, _l)));
         }
     }
-    //------------------------------------------------------------------------//
-
-public:
-    //------------------------------------------------------------------------//
-    // public join functions
-    //------------------------------------------------------------------------//
-
-    //------------------------------------------------------------------------//
-    // for tasks that return values
-    // there is probably a more flexible way to do this but it will do for now
-    //------------------------------------------------------------------------//
-    template <typename _Ret, typename _List>
-    _inline_
-    _Ret join(mad::task_group<_Ret>* tg,
-              _Ret _def,
-              _Ret(*_operator)(_List&, _Ret))
-    {
-        typedef _List return_container;
-
-        tg->join();
-        return_container ret_data;
-        for(auto itr = tg->begin(); itr != tg->end(); ++itr)
-            ret_data.insert(ret_data.end(),
-                            *(static_cast<_Ret*>((*itr)->get())));
-        return _operator(ret_data, _def);
-    }
-    //------------------------------------------------------------------------//
-    template <typename _Ret, typename _Func>
-    _inline_
-    void join(mad::task_group<_Ret>* tg,
-              _Func _operator)
-    {
-        return tg->join(_operator);
-    }
-
     //------------------------------------------------------------------------//
 
 public:
@@ -458,15 +402,6 @@ public:
     static thread_manager* get_thread_manager(const int64_t& nthread
                                               = get_env_num_threads(),
                                               const int& verbose = 0);
-
-public:
-    // Protected functions
-    template <typename _Ret>
-    static _inline_
-    _Ret sum_function(std::vector<_Ret>& _data, _Ret _def = _Ret())
-    {
-        return std::accumulate(_data.begin(), _data.end(), _def);
-    }
 
 protected:
     // Protected variables

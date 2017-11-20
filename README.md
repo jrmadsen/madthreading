@@ -8,7 +8,7 @@ groups cannot return and the function pointer does not support arguments.
 These features are available here. Additionally, there is a bit more transparency
 and simplicity to the inner workings and the overhead has been reduced. However,
 advanced features like flowgraph are not available. Is it better than TBB? I am
-not sure but I certainly like it better than OpenMP
+not sure but I certainly like it better than OpenMP.
 
 Side note about OpenMP:
   - There is a common misconception that all you need to do to multithread with OpenMP is add a `#pragma omp parallel`... 
@@ -29,9 +29,10 @@ Features:
   - Thread-pool (no overhead of thread creation)
   - Interface takes any function construct
   - Support for return types from joining (e.g. summation from all threads)
-  - Background tasks via pointer signaling
+  - Asynchronous execution using thread-pool
+  - Running C++ and Python in parallel
     
-The primary benefit of using Madthreading is the creation of a
+The primary benefit of using madthreading is the creation of a
 thread-pool. Threads are put to sleep when not doing work and do not require
 compute cycles when not in use.
 
@@ -39,9 +40,9 @@ The thread-pool is created during the instantiation of the
 thread-manager. Once the thread-manager has been created, you simply
 pass functions with or without arguments to the thread-manager, which
 creates tasks and these tasks are iterated over until the task stack is
-empty.
+empty. 
 
-Passing tasks to thread-manager is done through three primary interfaces:
+Passing tasks to thread-manager is done through four primary interfaces:
 
 ```c++
  mad::thread_manager::async(...)                              // run a function asynchronously
@@ -51,16 +52,16 @@ Passing tasks to thread-manager is done through three primary interfaces:
 ```
 
 Tasks are not generally explicitly created (although they can be). You are required to pass a pointer
-to a task-group when not using async. The task_group is the handle for joining/synchronization.
+to a task-group when not using async. The task\_group is the handle for joining/synchronization.
 Instead of explicitly creating tasks, you can pass function pointers and
 arguments, where the arguments are for the function (exec, run) or for the
-loop that creates the tasks (run_loop). Examples are provided in the
+loop that creates the tasks (run\_loop). Examples are provided in the
 examples/ directory of the source code
 
 Currently, there is support for functions using an unlimited number of arguments.
 
-The number of threads is controlled via the environment variable FORCE_NUM_THREADS
-or MAD_NUM_THREADS, with the latter taking supremacy.
+The number of threads is controlled via the environment variable FORCE\_NUM\_THREADS
+or MAD\_NUM\_THREADS, with the latter taking supremacy.
 
 Required dependencies:
   - GNU, Clang, or Intel compiler supporting C++11
@@ -71,22 +72,22 @@ Optional dependencies:
     - sudo apt-get install libunittest++-dev (Ubuntu)
   - TBB (used for allocators and in examples)
   - OpenMP (used for SIMD and in examples)
-  - SWIG version 3.0+ (some support for Python wrapping)
+  - PyBind11 (included as git submodule, some support for Python wrapping)
 
 Madthreading provides a generic interface to using atomics and, when C++11 is
 not available, provides a mutexed-based interface that works like an atomic.
 
-There are two forms of tasks: standard and a packaged_task. The packaged_task
-type is a slight extension of std::packaged_task to run in the thread_pool.
+There are two forms of tasks: standard and a packaged\_task. The packaged\_task
+type is a slight extension of std::packaged\_task to run in the thread\_pool.
 
  ##################################################
 
 Examples:
   - ex1  : simple usage examples
-  - ex2  : simple MT pi calculation using run_loop
+  - ex2  : simple MT pi calculation using run\_loop
   - ex3  : asynchronous execution of C++ from Python with futures (requires PyBind11)
   - ex4  : a vectorization example using intrinsics
-  - ex5  : demonstration of task_group usage cases
+  - ex5  : demonstration of task\_group usage cases
   - ex6  : PI calculations using different threading methods (for comparison)
     - serial
     - TBB (CXX98-body)
@@ -97,14 +98,14 @@ Examples:
     - OpenMP (task)
     - OpenMP (parallel block - type 1)
     - OpenMP (parallel block - type 2)
-    - mad thread-pool (run_loop)
+    - mad thread-pool (run\_loop)
 
  ##################################################
     
 Examples of OpenMP issues:
 
 - On GCC 4.8.2 (possibly fixed, I showed this to a developer during a tutorial)
-  - Here is the code he gave me (included in examples/ex6/omp_pi_loop.cc). This code utilized ~400% of the CPUs on 4 threads (on a 4 core machine), in other words, perfect speed-up:
+  - Here is the code he gave me (included in examples/ex6/omp\_pi\_loop.cc). This code utilized ~400% of the CPUs on 4 threads (on a 4 core machine), in other words, perfect speed-up:
 
 
 ```c++

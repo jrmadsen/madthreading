@@ -1,4 +1,4 @@
-//  VERSION_STRING 2_0_1
+//  VERSION_STRING 3_0
 //  madthreading version.hh configuration header file  ---------------------//
 
 //  (C) Copyright Jonathan Madsen 2015.
@@ -16,7 +16,7 @@
 //  madthreading_VERSION / 100 % 1000 is the minor version
 //  madthreading_VERSION / 100000 is the major version
 
-#define madthreading_VERSION 020001
+#define madthreading_VERSION 030000
 
 //
 //  madthreading_LIB_VERSION must be defined to be the same as
@@ -24,6 +24,6 @@
 //  the major version number, y is the minor version number, and z is the patch
 //  level if not 0.
 
-#define madthreading_LIB_VERSION "2_0_1"
+#define madthreading_LIB_VERSION "3_0"
 
 #endif
