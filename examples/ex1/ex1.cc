@@ -16,6 +16,8 @@
 #include <madthreading/threading/thread_manager.hh>
 #include <madthreading/threading/auto_lock.hh>
 #include <madthreading/threading/threading.hh>
+#include <madthreading/utility/auto_timer.hh>
+#include <madthreading/utility/timing_manager.hh>
 
 using namespace std::placeholders;
 using mad::ulong_type;
@@ -37,6 +39,15 @@ _Tp& fill(_Tp& _array, typename _Tp::value_type _b, typename _Tp::value_type _e)
     _array.clear();
     std::copy(_v.begin(), _v.end(), std::inserter(_array, _array.begin()));
     return _array;
+}
+
+//============================================================================//
+
+int64_t fibonacci(int64_t n)
+{
+    if(n < 2)
+        return n;
+    return fibonacci(n-2) + fibonacci(n-1);
 }
 
 //============================================================================//
@@ -140,6 +151,22 @@ int main(int argc, char** argv)
     tg3.join();
     std::cout.precision(prec);
     std::cout.unsetf(std::ios::fixed);
+
+    //========================================================================//
+    // RUN #4
+    //========================================================================//
+    tmcout << "\nRunning exec #4..."
+           << std::flush;
+    mad::task_group<int64_t> tg4([](int64_t& a, const int64_t& b) { return a + b; });
+    for(int i = 0; i < niter; ++i)
+        tm->exec(&tg4, fibonacci, 44);
+    {
+        mad::util::auto_timer t("fibonacci calculation");
+        auto sum = tg4.join();
+        std::cout << " sum = " << sum << std::endl;
+    }
+
+    mad::util::timing_manager::instance()->report();
 
     return 0;
 }
