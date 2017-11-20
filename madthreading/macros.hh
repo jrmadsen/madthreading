@@ -109,22 +109,13 @@
 //============================================================================//
 //  type traits
 //============================================================================//
+
 template <typename T> using decay_t = typename std::decay<T>::type;
 
 //----------------------------------------------------------------------------//
 
 template <bool _Bp, typename _Tp = void>
 using enable_if_t = typename std::enable_if<_Bp, _Tp>::type;
-
-//----------------------------------------------------------------------------//
-
-template <typename _Tp, typename... _Args>
-using is_trivial_construct_t = std::is_trivially_constructible<_Tp, _Args...>;
-
-//----------------------------------------------------------------------------//
-
-template <typename _Tp, typename... _Args>
-using is_trivial_destruct_t = std::is_trivially_destructible<_Tp, _Args...>;
 
 //----------------------------------------------------------------------------//
 
