@@ -35,6 +35,7 @@ constexpr int64_t fibonacci_max = 45;
 void output_message(int64_t);
 void write(const std::string&);
 typedef void (*write_func_type)(const std::string&);
+typedef std::future<int64_t>(*func_op_int64_t)(int64_t);
 
 //============================================================================//
 //  Main code
@@ -49,12 +50,23 @@ int64_t fibonacci(int64_t n)
 
 //----------------------------------------------------------------------------//
 // calculate fibonacci to do various amounts of work
-int64_t async_work()
+int64_t async_work_np()
 {
     // static atomic counter
     static std::atomic<int64_t> ncall;
     // thread-local counter
     int64_t _ncall = ncall++;
+    // simple message reporting we are in C++
+    output_message(_ncall);
+    // do fibonacci. Do not do with value larger than 43 since those take
+    // alot of time
+    return fibonacci(40);
+}
+
+//----------------------------------------------------------------------------//
+// calculate fibonacci to do various amounts of work
+int64_t async_work(int64_t _ncall)
+{
     // simple message reporting we are in C++
     output_message(_ncall);
     // do fibonacci. Do not do with value larger than 43 since those take
@@ -71,8 +83,7 @@ std::future<int64_t> async_run()
     // async will use a thread pool and defer executation until a later
     // time or when the std::future it returns calls its member function
     // "get()"
-    mad::thread_manager* tm = mad::thread_manager::get_thread_manager(4);
-    return tm->async<int64_t>(async_work);
+    return mad::thread_manager::instance()->async<int64_t>(async_work_np);
 }
 
 //============================================================================//
@@ -80,6 +91,10 @@ std::future<int64_t> async_run()
 //============================================================================//
 
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <pybind11/functional.h>
+#include <pybind11/chrono.h>
+
 namespace py = pybind11;
 
 PYBIND11_MODULE(async, t)
@@ -93,6 +108,9 @@ PYBIND11_MODULE(async, t)
     // the function called from Python loop
     t.def("run", &async_run, "Run asynchron")
      .def("write", (write_func_type) &write, "Print but using std::cout");
+    t.def("work", [] (int64_t n)
+    { return mad::thread_manager::instance()->async<int64_t>(async_work, n); },
+    "run async function");
 }
 
 //============================================================================//

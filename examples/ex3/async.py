@@ -4,6 +4,9 @@ import os
 import sys
 import time
 import async
+import pythreading
+
+pythreading.thread_manager(4)
 
 def fibonacci(n):
     if n < 2:
@@ -16,9 +19,13 @@ w_start = time.time()
 async.write("(Python) Starting loop calling C++ function scheduling asynchronous calculations...")
 
 futures = []
-for i in range(0, 100):
+for i in range(0, 50):
     async.write("(Python) Running async iteration %i..." % i)
     futures.append(async.run())
+
+for i in range(50, 100):
+    async.write("(Python) Running async iteration %i..." % i)
+    futures.append(async.work(i))
 
 async.write("(Python) Finished any calls to C++ code... Any future C++ output demonstrates C++ running in the background alongside Python...")
 
