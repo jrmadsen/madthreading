@@ -156,8 +156,6 @@ script:
     - chmod +x ./run_exe.sh
     - ./run_exe.sh ex1
     - ./run_exe.sh ex2
-    - ./run_exe.sh ex3a
-    - ./run_exe.sh ex3b
     - ./run_exe.sh ex4
     - ./run_exe.sh ex5
     - ./run_exe.sh omp_pi_loop
