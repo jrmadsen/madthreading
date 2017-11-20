@@ -87,13 +87,14 @@ thread_manager* thread_manager::get_thread_manager(const int64_t& nthreads,
                       << " thread(s)..." << std::endl;
         tm = new thread_manager(nthreads);
     }
-    else if(tm->size() != nthreads)
+    // don't reallocate
+    /*else if((int64_t) tm->size() != nthreads)
     {
         if(verbose > 0)
             tmcout << "mad::thread_manager exists - Allocating " << nthreads
                    << "..." << std::endl;
         tm->allocate_threads(nthreads);
-    }
+    }*/
     else
     {
         if(verbose > 0)
