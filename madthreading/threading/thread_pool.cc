@@ -35,7 +35,6 @@
 
 #include "madthreading/threading/thread_pool.hh"
 #include "madthreading/allocator/allocator_list.hh"
-#include "madthreading/threading/task/task_tree.hh"
 #include "madthreading/threading/thread_manager.hh"
 #include "madthreading/utility/fpe_detection.hh"
 

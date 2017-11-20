@@ -23,7 +23,6 @@
 #include <future>
 
 #include <madthreading/threading/task/task.hh>
-#include <madthreading/threading/task/task_tree.hh>
 #include <madthreading/threading/task/task_group.hh>
 
 //----------------------------------------------------------------------------//

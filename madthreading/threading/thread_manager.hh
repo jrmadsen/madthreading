@@ -36,7 +36,6 @@
 #include "madthreading/threading/threading.hh"
 #include "madthreading/threading/thread_pool.hh"
 #include "madthreading/threading/task/task.hh"
-#include "madthreading/threading/task/task_tree.hh"
 #include "madthreading/threading/task/task_group.hh"
 #include "madthreading/allocator/allocator.hh"
 
@@ -397,56 +396,6 @@ public:
                 _l = _e;
             m_data->tp()->add_task(task_ptr(new task_type(tg, function, _f, _l)));
         }
-    }
-    //------------------------------------------------------------------------//
-
-public:
-    //------------------------------------------------------------------------//
-    template <typename _Ret,
-              typename _Func,
-              typename _Arg1, typename _Arg,
-              typename _Join>
-    _inline_
-    _Ret
-    run_loop(mad::task_group<_Ret>* tg,
-             _Func function, const _Arg1& _s, const _Arg& _e,
-             uint64_t chunks, _Join _operator, const _Ret& identity = _Ret())
-    {
-
-        typedef task_tree_node<_Ret, _Arg, _Arg>    tree_node_type;
-        typedef task<_Ret, _Arg, _Arg>              task_type;
-        typedef task_tree<tree_node_type>           tree_type;
-        typedef std::deque<task_type*>              task_type_list_t;
-        typedef std::deque<tree_node_type>          tree_node_list_t;
-
-        _Arg _grainsize = (chunks == 0) ? size() : chunks;
-        _Arg _diff = (_e - _s)/_grainsize;
-        size_type _n = _grainsize;
-
-        tree_type tree;
-        tree_node_type*  _ttree = nullptr;
-        task_type_list_t _tasks;
-        tree_node_list_t _nodes;
-
-        for(size_type i = 0; i < _n; ++i)
-        {
-            _Arg _f = _diff*i; // first
-            _Arg _l = _f + _diff; // last
-            if(i+1 == _n)
-                _l = _e;
-
-            _tasks.push_back(new task_type(tg, function, _f, _l));
-            _ttree = new tree_node_type(nullptr, _operator,
-                                        _tasks.back(),
-                                        identity, tree.root());
-            _nodes.push_back(_ttree);
-            if(i == 0)
-                tree.set_root(_ttree);
-
-            tree.insert(tree.root(), _ttree);
-        }
-        m_data->tp()->add_tasks(tree.root());
-        return tree.get_future();
     }
     //------------------------------------------------------------------------//
 

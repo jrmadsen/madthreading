@@ -55,9 +55,6 @@
 namespace mad
 {
 
-template <typename _Tp1, typename _Tp2, typename _Tp3, typename _Tp4>
-class task_tree_node;
-
 class thread_pool
 {
 public:
