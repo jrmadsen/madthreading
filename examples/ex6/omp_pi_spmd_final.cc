@@ -68,7 +68,7 @@ int main (int, char** argv)
     omp_set_num_threads(num_threads);
 
     //========================================================================//
-    timer::timer t;
+    mad::util::timer t;
 
     ulong_type i;
     #pragma omp parallel private(i)

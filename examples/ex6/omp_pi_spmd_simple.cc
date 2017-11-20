@@ -61,7 +61,7 @@ int main (int, char** argv)
     double_type* sum = new double_type[num_threads];
 
     //========================================================================//
-    timer::timer t;
+    mad::util::timer t;
 
     #pragma omp parallel
     {

@@ -45,7 +45,7 @@ int main(int, char**)
     //------------------------------------------------------------------------//
 
     //========================================================================//
-    timer::timer t;
+    mad::util::timer t;
 
     mad::task_group<double_type> tg(accum);
     tm->run_loop(&tg, compute_block, 0, num_steps, num_threads);

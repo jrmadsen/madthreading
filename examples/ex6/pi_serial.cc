@@ -21,7 +21,7 @@ int main(int, char** argv)
     double_type sum = 0.0;
 
     //========================================================================//
-    timer::timer t;
+    mad::util::timer t;
 
     pragma_simd()
     for(ulong_type i = 0; i < num_steps; ++i)

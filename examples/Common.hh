@@ -55,7 +55,7 @@
 //----------------------------------------------------------------------------//
 
 template <typename _Step_t, typename _Pi_t>
-inline void report(_Step_t num_steps, _Pi_t pi, timer::timer& t,
+inline void report(_Step_t num_steps, _Pi_t pi, mad::util::timer& t,
                    std::string prefix = "",
                    std::ostream& os = std::cout)
 {
@@ -67,7 +67,6 @@ inline void report(_Step_t num_steps, _Pi_t pi, timer::timer& t,
        << num_steps << " steps is "
        << pi << " in ";
     t.report();
-    os << std::endl;
     os.unsetf(std::ios::fixed);
 }
 
@@ -116,7 +115,7 @@ void fmt(std::ofstream& of, double d[3])
 
 template <typename _Step_t>
 inline void report(_Step_t num_steps,
-                   const double& pi, timer::timer& t,
+                   const double& pi, mad::util::timer& t,
                    std::string prefix = "",
                    std::ostream& os = std::cout)
 {
@@ -131,7 +130,6 @@ inline void report(_Step_t num_steps,
        << ")"
        << " in ";
     t.report();
-    os << std::endl;
 
     mad::tools::mkdir("timing");
     std::stringstream iss;

@@ -76,7 +76,7 @@ int main(int, char** argv)
     tbb::task_scheduler_init init(num_threads);
 
     //========================================================================//
-    timer::timer t;
+    mad::util::timer t;
 
     ComputePi pi_body(step);
 

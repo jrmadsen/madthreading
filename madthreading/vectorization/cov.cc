@@ -292,7 +292,7 @@ void mad::cov::accumulate_zmap_input(int rank, int fc)
            << std::setw(2) << rank << ", "
            << std::setw(2) << fc << ") [ ";
 
-    timer::timer t(3, prefix.str());
+    mad::util::timer t(3, prefix.str());
     t.start();
 
     accumulate_zmap(nsub, subsize, nnz, nsamp, indx_submap, indx_pix,

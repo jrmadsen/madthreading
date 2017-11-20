@@ -71,7 +71,7 @@ int main (int, char** argv)
     MIN_BLK = num_steps / num_threads;
 
     //========================================================================//
-    timer::timer t;
+    mad::util::timer t;
 
     #pragma omp parallel
     {

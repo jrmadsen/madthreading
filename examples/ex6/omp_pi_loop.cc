@@ -53,7 +53,7 @@ int main (int, char** argv)
     double_type sum = 0.0;
 
     //========================================================================//
-    timer::timer t;
+    mad::util::timer t;
 
     #pragma omp parallel
     {

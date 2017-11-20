@@ -49,7 +49,7 @@ int main(int, char** argv)
     //------------------------------------------------------------------------//
 
     //========================================================================//
-    timer::timer t;
+    mad::util::timer t;
 
     sum = tbb::parallel_reduce(range_t(0, num_steps), sum, compute_block, join);
 

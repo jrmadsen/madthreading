@@ -39,7 +39,7 @@ int main(int, char** argv)
     //------------------------------------------------------------------------//
 
     //========================================================================//
-    timer::timer t;
+    mad::util::timer t;
 
     std::vector<std::thread> threads(num_threads);
     ulong_type diff = num_steps/num_threads;

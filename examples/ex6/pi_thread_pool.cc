@@ -39,7 +39,7 @@ int main(int, char** argv)
     };
 
     //========================================================================//
-    timer::timer t;
+    mad::util::timer t;
 
     tm->run_loop(&tg, compute_block, 0, num_steps, num_threads);
     tg.join();
