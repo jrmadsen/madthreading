@@ -149,7 +149,7 @@ public:
     typedef details::thread_manager_data        data_type;
     typedef data_type::size_type                size_type;
     typedef std::random_access_iterator_tag     iterator_category;
-    typedef std::vector<vtask*>                 task_list_t;
+    typedef std::vector<details::vtask*>        task_list_t;
 
 public:
     // Constructor and Destructors
@@ -162,6 +162,8 @@ private:
     thread_manager& operator=(const thread_manager&);
     thread_manager(const thread_manager&);
 
+    static unsigned ncores() { return std::thread::hardware_concurrency(); }
+
 public:
     /// get the singleton pointer
     static thread_manager* Instance();
@@ -171,7 +173,7 @@ public:
     /// thread pool.
     /// if an instance has not been created, create one with thread pool of
     /// nthreads
-    static thread_manager* get_thread_manager(const uint32_t& nthreads,
+    static thread_manager* get_thread_manager(const uint32_t& nthread = ncores(),
                                               const int& verbose = 0);
 
     /// function for returning the thread id
@@ -266,38 +268,50 @@ private:
 
 public:
     //------------------------------------------------------------------------//
+    // direct insertion of a task
+    //------------------------------------------------------------------------//
+    template <typename... _Args>
+    _inline_
+    void exec(mad::task<_Args...>* _task)
+    {
+        typedef mad::task<_Args...> task_type;
+        typedef std::shared_ptr<task_type> task_ptr;
+        m_data->tp()->add_task(task_ptr(_task));
+    }
+
+    //------------------------------------------------------------------------//
+    // direct insertion of a packaged_task
+    //------------------------------------------------------------------------//
+    template <typename _Ret, typename _Func, typename... _Args>
+    std::future<_Ret> async(_Func func, _Args... args)
+    {
+        typedef mad::packaged_task<_Ret, _Args...> task_type;
+        std::shared_ptr<task_type> _ptask(new task_type(func, args...));
+        m_data->tp()->add_task(_ptask);
+        std::future<_Ret> _f = _ptask->get_future();
+        return _f;
+    }
+
+public:
+    //------------------------------------------------------------------------//
     // public exec functions
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func, typename... _Args>
     _inline_
-    void exec(mad::task_group* tg, _Func function, _Args... args)
+    void exec(mad::task_group<_Ret>* tg, _Func function, _Args... args)
     {
         typedef task<_Ret, _Args...> task_type;
-        m_data->tp()->add_task(new task_type(tg, function, args...));
-    }
-    //------------------------------------------------------------------------//
-    template <typename _Func, typename... _Args>
-    _inline_
-    void exec(mad::task_group* tg, _Func function, _Args... args)
-    {
-        typedef task<void, _Args...> task_type;
-        m_data->tp()->add_task(new task_type(tg, function, args...));
+        typedef std::shared_ptr<task_type> task_ptr;
+        m_data->tp()->add_task(task_ptr(new task_type(tg, function, args...)));
     }
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func>
     _inline_
-    void exec(mad::task_group* tg, _Func function)
+    void exec(mad::task_group<_Ret>* tg, _Func function)
     {
         typedef task<_Ret> task_type;
-        m_data->tp()->add_task(new task_type(tg, function));
-    }
-    //------------------------------------------------------------------------//
-    template <typename _Func>
-    _inline_
-    void exec(mad::task_group* tg, _Func function)
-    {
-        typedef task<void> task_type;
-        m_data->tp()->add_task(new task_type(tg, function));
+        typedef std::shared_ptr<task_type> task_ptr;
+        m_data->tp()->add_task(task_ptr(new task_type(tg, function)));
     }
     //------------------------------------------------------------------------//
 
@@ -307,46 +321,25 @@ public:
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func, typename... _Args>
     _inline_
-    void run(mad::task_group* tg, _Func function, _Args... args)
+    void run(mad::task_group<_Ret>* tg, _Func function, _Args... args)
     {
         typedef task<_Ret, _Args...> task_type;
+        typedef std::shared_ptr<task_type> task_ptr;
         task_list_t _tasks(size(), nullptr);
         for(size_type i = 0; i < size(); ++i)
-            _tasks[i] = new task_type(tg, function, args...);
-        m_data->tp()->add_tasks(_tasks);
-    }
-    //------------------------------------------------------------------------//
-    template <typename _Func, typename... _Args>
-    _inline_
-    void run(mad::task_group* tg, _Func function, _Args... args)
-    {
-        typedef task<void, _Args...> task_type;
-        task_list_t _tasks(size(), nullptr);
-        for(size_type i = 0; i < size(); ++i)
-            _tasks[i] = new task_type(tg, function, args...);
+            _tasks[i] = task_ptr(new task_type(tg, function, args...));
         m_data->tp()->add_tasks(_tasks);
     }
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func>
     _inline_
-    void run(mad::task_group* tg, _Func function)
+    void run(mad::task_group<_Ret>* tg, _Func function)
     {
         typedef task<_Ret> task_type;
+        typedef std::shared_ptr<task_type> task_ptr;
         task_list_t _tasks(size(), nullptr);
         for(size_type i = 0; i < size(); ++i)
-            _tasks[i] = new task_type(tg, function);
-        m_data->tp()->add_tasks(_tasks);
-    }
-    //------------------------------------------------------------------------//
-    template <typename _Func>
-    _inline_
-    void run(mad::task_group* tg, _Func function)
-    {
-        typedef task<void> task_type;
-
-        task_list_t _tasks(size(), nullptr);
-        for(size_type i = 0; i < size(); ++i)
-            _tasks[i] = new task_type(tg, function);
+            _tasks[i] = task_ptr(new task_type(tg, function));
         m_data->tp()->add_tasks(_tasks);
     }
     //------------------------------------------------------------------------//
@@ -355,15 +348,6 @@ public:
     //------------------------------------------------------------------------//
     // public run_loop functions
     //------------------------------------------------------------------------//
-    template <typename _Func, typename InputIterator>
-    _inline_
-    void run_loop(mad::task_group* tg,
-                  _Func function, InputIterator _s, InputIterator _e)
-    {
-        typedef task<void, InputIterator> task_type;
-        for(InputIterator itr = _s; itr != _e; ++itr)
-            m_data->tp()->add_task(new task_type(tg, function, itr));
-    }
     //------------------------------------------------------------------------//
     // Specialization for above when run_loop(func, 0, container->size())
     // is called. Generally, the "0" is defaulted to a signed type
@@ -371,112 +355,79 @@ public:
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func, typename _Arg1, typename _Arg>
     _inline_
-    void run_loop(mad::task_group* tg,
+    void run_loop(mad::task_group<_Ret>* tg,
                   _Func function, const _Arg1& _s, const _Arg& _e)
     {
         typedef task<_Ret, _Arg> task_type;
+        typedef std::shared_ptr<task_type> task_ptr;
         for(size_type i = _s; i < _e; ++i)
-            m_data->tp()->add_task(new task_type(tg, function, i));
+            m_data->tp()->add_task(task_ptr(new task_type(tg, function, i)));
     }
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func, typename InputIterator>
     _inline_
-    void run_loop(mad::task_group* tg,
+    void run_loop(mad::task_group<_Ret>* tg,
                   _Func function, InputIterator _s, InputIterator _e)
     {
         typedef task<_Ret, InputIterator> task_type;
+        typedef std::shared_ptr<task_type> task_ptr;
         for(InputIterator itr = _s; itr != _e; ++itr)
-            m_data->tp()->add_task(new task_type(tg, function, itr));
+            m_data->tp()->add_task(task_ptr(new task_type(tg, function, itr)));
     }
     //------------------------------------------------------------------------//
-    // Specialization for above when run_loop(func, 0, container->size())
-    // is called. Generally, the "0" is defaulted to a signed type
-    // so template deduction fails
-    //------------------------------------------------------------------------//
-    template <typename _Func, typename _Arg1, typename _Arg>
+    template <typename _Ret, typename _Func, typename _Arg1, typename _Arg>
     _inline_
-    void run_loop(mad::task_group* tg,
-                  _Func function, const _Arg1& _s, const _Arg& _e)
+    void run_loop(mad::task_group<_Ret>* tg,
+                  _Func function,
+                  const _Arg1& _s,
+                  const _Arg& _e,
+                  uint64_t chunks)
     {
-        typedef task<void, _Arg> task_type;
-        for(size_type i = _s; i < _e; ++i)
-            m_data->tp()->add_task(new task_type(tg, function, i));
+        typedef task<_Ret, _Arg, _Arg> task_type;
+        typedef std::shared_ptr<task_type> task_ptr;
+
+        _Arg _grainsize = (chunks == 0) ? size() : chunks;
+        _Arg _diff = (_e - _s)/_grainsize;
+        size_type _n = _grainsize;
+        for(size_type i = 0; i < _n; ++i)
+        {
+            _Arg _f = _diff*i; // first
+            _Arg _l = _f + _diff; // last
+            if(i+1 == _n)
+                _l = _e;
+            m_data->tp()->add_task(task_ptr(new task_type(tg, function, _f, _l)));
+        }
     }
     //------------------------------------------------------------------------//
 
 public:
     //------------------------------------------------------------------------//
-    // public run_loop (in chunks) functions
-    //------------------------------------------------------------------------//
-    template <typename _Ret, typename _Func, typename _Arg1, typename _Arg>
-    _inline_
-    void run_loop(mad::task_group* tg,
-                  _Func function,
-                  const _Arg1& _s,
-                  const _Arg& _e,
-                  unsigned long chunks)
-    {
-        typedef task<_Ret, _Arg, _Arg> task_type;
-
-        _Arg _grainsize = (chunks == 0) ? size() : chunks;
-        _Arg _diff = (_e - _s)/_grainsize;
-        size_type _n = _grainsize;
-        for(size_type i = 0; i < _n; ++i)
-        {
-            _Arg _f = _diff*i; // first
-            _Arg _l = _f + _diff; // last
-            if(i+1 == _n)
-                _l = _e;
-            task_type* t = new task_type(tg, function, _f, _l);
-            m_data->tp()->add_task(t);
-        }
-    }
-    //------------------------------------------------------------------------//
-    template <typename _Func, typename _Arg1, typename _Arg>
-    _inline_
-    void run_loop(mad::task_group* tg,
-                  _Func function, const _Arg1& _s, const _Arg& _e,
-                  unsigned long chunks)
-    {
-        typedef task<void, _Arg, _Arg> task_type;
-
-        _Arg _grainsize = (chunks == 0) ? size() : chunks;
-        _Arg _diff = (_e - _s)/_grainsize;
-        size_type _n = _grainsize;
-        for(size_type i = 0; i < _n; ++i)
-        {
-            _Arg _f = _diff*i; // first
-            _Arg _l = _f + _diff; // last
-            if(i+1 == _n)
-                _l = _e;
-            task_type* t = new task_type(tg,
-                                         function, _f, _l);
-            m_data->tp()->add_task(t);
-        }
-    }
-    //------------------------------------------------------------------------//
     template <typename _Ret,
               typename _Func,
               typename _Arg1, typename _Arg,
-              typename _Tp,   typename _Join>
+              typename _Join>
     _inline_
-    void
-    run_loop(mad::task_group* tg,
+    _Ret
+    run_loop(mad::task_group<_Ret>* tg,
              _Func function, const _Arg1& _s, const _Arg& _e,
-             unsigned long chunks, _Join _operator, _Tp identity)
+             uint64_t chunks, _Join _operator, const _Ret& identity = _Ret())
     {
-        typedef task_tree_node<_Ret, _Arg, _Arg>        task_tree_node_type;
-        typedef task<_Ret, _Arg, _Arg>                  task_type;
-        typedef task_tree<task_tree_node_type>          task_tree_type;
+
+        typedef task_tree_node<_Ret, _Arg, _Arg>    tree_node_type;
+        typedef task<_Ret, _Arg, _Arg>              task_type;
+        typedef task_tree<tree_node_type>           tree_type;
+        typedef std::deque<task_type*>              task_type_list_t;
+        typedef std::deque<tree_node_type>          tree_node_list_t;
 
         _Arg _grainsize = (chunks == 0) ? size() : chunks;
         _Arg _diff = (_e - _s)/_grainsize;
         size_type _n = _grainsize;
 
-        task_tree_type* tree = new task_tree_type;
-        task_tree_node_type* tree_node = 0;
-        std::deque<task_type*> _tasks;
-        std::deque<task_tree_node_type*> _nodes;
+        tree_type tree;
+        tree_node_type*  _ttree = nullptr;
+        task_type_list_t _tasks;
+        tree_node_list_t _nodes;
+
         for(size_type i = 0; i < _n; ++i)
         {
             _Arg _f = _diff*i; // first
@@ -485,90 +436,17 @@ public:
                 _l = _e;
 
             _tasks.push_back(new task_type(tg, function, _f, _l));
-            tree_node = new task_tree_node_type(tg, _operator,
-                                                _tasks.back(),
-                                                identity, tree->root());
-            _nodes.push_back(tree_node);
+            _ttree = new tree_node_type(nullptr, _operator,
+                                        _tasks.back(),
+                                        identity, tree.root());
+            _nodes.push_back(_ttree);
             if(i == 0)
-                tree->set_root(tree_node);
+                tree.set_root(_ttree);
 
-            tree->insert(tree->root(), tree_node);
+            tree.insert(tree.root(), _ttree);
         }
-        m_data->tp()->add_tasks(tree->root());
-        tg->join();
-        delete tree;
-    }
-    //------------------------------------------------------------------------//
-
-public:
-    //------------------------------------------------------------------------//
-    // public run in background functions
-    //------------------------------------------------------------------------//
-    template <typename _Ret, typename _Arg, typename _Func>
-    _inline_
-    void add_background_task(mad::task_group* tg,
-                             void* _id, _Func function, _Arg argument)
-    {
-        typedef task<_Ret, _Arg> task_type;
-        task_type* t = new task_type(tg, function, argument);
-        m_data->tp()->add_background_task(_id, t);
-    }
-    //------------------------------------------------------------------------//
-    template <typename _Arg, typename _Func>
-    _inline_
-    void add_background_task(mad::task_group* tg,
-                             void* _id, _Func function, _Arg argument)
-    {
-        typedef task<void, _Arg> task_type;
-        task_type* t = new task_type(tg, function, argument);
-        m_data->tp()->add_background_task(_id, t);
-    }
-    //------------------------------------------------------------------------//
-    template <typename _Func>
-    _inline_
-    void add_background_task(mad::task_group* tg,
-                             void* _id, _Func function)
-    {
-        typedef task<void> task_type;
-        for(size_type i = 0; i < size(); ++i)
-        {
-            task_type* t = new task_type(tg, function);
-            m_data->tp()->add_background_task(_id, t);
-        }
-    }
-    //------------------------------------------------------------------------//
-
-public:
-    //------------------------------------------------------------------------//
-    // background utility functions
-    //------------------------------------------------------------------------//
-    // in a class, call thread_manager::Instance()->signal_background(this);
-    // to wake up a thread to complete the background task
-    // use case: a dedicated thread for generate random numbers
-    //------------------------------------------------------------------------//
-    _inline_
-    void signal_background(void* _id)
-    {
-        m_data->tp()->signal_background(_id);
-    }
-    //------------------------------------------------------------------------//
-    // same as above but set argument to "val"
-    //------------------------------------------------------------------------//
-    template <typename _Tp>
-    _inline_
-    void signal_background(void* _id, _Tp val)
-    {
-        m_data->tp()->signal_background<_Tp>(_id, val);
-    }
-    //------------------------------------------------------------------------//
-    // check if background is done
-    // example:
-    //      while(!thread_manager::Instance()->is_done(this);
-    //------------------------------------------------------------------------//
-    _inline_
-    volatile bool& is_done(void* _id)
-    {
-        return m_data->tp()->is_done(_id);
+        m_data->tp()->add_tasks(tree.root());
+        return tree.get_future();
     }
     //------------------------------------------------------------------------//
 
@@ -583,7 +461,7 @@ public:
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _List>
     _inline_
-    _Ret join(mad::task_group* tg,
+    _Ret join(mad::task_group<_Ret>* tg,
               _Ret _def,
               _Ret(*_operator)(_List&, _Ret))
     {
@@ -599,12 +477,10 @@ public:
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func>
     _inline_
-    void join(mad::task_group* tg,
+    void join(mad::task_group<_Ret>* tg,
               _Func _operator)
     {
-        tg->join();
-        for(auto itr = tg->begin(); itr != tg->end(); ++itr)
-            _operator(*(static_cast<_Ret*>((*itr)->get())));
+        return tg->join(_operator);
     }
 
     //------------------------------------------------------------------------//

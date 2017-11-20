@@ -30,17 +30,11 @@
 #define macros_hh_
 
 #include <madthreading/config.hh>
+#include <type_traits>
 
 //============================================================================//
-//  CXX{0X,11,14,17}
+//  CXX{11,14,17}
 //============================================================================//
-
-// Define C++0x
-#ifndef CXX0X
-#   if defined(__GXX_EXPERIMENTAL_CXX0X)    // C++0x
-#       define CXX0X
-#   endif
-#endif
 
 // Define C++11
 #ifndef CXX11
@@ -111,5 +105,72 @@
 #else
 #   define _inline_ inline
 #endif
+
+//============================================================================//
+//  type traits
+//============================================================================//
+template <typename T> using decay_t = typename std::decay<T>::type;
+
+//----------------------------------------------------------------------------//
+
+template <bool _Bp, typename _Tp = void>
+using enable_if_t = typename std::enable_if<_Bp, _Tp>::type;
+
+template <typename _Tp, typename... _Args>
+using is_trivial_construct_t = std::is_trivially_constructible<_Tp, _Args...>;
+
+template <typename _Tp, typename... _Args>
+using is_trivial_destruct_t = std::is_trivially_destructible<_Tp, _Args...>;
+
+//----------------------------------------------------------------------------//
+/*
+namespace detail { struct inplace_t{}; }
+void* operator new(std::size_t, void* p, detail::inplace_t) { return p; }
+
+//----------------------------------------------------------------------------//
+
+template <typename _Tp, typename... _Args>
+typename enable_if_t<is_trivial_construct_t<_Tp, _Args&&...>::value>::type
+construct(_Tp*, _Args&&...)
+{ }
+
+//----------------------------------------------------------------------------//
+
+template <typename _Tp, typename... _Args>
+enable_if_t<!is_trivial_construct_t<_Tp, _Args&&...>::value>
+construct(_Tp* t, _Args&&... args)
+{
+    new(t, detail::inplace_t{}) _Tp(args...);
+}
+
+//----------------------------------------------------------------------------//
+// enabled via parameter
+template <typename _Tp>
+void destroy(_Tp* t,
+             typename enable_if_t<is_trivial_destruct_t<_Tp>::value>::type* = 0)
+{ }
+
+//----------------------------------------------------------------------------//
+// enabled via template paramater
+template <typename _Tp,
+          typename enable_if_t<!(is_trivial_destruct_t<_Tp>{} &&
+                                 (std::is_class<_Tp>{} ||
+                                  std::is_union<_Tp>{}  )), int>::type = 0>
+void destroy(_Tp* t)
+{
+    t->~T();
+}
+
+//----------------------------------------------------------------------------//
+// enabled via template parameter
+template <typename _Tp,
+          typename = enable_if_t<std::is_array<_Tp>::value> >
+void destroy(_Tp* t)
+{
+    for(std::size_t i = 0; i < std::extent<_Tp>::value; ++i)
+        destroy((*t)[i]);
+}
+*/
+//----------------------------------------------------------------------------//
 
 #endif

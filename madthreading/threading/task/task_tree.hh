@@ -33,6 +33,7 @@
 #include "madthreading/types.hh"
 #include "madthreading/threading/mutex.hh"
 #include "madthreading/threading/task/task.hh"
+#include "madthreading/threading/task/task_group.hh"
 
 #include <queue>
 #include <stack>
@@ -41,48 +42,67 @@
 namespace mad
 {
 
-class task_group;
-
 //============================================================================//
 //      base class for task_tree
 //============================================================================//
 template <typename _Tp, typename _Arg1, typename _Arg2,
           typename _Tp_join = _Tp>
-class task_tree_node : public vtask
+class task_tree_node : public details::vtask
 {
 public:
     typedef task_tree_node<_Tp, _Arg1, _Arg2>   this_type;
     typedef task<_Tp, _Arg1, _Arg2>             task_type;
     typedef _Tp                                 result_type;
-    typedef std::function<void(_Tp_join)>       join_function_type;
+    typedef std::function<void(_Tp_join)>       func_join_type;
+    typedef std::promise<_Tp>                   promise_type;
+    typedef std::future<_Tp>                    future_type;
+    typedef std::packaged_task<_Tp()>           packaged_task_type;
+    typedef task_group<_Tp>                     task_group_type;
     friend class task<_Tp, _Arg1, _Arg2>;
 
 public:
-    task_tree_node(task_group* tg,
-                   join_function_type f,
+    task_tree_node(task_group_type* tg,
+                   func_join_type f,
                    task_type* task = 0,
-                   _Tp val = _Tp(),
+                   result_type val = _Tp(),
                    this_type* _parent = 0)
-    : vtask(tg),
+    : m_retrieved(false),
       join_function(f),
       m_parent(_parent),
-      m_left_child(0), m_right_child(0),
-      m_task(task), m_value(val)
+      m_left_child(0),
+      m_right_child(0),
+      m_task(task),
+      m_group(tg),
+      m_value(val)
     {
-        m_task->set_result(&m_value);
+        //thread_manager::instance()->exec(task);
     }
 
     virtual ~task_tree_node()
     { }
 
 public:
-    _inline_
     void operator()()
     {
-        (*m_task)();
-        m_value = *((_Tp_join*) (m_task->get()));
-        join_function(m_value);
+        m_value = m_group->get(m_task);
+        m_retrieved = false;
     }
+
+    // finish execution
+    virtual void wait() const
+    {
+        if(!m_retrieved)
+            join_function(m_value);
+    }
+
+public:
+    // used by thread_pool
+    virtual cond_t&     task_cond()  final { return m_group->task_cond(); }
+    virtual lock_t&     task_lock()  final { return m_group->task_lock(); }
+    virtual count_t&    task_count() final { return m_group->task_count(); }
+
+public:
+    future_type&& get_future() { return m_promise.get_future(); }
 
 public:
     inline this_type* parent() { return m_parent; }
@@ -103,12 +123,16 @@ public:
     inline task_tree_node*& right() { return m_right_child; }
 
 protected:
-    join_function_type  join_function;
-    task_tree_node*     m_parent;
-    task_tree_node*     m_left_child;
-    task_tree_node*     m_right_child;
-    task_type*          m_task;
-    _Tp                 m_value;
+    bool                    m_retrieved;
+    func_join_type          join_function;
+    task_tree_node*         m_parent;
+    task_tree_node*         m_left_child;
+    task_tree_node*         m_right_child;
+    task_type*              m_task;
+    task_group_type*        m_group;
+    result_type             m_value;
+    promise_type            m_promise;
+
 };
 
 

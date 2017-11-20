@@ -32,10 +32,9 @@
 #ifndef types_hh_
 #define types_hh_
 
-#include "madthreading/allocator/allocator.hh"
 #include "madthreading/threading/threading.hh"
+#include "madthreading/allocator/allocator.hh"
 #include "madthreading/threading/auto_lock.hh"
-
 #include "madthreading/atomics/atomic.hh"
 
 #ifdef USE_TBB
@@ -78,7 +77,7 @@ namespace mad
     #define type_conversion(type)   atomic<type>
     #define base_conversion(type)   typename type::value_type
 
-    typedef auto_lock                Lock_t;
+    typedef auto_lock                lock_t;
 
 } // namespace mad
 
@@ -108,7 +107,7 @@ namespace mad
     using mad::float_type;
     using mad::double_type;
 
-    using mad::Lock_t;
+    using mad::lock_t;
 
 #endif
 

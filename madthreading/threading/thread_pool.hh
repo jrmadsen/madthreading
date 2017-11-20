@@ -41,9 +41,8 @@
 #include "madthreading/threading/condition.hh"
 #include "madthreading/allocator/allocator.hh"
 #include "madthreading/atomics/atomic.hh"
-#include "madthreading/threading/task/task_group.hh"
-#include "madthreading/threading/task/task.hh"
-#include "madthreading/threading/task/task_tree.hh"
+#include "madthreading/threading/task/vtask_group.hh"
+#include "madthreading/threading/task/vtask.hh"
 #include "madthreading/types.hh"
 
 #include <iostream>
@@ -56,20 +55,24 @@
 namespace mad
 {
 
+template <typename _Tp1, typename _Tp2, typename _Tp3, typename _Tp4>
+class task_tree_node;
+
 class thread_pool
 {
 public:
     typedef long                                            long_type;
     typedef unsigned long                                   ulong_type;
-    typedef mad::vtask                                      task_type;
+    typedef mad::details::vtask                             task_type;
     typedef std::size_t                                     size_type;
+    typedef std::shared_ptr<task_type>                      task_ptr;
     typedef std::vector<std::thread*>                       ThreadContainer_t;
-    typedef std::deque<task_type*, Allocator_t(task_type*)> TaskContainer_t;
+    typedef std::deque<task_ptr, Allocator_t(task_ptr)>     task_list_t;
     typedef std::vector<bool, Allocator_t(bool)>            JoinContainer_t;
-    typedef mutex                                           Lock_t;
+    typedef mutex                                           lock_t;
     typedef ulong_ts                                        task_count_type;
     typedef volatile int                                    pool_state_type;
-    typedef mad::condition                                  Condition_t;
+    typedef mad::condition                                  condition_t;
     typedef std::map<void*, task_type*>                     TaskMap_t;
     typedef std::map<void*, volatile bool>                  JoinMap_t;
     typedef std::map<std::thread::id, ulong_type>           tid_type;
@@ -90,41 +93,14 @@ public:
 
 public:
     // add tasks for threads to process
-    int add_task(task_type* task);
-    // add tasks quickly
-    //int fast_add_tasks(task_type* task);
+    int add_task(task_ptr task);
     // add a generic container with iterator
     template <typename Container_t>
     int add_tasks(Container_t&);
-    // add a queue of tasks
-    template <typename _Tp>
-    int add_tasks(std::queue<_Tp*>);
-    // add a stack of tasks
-    template <typename _Tp>
-    int add_tasks(std::stack<_Tp*>);
-    // add tasks from task tree
-    template <typename _Tp, typename _A1,
-              typename _A2, typename _TpJ>
-    int add_tasks(task_tree_node<_Tp, _A1, _A2, _TpJ>*);
 
 public:
-    // background tasks are task that you don't call join() on
-    // and are executed several times, e.g. generate random number
-    // task is identified by a unique pointer -- typically
-    // "this" in class method
-    int add_background_task(void*, task_type*);
-    // signal a thread to wake up and execute the task
-    void signal_background(void*);
-    // set the task argument to a value and signal a thread to wake up
-    // and execute
-    template <typename... _Tp>
-    void signal_background(void*, _Tp...);
-    // check is a background task is finished computing
-    volatile bool& is_done(void* ptr) { return m_back_done.find(ptr)->second; }
     // get the pool state
     const pool_state_type& state() const { return m_pool_state; }
-
-public:
     // see how many main task threads there are
     size_type size() const { return m_pool_size; }
     // set the thread pool size
@@ -140,15 +116,14 @@ public:
     static volatile bool& is_alive() { return is_alive_flag; }
 
 protected:
-    void* execute_thread(); // function thread sits in
+    void  execute_thread(); // function thread sits in
     void  background_thread(); // function background threads sit in
-    void  run(task_type*&);
+    void  run(task_ptr);
     bool  is_initialized() const;
 
 protected:
     // called in THREAD INIT
-    static void* start_thread(void* arg);
-    static void* start_background(void* arg);
+    static void start_thread(void* arg);
 
 private:
     // Private variables
@@ -158,24 +133,14 @@ private:
     pool_state_type m_pool_state;
 
     // locks
-    Lock_t m_task_lock;
-    Lock_t m_back_lock;
-
+    lock_t m_task_lock;
     // conditions
-    Condition_t m_task_cond;
-    Condition_t m_back_cond;
+    condition_t m_task_cond;
 
     // containers
-    ThreadContainer_t m_main_threads;   // storage for threads
-    ThreadContainer_t m_back_threads;
-    TaskContainer_t   m_main_tasks;     // storage for tasks
-    JoinContainer_t   m_is_joined;
-    JoinMap_t         m_back_done;
-
-    // background
-    void*             m_back_pointer;
-    task_type*        m_back_task_to_do;
-    TaskMap_t         m_back_tasks;
+    ThreadContainer_t   m_main_threads;   // storage for threads
+    task_list_t         m_main_tasks;     // storage for tasks
+    JoinContainer_t     m_is_joined;
 
     static tid_type tids;
     static volatile bool is_alive_flag;
@@ -186,28 +151,21 @@ private:
       m_pool_size(0),
       m_pool_state(0),
       m_task_lock(), // recursive
-      m_back_lock(),
       m_task_cond(),
-      m_back_cond(),
       m_main_threads(ThreadContainer_t()),
-      m_back_threads(ThreadContainer_t()),
-      m_main_tasks(TaskContainer_t()),
-      m_is_joined(JoinContainer_t()),
-      m_back_done(JoinMap_t()),
-      m_back_pointer(nullptr),
-      m_back_task_to_do(nullptr),
-      m_back_tasks(TaskMap_t())
+      m_main_tasks(task_list_t()),
+      m_is_joined(JoinContainer_t())
     { }
 
     thread_pool& operator=(const thread_pool&) { return *this; }
 
 };
 
-//----------------------------------------------------------------------------//
-#include "task/task_group.hh"
+} // namespace mad
+
 //----------------------------------------------------------------------------//
 template <typename Container_t>
-int thread_pool::add_tasks(Container_t& c)
+int mad::thread_pool::add_tasks(Container_t& c)
 {
 
     if(!is_alive_flag) // if we haven't built thread-pool, just execute
@@ -226,7 +184,7 @@ int thread_pool::add_tasks(Container_t& c)
     // TODO: put a limit on how many tasks can be added at most
     for(auto& itr : c)
     {
-        itr->group()->task_count() += 1;
+        itr->task_count() += 1;
         m_main_tasks.push_back(std::move(itr));
     }
     c.clear();
@@ -245,91 +203,5 @@ int thread_pool::add_tasks(Container_t& c)
     return c.size();
 }
 //----------------------------------------------------------------------------//
-template <typename _Tp>
-int thread_pool::add_tasks(std::queue<_Tp*> c)
-{
-    int n = 0;
-    while(!c.empty())
-    {
-        this->add_task(c.front());
-        c.pop();
-        ++n;
-    }
-    return n;
-}
-//----------------------------------------------------------------------------//
-template <typename _Tp>
-int thread_pool::add_tasks(std::stack<_Tp*> c)
-{
-    int n = 0;
-    while(!c.empty())
-    {
-        this->add_task(c.top());
-        c.pop();
-        ++n;
-    }
-    return n;
-}
-//----------------------------------------------------------------------------//
-template <typename _Tp, typename _A1, typename _A2, typename _TpJ>
-int thread_pool::add_tasks(task_tree_node<_Tp, _A1, _A2, _TpJ>* node)
-{
-    // if we haven't built thread-pool, just execute
-    if(!is_alive_flag)
-    {
-        if(node->left())
-            add_tasks(node->left());
-        vtask* vnode = node;
-        run(vnode);
-        if(node->right())
-            add_tasks(node->right());
-        return 1;
-    }
-
-    // thread-pool has been built
-    if(node->left())
-        add_tasks(node->left());
-
-    // do outside of lock because is thread-safe and needs to be updated as
-    // soon as possible
-    node->group()->task_count() += 1;
-
-    m_task_lock.lock();
-    // if the thread pool hasn't been initialize, initialize it
-    if(!is_initialized())
-        initialize_threadpool();
-
-    m_main_tasks.push_back(node);
-    m_task_lock.unlock();
-
-    if(node->right())
-        add_tasks(node->right());
-
-    m_task_cond.notify_all();
-
-    return 1;
-}
-//----------------------------------------------------------------------------//
-template <typename... _Tp>
-void thread_pool::signal_background(void* ptr, _Tp... _args)
-{
-    if(m_back_tasks.find(ptr) == m_back_tasks.end())
-        return;
-        //throw std::runtime_error("invalid signal to background task");
-
-    // acquire lock, assign task-to-do, signal a thread to wake up.
-    // thread just woken up will acquire lock, get pointer value of
-    // task-to-do, and then set task-to-do pointer to nullptr
-    m_back_lock.lock();
-    m_back_task_to_do = m_back_tasks[ptr];
-    m_back_task_to_do->set(_args...);
-    m_back_pointer = ptr;
-    m_back_done[ptr] = false;
-    m_back_cond.notify_one();
-    m_back_lock.unlock();
-}
-//----------------------------------------------------------------------------//
-
-} // namespace mad
 
 #endif

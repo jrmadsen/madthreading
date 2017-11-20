@@ -171,5 +171,3 @@ script:
     - ./run_exe.sh pi_tbb
     - ./run_exe.sh pi_pthreads
     - ./run_exe.sh pi_thread_pool
-    - ./run_exe.sh pi_thread_pool_tree_1
-    - ./run_exe.sh pi_thread_pool_tree_2

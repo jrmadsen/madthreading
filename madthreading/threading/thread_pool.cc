@@ -80,11 +80,9 @@ static const int NONINIT = 2;
 
 thread_pool::thread_pool(bool _use_affinity)
 : m_use_affinity(_use_affinity),
-  m_pool_size(std::thread::hardware_concurrency()),
+  m_pool_size(ncores()),
   m_pool_state(state::NONINIT),
-  m_task_lock(), // recursive
-  m_back_lock(),
-  m_back_task_to_do(nullptr)
+  m_task_lock() // recursive
 {
 
 #ifdef VERBOSE_THREAD_POOL
@@ -107,9 +105,7 @@ thread_pool::thread_pool(size_type pool_size, bool _use_affinity)
 : m_use_affinity(_use_affinity),
   m_pool_size(pool_size),
   m_pool_state(state::NONINIT),
-  m_task_lock(), // recursive
-  m_back_lock(),
-  m_back_task_to_do(nullptr)
+  m_task_lock() // recursive
 {
 
 #ifdef VERBOSE_THREAD_POOL
@@ -132,11 +128,6 @@ thread_pool::~thread_pool()
     // Release resources
     if (m_pool_state != state::STOPPED)
         destroy_threadpool();
-
-    // delete all background tasks
-    for(TaskMap_t::iterator itr = m_back_tasks.begin();
-        itr != m_back_tasks.end(); ++itr)
-        delete itr->second;
 
     // wait until thread pool is fully destroyed
     while(mad::thread_pool::is_alive());
@@ -164,10 +155,10 @@ bool thread_pool::is_initialized() const
 // We can't pass a non-static member function to CORETHREADCREATE.
 // So created the static member function that calls the member function
 // we want to run in the thread.
-void* thread_pool::start_thread(void* arg)
+void thread_pool::start_thread(void* arg)
 {
     {
-        mad::Lock_t lock(tid_mutex);
+        mad::lock_t lock(tid_mutex);
         tids[std::this_thread::get_id()] = tids.size();
 #ifdef VERBOSE_THREAD_POOL
         tmcout << "--> [MAIN THREAD QUEUE] thread ids size: " << tids.size()
@@ -176,24 +167,6 @@ void* thread_pool::start_thread(void* arg)
     }
     thread_pool* tp = (thread_pool*) arg;
     tp->execute_thread();
-    return nullptr;
-}
-
-//============================================================================//
-
-void* thread_pool::start_background(void* arg)
-{
-    { // a background thread is not in thread pool
-        mad::Lock_t lock(tid_mutex);
-        tids[std::this_thread::get_id()] = tids.size();
-#ifdef VERBOSE_THREAD_POOL
-        tmcout << "--> [BACK THREAD QUEUE] thread ids size: "
-                  << tids.size() << std::endl;
-#endif
-    }
-    thread_pool* tp = (thread_pool*) arg;
-    tp->background_thread();
-    return nullptr;
 }
 
 //============================================================================//
@@ -242,11 +215,14 @@ int thread_pool::initialize_threadpool()
                               << std::endl;
             }
 #endif
-        } catch(std::runtime_error& e)
+            tid->detach();
+        }
+        catch(std::runtime_error& e)
         {
             std::cerr << e.what() << std::endl; // issue creating thread
             _add_thread = false;
-        } catch(std::bad_alloc& e)
+        }
+        catch(std::bad_alloc& e)
         {
             std::cerr << e.what() << std::endl;
             _add_thread = false;
@@ -304,7 +280,6 @@ int thread_pool::destroy_threadpool()
     //------------------------------------------------------------------------//
     // notify all threads we are shutting down
     m_task_cond.notify_all();
-    m_back_cond.notify_all();
     //------------------------------------------------------------------------//
 
     if(m_is_joined.size() != m_main_threads.size())
@@ -345,24 +320,6 @@ int thread_pool::destroy_threadpool()
         //--------------------------------------------------------------------//
     }
 
-    for (size_type i = 0; i < m_back_threads.size(); i++)
-    {
-        //--------------------------------------------------------------------//
-        // erase background threads
-        if(tids.find(m_back_threads[i]->get_id()) != tids.end())
-            tids.erase(tids.find(m_back_threads[i]->get_id()));
-
-        //--------------------------------------------------------------------//
-        // set join
-        if(!(std::this_thread::get_id() == m_back_threads[i]->get_id()))
-            m_back_threads[i]->join();
-
-        //--------------------------------------------------------------------//
-        // try waking up a bunch of threads that are still waiting
-        m_back_cond.notify_all();
-        //--------------------------------------------------------------------//
-    }
-
 #ifdef VERBOSE_THREAD_POOL
     tmcout << "--> " << m_pool_size
               << " threads exited from the thread pool" << std::endl;
@@ -372,9 +329,6 @@ int thread_pool::destroy_threadpool()
     for(auto& itr : m_main_threads)
         delete itr;
     m_main_threads.clear();
-    for(auto& itr : m_back_threads)
-        delete itr;
-    m_back_threads.clear();
     m_is_joined.clear();
 
     is_alive_flag = false;
@@ -384,9 +338,9 @@ int thread_pool::destroy_threadpool()
 
 //============================================================================//
 
-void* thread_pool::execute_thread()
+void thread_pool::execute_thread()
 {
-    vtask* task = nullptr;
+    task_ptr task = nullptr;
     while(true)
     {
         //--------------------------------------------------------------------//
@@ -418,7 +372,7 @@ void* thread_pool::execute_thread()
                 mad::details::allocator_list_tl::get_allocator_list()
                         ->Destroy(tids.find(std::this_thread::get_id())->second, 1);
             //----------------------------------------------------------------//
-            return nullptr;
+            return;
         }
 
         // get the task
@@ -435,126 +389,21 @@ void* thread_pool::execute_thread()
         //--------------------------------------------------------------------//
 
     }
-    return nullptr;
 }
 
 //============================================================================//
 
-void thread_pool::signal_background(void* ptr)
+void thread_pool::run(task_ptr task)
 {
-    if(m_back_tasks.find(ptr) == m_back_tasks.end())
-        return;
-
-    m_back_lock.lock();
-    m_back_task_to_do = m_back_tasks[ptr];
-    m_back_pointer = ptr;
-    m_back_done.find(ptr)->second = false;
-    m_back_cond.notify_one();
-    m_back_lock.unlock();
-}
-
-//============================================================================//
-
-void thread_pool::background_thread()
-{
-    vtask* task = nullptr;
-    void*  task_key = 0;
-
-    while(m_pool_state == state::NONINIT)
-        m_back_cond.wait(m_back_lock);
-
-    while(true)
-    {
-        //--------------------------------------------------------------------//
-        // Try to pick a task
-        m_back_lock.lock();
-        //--------------------------------------------------------------------//
-
-        // We need to put condition.wait() in a loop for two reasons:
-        // 1. There can be spurious wake-ups (due to signal/ENITR)
-        // 2. When mutex is released for waiting, another thread can be waken up
-        //    from a signal/broadcast and that thread can mess up the condition.
-        //    So when the current thread wakes up the condition may no longer be
-        //    actually true!
-        while ((m_pool_state != state::STOPPED) && !m_back_task_to_do)
-        {
-            // Wait until there is a task in the queue
-            // Unlock mutex while wait, then lock it back when signaled
-            m_back_cond.wait(m_back_lock);
-        }
-
-        // If the thread was waked to notify process shutdown, return from here
-        if (m_pool_state == state::STOPPED)
-        {
-            //m_has_exited.
-            m_back_lock.unlock();
-            //----------------------------------------------------------------//
-            if(mad::details::allocator_list::get_allocator_list_if_exists() &&
-               tids.find(std::this_thread::get_id()) != tids.end())
-                mad::details::allocator_list::get_allocator_list()
-                        ->Destroy(tids.find(std::this_thread::get_id())->second, 1);
-            //----------------------------------------------------------------//
-        }
-
-        task_key = m_back_pointer;
-        task = m_back_task_to_do;
-        m_back_task_to_do = nullptr;
-        //--------------------------------------------------------------------//
-        // Unlock
-        m_back_lock.unlock();
-        //--------------------------------------------------------------------//
-
-        if(!task)
-        {
-            typedef TaskMap_t::iterator _iterator;
-            _iterator itr = m_back_tasks.begin();
-            std::cerr << "Background task has a null pointer. "
-                      << "Num background tasks: "
-                      << m_back_tasks.size()
-                      << " \t " << itr->first
-                      << " \t " << itr->second
-                      << " \t " << task_key
-                      << " \t " << task
-                      << std::endl;
-            continue;
-        }
-
-        // execute the task
-        (*task)();
-
-        // notify that it is done
-        m_back_lock.lock();
-        m_back_done.find(task_key)->second = true;
-        m_back_lock.unlock();
-
-        task = nullptr;
-        task_key = nullptr;
-        //--------------------------------------------------------------------//
-    }
-    //return nullptr;
-}
-
-//============================================================================//
-
-void thread_pool::run(vtask*& task)
-{
-    task_group* tg = task->group();
-
     // execute task
     (*task)();
 
-    tg->task_count() -= 1;
-    if(tg->task_count().load() < 2)
-    {
-        tg->join_lock().lock();
-        tg->join_cond().notify_all();
-        tg->join_lock().unlock();
-    }
+    task->operator--();
 }
 
 //============================================================================//
 
-int thread_pool::add_task(vtask* task)
+int thread_pool::add_task(task_ptr task)
 {
 
 #ifdef VERBOSE_THREAD_POOL
@@ -563,13 +412,13 @@ int thread_pool::add_task(vtask* task)
 
     if(!is_alive_flag) // if we haven't built thread-pool, just execute
     {
-        run(task);
+        run(task_ptr(task));
         return 0;
     }
 
     // do outside of lock because is thread-safe and needs to be updated as
     // soon as possible
-    task->group()->task_count() += 1;
+    task->operator++();
 
     m_task_lock.lock();
 
@@ -578,7 +427,7 @@ int thread_pool::add_task(vtask* task)
         initialize_threadpool();
 
     // TODO: put a limit on how many tasks can be added at most
-    m_main_tasks.push_back(task);
+    m_main_tasks.push_back(task_ptr(task));
 
     // wake up one thread that is waiting for a task to be available
     m_task_cond.notify_one();
@@ -586,54 +435,6 @@ int thread_pool::add_task(vtask* task)
     m_task_lock.unlock();
 
     return 0;
-}
-
-//============================================================================//
-
-int thread_pool::add_background_task(void* ptr, vtask* task)
-{
-    thread* tid = new thread();
-    bool _add_thread = true;
-    try
-    {
-        // assign to core if affinity is set to on
-        *tid = std::thread(thread_pool::start_background, (void*)(this));
-#if defined(ALLOW_AFFINITY)
-        if(m_use_affinity)
-        {
-            static size_type cpu_i = 0;
-            size_type i = (cpu_i++) % std::thread::hardware_concurrency();
-            // Create a cpu_set_t object representing a set of CPUs. Clear it and mark
-            // only CPU i as set.
-            cpu_set_t cpuset;
-            CPU_ZERO(&cpuset);
-            CPU_SET(i, &cpuset);
-            int rc = pthread_setaffinity_np(tid->native_handle(),
-                                            sizeof(cpu_set_t), &cpuset);
-            if (rc != 0)
-                std::cerr << "Error calling pthread_setaffinity_np: " << rc
-                          << std::endl;
-        }
-#endif
-    } catch(std::runtime_error& e)
-    {
-        std::cerr << e.what() << std::endl;
-        _add_thread = false;
-    } catch(std::bad_alloc& e)
-    {
-        std::cerr << e.what() << std::endl;
-        _add_thread = false;
-    }
-
-    // successful creation, identifiable via pointer
-    if(_add_thread)
-    {
-        m_back_threads.push_back(tid);
-        m_back_tasks[ptr] = task;
-        m_back_done.insert(std::pair<void*, bool>(ptr, true));
-    }
-
-    return m_back_threads.size();
 }
 
 //============================================================================//

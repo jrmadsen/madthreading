@@ -17,6 +17,8 @@ using namespace mad;
 
 #include "../Common.hh"
 
+typedef const double_type& cdoubleref;
+
 //----------------------------------------------------------------------------//
 
 int main(int, char**)
@@ -39,18 +41,15 @@ int main(int, char**)
         return tl_sum;
     };
     //------------------------------------------------------------------------//
-    auto join = [&sum] (double_type tl_sum)
-    {
-        sum += tl_sum;
-    };
+    auto accum = [&] (double_type& a, const double_type& b) { return a + b; };
     //------------------------------------------------------------------------//
 
     //========================================================================//
     timer::timer t;
 
-    mad::task_group tg;
-    tm->run_loop<double_type>(&tg, compute_block, 0, num_steps, num_threads);
-    tm->join<double_type>(&tg, join);
+    mad::task_group<double_type> tg(accum);
+    tm->run_loop(&tg, compute_block, 0, num_steps, num_threads);
+    sum = tg.join();
 
     report(num_steps, step*sum, t.stop_and_return(), "mad_thread_pool");
     //========================================================================//

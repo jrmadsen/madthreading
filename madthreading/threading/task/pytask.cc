@@ -30,25 +30,28 @@
 
 namespace py = pybind11;
 
-typedef mad::task_group::task_count_type task_count_type;
+typedef mad::details::vtask vtask;
+typedef mad::details::vtask_group vtask_group;
+typedef vtask_group::task_count_type task_count_type;
+typedef mad::task_group<void> void_task_group;
 
-typedef const task_count_type& (mad::task_group::*task_count_func_type)() const;
-typedef const mad::ulong_type& (mad::task_group::*id_func_type)() const;
+typedef const task_count_type& (vtask_group::*task_count_func_type)() const;
+typedef const mad::ulong_type& (vtask_group::*id_func_type)() const;
 typedef void (std::promise<int>::*int_promise_func_type)(const int&);
-typedef void (mad::task_group::*join_void_func)();
+typedef void (void_task_group::*join_void_func)();
 
 PYBIND11_MODULE(pytask, t)
 {
-    py::class_<mad::task_group> task_group(t, "task_group");
+    py::class_<void_task_group> task_group(t, "task_group");
     task_group.def(py::init<>())
               .def("join",
-                   (join_void_func) &mad::task_group::join,
+                   (join_void_func) &void_task_group::join,
                    "Join function")
               .def("task_count",
-                   (task_count_func_type) &mad::task_group::task_count,
+                   (task_count_func_type) &vtask_group::task_count,
                    "Get the task count")
               .def("id",
-                   (id_func_type) &mad::task_group::id,
+                   (id_func_type) &vtask_group::id,
                    "Get the ID");
 
     py::class_<std::future<int>> fint (t, "int_future");

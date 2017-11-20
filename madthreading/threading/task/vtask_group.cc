@@ -1,22 +1,40 @@
+// MIT License
 //
+// Copyright (c) 2017 Jonathan R. Madsen
 //
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 //
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 //
 //
 // created by jmadsen on Sat Jul 15 18:43:49 2017
 //
-//
-//
-//
 
 
-#include "madthreading/threading/task/task_group.hh"
+#include "madthreading/threading/task/vtask_group.hh"
 #include "madthreading/threading/thread_pool.hh"
 #include "madthreading/threading/task/task.hh"
 #include "madthreading/threading/thread_manager.hh"
 #include "madthreading/utility/fpe_detection.hh"
 
 namespace mad
+{
+
+namespace details
 {
 
 //============================================================================//
@@ -34,12 +52,11 @@ static ulong_ts m_group_count = 0;
 
 //============================================================================//
 
-task_group::task_group(thread_pool* tp)
+vtask_group::vtask_group(thread_pool* tp)
 : m_task_count(0),
   m_id(m_group_count++),
   m_pool(tp),
-  m_save_lock(),
-  m_join_lock()
+  m_task_lock()
 {
     if(!m_pool)
         m_pool = mad::thread_manager::instance()->thread_pool();
@@ -47,15 +64,12 @@ task_group::task_group(thread_pool* tp)
 
 //============================================================================//
 
-task_group::~task_group()
-{
-    for(auto& itr : m_task_list)
-        delete itr;
-}
+vtask_group::~vtask_group()
+{ }
 
 //============================================================================//
 
-void task_group::join()
+void vtask_group::wait()
 {
 #ifdef VERBOSE_THREAD_POOL
     std::cout << "Joining " << pending() << " tasks..." << std::endl;
@@ -66,11 +80,11 @@ void task_group::join()
     if(!m_pool->is_alive())
         return;
 
-    while (m_pool->state() != state::STOPPED)
+    while ((int) m_pool->state() != (int) state::STOPPED)
     {
-        m_join_lock.lock();
+        m_task_lock.lock();
 
-        while(pending() > 0 && m_pool->state() != state::STOPPED)
+        while(pending() > 0 && (int) m_pool->state() != (int) state::STOPPED)
         {
             #if defined(DEBUG)
             long_type ntasks = pending();
@@ -83,7 +97,7 @@ void task_group::join()
             #endif
             // Wait until signaled that a task has been competed
             // Unlock mutex while wait, then lock it back when signaled
-            m_join_cond.wait(m_join_lock);
+            m_task_cond.wait(m_task_lock);
         }
 
         // if pending is not greater than zero, we are joined
@@ -91,8 +105,7 @@ void task_group::join()
             break;
     }
 
-    for(auto& itr : m_task_list)
-        itr->get();
+    wait_internal();
 
     if(m_task_count > 0)
     {
@@ -103,9 +116,11 @@ void task_group::join()
         throw std::runtime_error(ss.str().c_str());
     }
 
-    m_join_lock.unlock();
+    m_task_lock.unlock();
 }
 
 //============================================================================//
+
+} // namespace details
 
 } // namespace mad

@@ -36,3 +36,9 @@ async.write("CPU time : %f seconds" % c_diff)
 async.write("Wall time : %f seconds" % w_diff)
 async.write("")
 async.write("%s CPU : %6.2f%s" % ('%', cpu_usage, '%'))
+
+ans = (sum == 2269806570)
+if ans == True:
+    sys.exit(0)
+else:
+    sys.exit(1)

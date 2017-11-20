@@ -25,6 +25,8 @@
 #include <string>
 #include <vector>
 
+#include "madthreading/threading/thread_manager.hh"
+
 constexpr int64_t fibonacci_max = 44;
 
 //============================================================================//
@@ -69,7 +71,9 @@ std::future<int64_t> async_run()
     // async will use a thread pool and defer executation until a later
     // time or when the std::future it returns calls its member function
     // "get()"
-    return std::async(std::launch::async | std::launch::deferred, async_work);
+    mad::thread_manager* tm = mad::thread_manager::get_thread_manager();
+    return tm->async<int64_t>(async_work);
+    //return std::async(std::launch::async | std::launch::deferred, async_work);
 }
 
 //============================================================================//
@@ -156,7 +160,7 @@ void output_message(int64_t _ncall)
 
     std::stringstream ss;
     ss << "(C++) Function call #" << _ncall << " on thread # "
-       << tid << "(tid: " << std::this_thread::get_id()
+       << tid << " (tid: " << std::this_thread::get_id()
        << "). function: fibonacci(" << (_ncall % fibonacci_max)
        << ")...";
 

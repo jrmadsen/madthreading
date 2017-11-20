@@ -63,7 +63,7 @@ int main(int, char**)
     // just executabe all the blocks
     // note: thread sleep in block_b will help ensure the resulting sentence
     //  is out of order
-    mad::task_group tg1;
+    mad::task_group<void> tg1;
     for(ulong_type j = 0; j < nchar; ++j)
     {
         for(ulong_type i = 0; i < nchar; ++i)
@@ -79,10 +79,10 @@ int main(int, char**)
 
     //========================================================================//
     // new task group is created implicitly
-    mad::task_group tg2a;
+    mad::task_group<void> tg2a;
     for(ulong_type j = 0; j < nchar; ++j)
     {
-        mad::task_group tg2b;
+        mad::task_group<void> tg2b;
         for(ulong_type i = 0; i < nchar; ++i)
             tm->exec(&tg2b, block_b);
         // here we want thread_group 2b to finish

@@ -12,20 +12,9 @@
 #ifndef task_group_hh_
 #define task_group_hh_
 
-#include "madthreading/threading/threading.hh"
-#include "madthreading/threading/mutex.hh"
-#include "madthreading/threading/condition.hh"
-#include "madthreading/allocator/allocator.hh"
-#include "madthreading/atomics/atomic.hh"
-#include "madthreading/types.hh"
-#include "madthreading/threading/task/task.hh"
+#include "madthreading/threading/task/vtask_group.hh"
 
-#include <iostream>
-#include <deque>
-#include <vector>
-#include <map>
-#include <queue>
-#include <stack>
+#include <future>
 
 //----------------------------------------------------------------------------//
 
@@ -36,52 +25,34 @@ class thread_pool;
 
 //----------------------------------------------------------------------------//
 
-class task_group
+template <typename _Tp,typename _Arg = _Tp>
+class task_group : public mad::details::vtask_group
 {
 public:
-    typedef task_group                                      this_type;
-    typedef long                                            long_type;
-    typedef unsigned long                                   ulong_type;
-    typedef mad::vtask                                      task_type;
-    typedef std::size_t                                     size_type;
-    typedef std::deque<task_type*>                          TaskContainer_t;
-    typedef mad::mutex                                      Lock_t;
-    typedef long_ts                                         task_count_type;
-    typedef volatile int                                    pool_state_type;
-    typedef mad::condition                                  Condition_t;
-    typedef TaskContainer_t::iterator                       iterator;
-    typedef TaskContainer_t::const_iterator                 const_iterator;
+    template <typename _Key, typename _Type>
+    using map_type = std::unordered_map<_Key, _Type>;
+
+    typedef _Tp                                     result_type;
+    typedef task_group<_Tp>                         this_type;
+    typedef std::promise<_Tp>                       promise_type;
+    typedef std::future<_Tp>                        future_type;
+    typedef std::tuple<bool, future_type, _Tp*>     data_type;
+    typedef map_type<task_type*, data_type>         task_list_t;
+    typedef typename task_list_t::iterator          iterator;
+    typedef typename task_list_t::const_iterator    const_iterator;
+    typedef std::deque<future_type>                 future_list_t;
+    typedef std::function<_Tp(_Tp&, _Arg)>          function_type;
 
 public:
     // Constructor and Destructors
-    task_group(thread_pool* tp = nullptr);
-    // Virtual destructors are required by abstract classes
-    // so add it by default, just in case
-    virtual ~task_group();
+    template <typename _Func>
+    task_group(_Func _join, thread_pool* tp = nullptr);
+    ~task_group();
 
 public:
-    // wait for threads to finish tasks
-    void join();
-
-    // get the task count
-    task_count_type& task_count() { return m_task_count; }
-    const task_count_type& task_count() const { return m_task_count; }
-
-    // get the locks/conditions
-    Lock_t& join_lock()      { return m_join_lock; }
-    Condition_t& join_cond() { return m_join_cond; }
-
-    const Lock_t& join_lock() const      { return m_join_lock; }
-    const Condition_t& join_cond() const { return m_join_cond; }
-
-    // add task
-    this_type& operator+=(task_type* _task);
-    this_type& operator()(task_type* _task) { return *this += _task; }
-    this_type& add(task_type* _task) { return *this += _task; }
-
     // Get tasks with non-void return types
-    TaskContainer_t& get_tasks() { return m_task_list; }
-    const TaskContainer_t& get_tasks() const { return m_task_list; }
+    task_list_t& get_tasks() { return m_task_list; }
+    const task_list_t& get_tasks() const { return m_task_list; }
 
     // iterate over tasks with return type
     iterator begin()                { return m_task_list.begin(); }
@@ -91,52 +62,113 @@ public:
     const_iterator cbegin() const   { return m_task_list.begin(); }
     const_iterator cend()   const   { return m_task_list.end(); }
 
-    const ulong_type& id() const { return m_id; }
-    void set_pool(thread_pool* tp) { m_pool = tp; }
-
-    thread_pool*& pool()       { return m_pool; }
-    thread_pool*  pool() const { return m_pool; }
-
-    template <typename _Tp, typename _Func>
-    _Tp join(_Func func, _Tp result = _Tp());
+    //------------------------------------------------------------------------//
+    // add task
+    this_type& add(task_type* _t, future_type&& _f);
+    //------------------------------------------------------------------------//
+    // wait to finish
+    _Tp join(_Tp accum = _Tp());
 
 protected:
-    // check if any tasks are still pending
-    int pending() { return m_task_count; }
+    //------------------------------------------------------------------------//
+    // used by vtask_group
+    virtual void wait_internal() final;
+    //------------------------------------------------------------------------//
+    // get a specific task
+    _Arg get(details::vtask* ptr);
 
-private:
-    // Private variables
-    task_count_type     m_task_count;
-    ulong_type          m_id;
-    thread_pool*        m_pool;
-    Condition_t         m_join_cond;
-    Lock_t              m_save_lock;
-    Lock_t              m_join_lock;
-    TaskContainer_t     m_task_list;
+protected:
+    // Protected variables
+    task_list_t         m_task_list;
+    promise_type        m_promise;
+    function_type       m_join_function;
 
 };
 
 //----------------------------------------------------------------------------//
-inline task_group::this_type&
-task_group::operator+=(task_type* _task)
+// specialization for void type
+template <>
+class task_group<void, void> : public mad::details::vtask_group
 {
-    m_task_list.push_back(_task);
-    return *this;
-}
-//----------------------------------------------------------------------------//
-template <typename _Tp, typename _Func> inline
-_Tp mad::task_group::join(_Func func, _Tp result)
-{
-    this->join();
-    for(const auto& itr : *this)
+public:
+    template <typename _Key, typename _Type>
+    using map_type = std::unordered_map<_Key, _Type>;
+
+    typedef void                                        result_type;
+    typedef task_group<void>                            this_type;
+    typedef std::promise<void>                          promise_type;
+    typedef std::future<void>                           future_type;
+    typedef std::tuple<bool, future_type>               data_type;
+    typedef map_type<task_type*, data_type>             task_list_t;
+    typedef typename task_list_t::iterator              iterator;
+    typedef typename task_list_t::const_iterator        const_iterator;
+    typedef std::deque<future_type>                     future_list_t;
+
+public:
+    // Constructor and Destructors
+    task_group(thread_pool* tp = nullptr) : details::vtask_group(tp) { }
+    ~task_group()
     {
-        result = func(result, *( (_Tp*) (itr->get() ) ));
+        for(auto& itr : m_task_list)
+            delete itr.first;
     }
-    return result;
-}
+
+public:
+    // Get tasks with non-void return types
+    task_list_t& get_tasks() { return m_task_list; }
+    const task_list_t& get_tasks() const { return m_task_list; }
+
+    // iterate over tasks with return type
+    iterator begin()                { return m_task_list.begin(); }
+    iterator end()                  { return m_task_list.end(); }
+    const_iterator begin() const    { return m_task_list.begin(); }
+    const_iterator end()   const    { return m_task_list.end(); }
+    const_iterator cbegin() const   { return m_task_list.begin(); }
+    const_iterator cend()   const   { return m_task_list.end(); }
+
+    //------------------------------------------------------------------------//
+    // add task
+    this_type& add(task_type* _t, future_type&& _f)
+    {
+        m_task_list[_t] = data_type(false, std::move(_f));
+        return *this;
+    }
+    //------------------------------------------------------------------------//
+    // wait to finish
+    void join() { this->wait(); }
+
+protected:
+    //------------------------------------------------------------------------//
+    // used by vtask_group
+    virtual void wait_internal() final
+    {
+        for(auto& itr : m_task_list)
+            itr.first->wait();
+    }
+    //------------------------------------------------------------------------//
+    // get specific task
+    void get(details::vtask* ptr)
+    {
+        data_type& _data = m_task_list[ptr];
+        if(!std::get<0>(_data))
+        {
+            ptr->wait();
+            std::get<1>(_data).get();
+            std::get<0>(_data) = true;
+        }
+    }
+
+protected:
+    // Private variables
+    task_list_t         m_task_list;
+    promise_type        m_promise;
+
+};
+
 //----------------------------------------------------------------------------//
 
 } // namespace mad
 
+#include "madthreading/threading/task/task_group.tcc"
 
 #endif

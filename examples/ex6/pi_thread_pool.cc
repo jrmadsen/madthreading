@@ -26,7 +26,7 @@ int main(int, char** argv)
     double_ts sum = 0.0;
     ulong_type num_threads = thread_manager::GetEnvNumThreads(1);
     thread_manager* tm = new thread_manager(num_threads);
-    task_group tg;
+    task_group<void> tg;
 
     auto compute_block = [&sum, step] (const ulong_type& s, const ulong_type& e)
     {

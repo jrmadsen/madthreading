@@ -7,6 +7,6 @@ file(GLOB MADPY_EXCLUDE "${CMAKE_CURRENT_LIST_DIR}/py${DIRNAME}.cc")
 
 DEFINE_MODULE(NAME mad.threading.task
     EXCLUDE ${MADPY_EXCLUDE}
-    HEADER_EXT .h .hh
+    HEADER_EXT .h .hh .tcc
     SOURCE_EXT .cc .cpp
 )

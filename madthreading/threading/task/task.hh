@@ -31,229 +31,235 @@
 #ifndef task_hh_
 #define task_hh_
 
-#include "madthreading/macros.hh"
-#include "madthreading/threading/threading.hh"
-#include "madthreading/threading/auto_lock.hh"
-#include "madthreading/allocator/allocator.hh"
+#include "madthreading/threading/task/vtask.hh"
+#include "madthreading/threading/task/task_group.hh"
+#include <stdexcept>
 
-#include <functional>
-#include <utility>
-#include <tuple>
-#include <cstddef>
-#include <string>
-#include <array>
-#include <future>
-#include <thread>
-
-namespace mad  { class task_group; }
+#define forward_args_t(_Args, _args) std::forward<_Args>(std::move(_args))...
 
 namespace mad
 {
 
 //============================================================================//
-/// \brief vtask is the abstract class stored in thread_pool
-class vtask : public mad::Allocator
+
+/// \brief The task class is supplied to thread_pool.
+template <typename _Ret, typename... _Args>
+class packaged_task : public details::vtask
 {
 public:
-    typedef vtask*          iterator;
-    typedef const vtask*    const_iterator;
-    typedef size_t          size_type;
+    typedef _Ret                            result_type;
+    typedef std::function<_Ret(_Args...)>   function_type;
+    typedef std::promise<result_type>       promise_type;
+    typedef std::future<result_type>        future_type;
+    typedef std::packaged_task<_Ret()>      packaged_task_type;
+    typedef task_group<_Ret>                task_group_type;
 
 public:
-    vtask(task_group* tg);
-    virtual ~vtask() { }
+    // pass a free function pointer
+    packaged_task(function_type func, _Args... args)
+    : details::vtask(nullptr),
+      m_ptask(std::bind(func, forward_args_t(_Args, args)))
+    { }
+
+    virtual ~packaged_task() { }
 
 public:
-    iterator begin() { return this; }
-    iterator end() { return this+1; }
-    const_iterator begin() const { return this; }
-    const_iterator end() const { return this+1; }
-    size_type size() const { return 1; }
+    // execution operator
+    virtual void operator()() { m_ptask(); }
 
-public:
-    virtual void operator()() = 0;
-
-    virtual void* get() const { return nullptr; }
-    virtual void set_result(void*)
+    // finish execution
+    virtual void wait() const
     {
-        std::runtime_error("Bad function call vtask::set_result(void*)");
+        std::stringstream ss;
+        ss << "Invalid call to mad::packaged_task<>::wait(). "
+           << "Instead, call mad::packaged_task<>::get_future() and then "
+           << "get() on the future";
+        throw std::runtime_error(ss.str().c_str());
     }
 
-    template <typename... _Tp>
-    void set(_Tp...) { }
+    future_type get_future() { return m_ptask.get_future(); }
 
-public:
-    // get the task group
-    task_group* group() const { return m_group; }
-
-protected:
-    void _check_group();
-
-protected:
-    task_group* m_group;
+private:
+    packaged_task_type      m_ptask;
 };
 
 //============================================================================//
 
 /// \brief The task class is supplied to thread_pool.
 template <typename _Ret, typename... _Args>
-class task : public vtask
+class task : public details::vtask
 {
 public:
     typedef _Ret                            result_type;
     typedef std::function<_Ret(_Args...)>   function_type;
+    typedef std::promise<result_type>       promise_type;
     typedef std::future<result_type>        future_type;
     typedef std::packaged_task<_Ret()>      packaged_task_type;
+    typedef task_group<_Ret>                task_group_type;
 
 public:
     // pass a free function pointer
-    task(task_group* tg, function_type fn_ptr, _Args... args)
-    : vtask(tg),
-      m_future_retrieved(false),
-      m_function(fn_ptr),
-      m_ptask(std::bind(m_function, std::forward<_Args>(std::move(args))...)),
-      m_result(new result_type())
-    { }
-
-    virtual ~task() { delete m_result; }
-
-    template <typename... _Tp>
-    void set(_Tp... args)
+    task(task_group_type* tg, function_type func, _Args... args)
+    : details::vtask(tg),
+      m_retrieved(false),
+      m_function(func),
+      m_ptask(std::bind(m_function, forward_args_t(_Args, args))),
+      m_group(tg)
     {
-        m_ptask = packaged_task_type(
-                      std::bind(m_function,
-                                std::forward<_Args>(std::move(args))...));
+        if(m_group)
+            m_group->add(this, m_promise.get_future());
     }
 
-    virtual void set_result(void* ptr) { *m_result = *(result_type*) ptr; }
-    virtual void* get() const
-    {
-        if(!m_future_retrieved)
-            *m_result = m_future.get();
-        m_future_retrieved = true;
-        return (void*) m_result;
-    }
-
-    inline result_type get_result() const
-    {
-        return *((result_type*)(this->get()));
-    }
+    virtual ~task() { }
 
 public:
+    // execution operator
     virtual void operator()()
     {
         m_future = m_ptask.get_future();
         m_ptask();
-        m_future_retrieved = false;
+        m_retrieved = false;
     }
 
+    // finish execution
+    virtual void wait() const
+    {
+        if(!m_retrieved)
+            m_promise.set_value(m_future.get());
+        m_retrieved = true;
+    }
+
+public:
+    // set arguments
+    template <typename... _Tp>
+    void set(_Tp... args)
+    {   m_ptask = packaged_task_type(std::bind(m_function,
+                                               forward_args_t(_Args, args))); }
+
 private:
-    mutable bool                    m_future_retrieved;
-    function_type                   m_function;
-    packaged_task_type              m_ptask;
-    mutable future_type             m_future;
-    result_type*                    m_result;
+    mutable bool            m_retrieved;
+    mutable promise_type    m_promise;
+    mutable future_type     m_future;
+    function_type           m_function;
+    packaged_task_type      m_ptask;
+    task_group_type*        m_group;
 };
 
 //============================================================================//
 
 /// \brief The task class is supplied to thread_pool.
 template <typename... _Args>
-class task<void, _Args...> : public vtask
+class task<void, _Args...> : public details::vtask
 {
 public:
-    typedef void                            _Ret;
-    typedef _Ret                            result_type;
-    typedef std::function<_Ret(_Args...)>   function_type;
-    typedef std::future<result_type>        future_type;
-    typedef std::packaged_task<_Ret()>      packaged_task_type;
+    typedef void                                _Ret;
+    typedef _Ret                                result_type;
+    typedef std::function<_Ret(_Args...)>       function_type;
+    typedef std::promise<result_type>           promise_type;
+    typedef std::future<result_type>            future_type;
+    typedef std::packaged_task<result_type()>   packaged_task_type;
+    typedef task_group<result_type>             task_group_type;
 
 public:
     // pass a free function pointer
-    task(task_group* tg, function_type fn_ptr, _Args... args)
-    : vtask(tg),
-      m_future_retrieved(false),
-      m_function(fn_ptr),
-      m_ptask(std::bind(m_function, std::forward<_Args>(std::move(args))...))
-    { }
+    task(task_group_type* tg, function_type func, _Args... args)
+    : details::vtask(tg),
+      m_retrieved(false),
+      m_function(func),
+      m_ptask(std::bind(m_function, forward_args_t(_Args, args))),
+      m_group(tg)
+    {
+        if(m_group)
+            m_group->add(this, m_promise.get_future());
+    }
 
     virtual ~task() { }
 
-    template <typename... _Tp>
-    void set(_Tp... args)
-    {
-        m_ptask = packaged_task_type(
-                      std::bind(m_function,
-                                std::forward<_Args>(std::move(args))...));
-
-    }
-
-    virtual void* get() const
-    {
-        if(!m_future_retrieved)
-            m_future.get();
-        m_future_retrieved = true;
-        return nullptr;
-    }
-
 public:
+    // execution operator
     virtual void operator()()
     {
         m_future = m_ptask.get_future();
         m_ptask();
-        m_future_retrieved = false;
+        m_retrieved = false;
     }
 
+    // finish execution
+    virtual void wait() const
+    {
+        if(!m_retrieved)
+            m_future.get();
+        m_retrieved = true;
+    }
+
+    // set arguments
+    template <typename... _Tp>
+    void set(_Tp... args)
+    {   m_ptask = packaged_task_type(std::bind(m_function,
+                                               forward_args_t(_Args, args))); }
+
 private:
-    mutable bool                    m_future_retrieved;
-    function_type                   m_function;
-    packaged_task_type              m_ptask;
-    mutable future_type             m_future;
+    mutable bool            m_retrieved;
+    mutable promise_type    m_promise;
+    mutable future_type     m_future;
+    function_type           m_function;
+    packaged_task_type      m_ptask;
+    task_group_type*        m_group;
 };
 
 //============================================================================//
 
 /// \brief The task class is supplied to thread_pool.
 template <>
-class task<void> : public vtask
+class task<void> : public details::vtask
 {
 public:
-    typedef void                            _Ret;
-    typedef _Ret                            result_type;
-    typedef std::function<result_type()>    function_type;
-    typedef std::future<result_type>        future_type;
-    typedef std::packaged_task<_Ret()>      packaged_task_type;
+    typedef void                                _Ret;
+    typedef _Ret                                result_type;
+    typedef std::function<result_type()>        function_type;
+    typedef std::promise<result_type>           promise_type;
+    typedef std::future<result_type>            future_type;
+    typedef std::packaged_task<result_type()>   packaged_task_type;
+    typedef task_group<result_type>             task_group_type;
 
 public:
     // pass a free function pointer
-    task(task_group* tg, function_type fn_ptr)
-    : vtask(tg),
-      m_future_retrieved(false),
-      m_ptask(fn_ptr)
-    { }
+    task(task_group_type* tg, function_type func)
+    : details::vtask(tg),
+      m_retrieved(false),
+      m_ptask(func),
+      m_group(tg)
+    {
+        if(m_group)
+            m_group->add(this, m_promise.get_future());
+    }
 
     virtual ~task() { }
 
-    virtual void* get() const
-    {
-        if(!m_future_retrieved)
-            m_future.get();
-        m_future_retrieved = true;
-        return nullptr;
-    }
-
 public:
+    // execution operator
     virtual void operator()()
     {
         m_future = m_ptask.get_future();
         m_ptask();
-        m_future_retrieved = false;
+        m_retrieved = false;
+    }
+
+    // finish execution
+    virtual void wait() const
+    {
+        if(!m_retrieved)
+            m_future.get();
+        m_retrieved = true;
     }
 
 private:
-    mutable bool                    m_future_retrieved;
-    packaged_task_type              m_ptask;
-    mutable future_type             m_future;
+    mutable bool            m_retrieved;
+    mutable promise_type    m_promise;
+    mutable future_type     m_future;
+    function_type           m_function;
+    packaged_task_type      m_ptask;
+    task_group_type*           m_group;
 };
 
 //============================================================================//

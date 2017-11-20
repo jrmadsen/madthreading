@@ -180,7 +180,7 @@ void mad::cov::accumulate_diagonal_invnpp ( int64_t /*nsub*/, int64_t subsize,
 
 //============================================================================//
 #define SLOWER
-void mad::cov::accumulate_zmap (int64_t nsub, int64_t subsize, int64_t nnz,
+void mad::cov::accumulate_zmap (int64_t /*nsub*/, int64_t subsize, int64_t nnz,
                                 int64_t nsamp,
                                 int64_t const* indx_submap,
                                 int64_t const* indx_pix,

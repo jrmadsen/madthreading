@@ -1,5 +1,6 @@
 # madthreading
-A low-overhead, task-based threading API using a pool of C++11 threads (i.e. thread pool)
+A low-overhead, task-based threading API using a pool of C++11 threads (i.e. thread pool).
+It also features an extension for asynchronous execution using a thread pool.
 
 Madthreading is a general multithreading API similar to Intel's Thread Building
 Blocks but with a more flexible tasking system. For example, in TBB, task
@@ -49,9 +50,9 @@ Passing tasks to thread-manager is done through three primary interfaces:
  mad::thread_manager::run_loop(mad::task_group*, ...)   // generic construct
 ```
 
-Tasks are not explicitly created. However, you are required to pass a pointer
-to a task-group. The task_group is the handle for joining/synchronization.
-Instead of explicitly creating tasks, you pass function pointers and
+Tasks are not generally explicitly created (although they can be). You are required to pass a pointer
+to a task-group when not using async. The task_group is the handle for joining/synchronization.
+Instead of explicitly creating tasks, you can pass function pointers and
 arguments, where the arguments are for the function (exec, run) or for the
 loop that creates the tasks (run_loop). Examples are provided in the
 examples/ directory of the source code
@@ -75,16 +76,15 @@ Optional dependencies:
 Madthreading provides a generic interface to using atomics and, when C++11 is
 not available, provides a mutexed-based interface that works like an atomic.
 
-There are two forms of tasks: standard and a tree type design. The tree
-type design is intended to be closer to the TBB design.
+There are two forms of tasks: standard and a packaged_task. The packaged_task
+type is a slight extension of std::packaged_task to run in the thread_pool.
 
  ##################################################
 
 Examples:
   - ex1  : simple usage examples
   - ex2  : simple MT pi calculation using run_loop
-  - ex3a : simple MT pi calculation using task_tree
-  - ex3b : simple MT pi calculation using task_tree + grainsize
+  - ex3  : asynchronous execution of C++ from Python with futures (requires PyBind11)
   - ex4  : a vectorization example using intrinsics
   - ex5  : demonstration of task_group usage cases
   - ex6  : PI calculations using different threading methods (for comparison)
@@ -98,8 +98,6 @@ Examples:
     - OpenMP (parallel block - type 1)
     - OpenMP (parallel block - type 2)
     - mad thread-pool (run_loop)
-    - mad thread-pool (task_tree)
-    - mad thread-pool (task_tree w/ grainsize)
 
  ##################################################
     
@@ -141,14 +139,14 @@ Examples of OpenMP issues:
   - I tried different captures, different placements of the lambda (inside and outside parallel section, inside the loop, etc.) and none of that fixed the performance. 
   - Then I thought, maybe since GCC just implemented C++11 in 4.7, the problem might be on the GCC side.
   - I tested the comparison with TBB and found no difference. 
-  - So I brought it to the OpenMP developer and showed him and he verified everything and tried fixing the performance himself to no avail. 
+  - So I brought it to the OpenMP developer. He verified everything and agreed the code should perform as expected @ 400% CPU utilization and even tried fixing the performance himself to no avail.
   - He wrote down the compiler version and said he'd look into it. 
 
 
 This experience started me down the road to the opinion I have of OpenMP today:
 
 - **OpenMP is convenient but far too opaque in what is being done "under the hood" to allow straight-forward diagnosis of performance issues.**
-- **False-sharing is very easy to introduce, requires a lot of experience to quickly diagnose, and is a byproduct of the OpenMP pragma style. It is much less common with other models because of how you are forced to build the code (functionally).**
+- **False-sharing is easy to introduce, requires a lot of experience to quickly diagnose, and is a byproduct of the OpenMP pragma style. It is much less common with other models because of how you are forced to build the code (functionally).**
 - **Thus, you could end up spending far too much of your own time either (a) trying to fix something that shouldn't have to be fixed, (b) searching for the performance bottleneck that would exist in other threading models, or (c) both.**
 
 
