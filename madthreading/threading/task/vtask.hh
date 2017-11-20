@@ -64,10 +64,7 @@ public:
 
 public:
     // execution operator
-    virtual void operator()()           = 0;
-
-    // finish execution
-    virtual void        wait() const    = 0;
+    virtual void operator()() = 0;
 
 public:
     // used by thread_pool

@@ -64,6 +64,7 @@ public:
     typedef mad::mutex                              lock_t;
     typedef long_ts                                 task_count_type;
     typedef mad::condition                          condition_t;
+    typedef std::shared_ptr<task_type>              task_pointer;
 
 public:
     // Constructor and Destructors
@@ -96,8 +97,6 @@ public:
 protected:
     // check if any tasks are still pending
     int pending() { return m_task_count; }
-
-    virtual void wait_internal() = 0;
     
 protected:
     // Private variables

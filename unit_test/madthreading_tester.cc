@@ -23,6 +23,8 @@ using namespace std;
 #define CheckTol    1.0e-7
 #define NUM_STEPS   500000000UL
 
+static mad::mutex _mutex;
+
 //============================================================================//
 // T1
 TEST(Test_1_pi_pool)
@@ -50,6 +52,56 @@ TEST(Test_1_pi_pool)
     tg.join();
 
     CHECK_CLOSE(step*sum, dat::PI, CheckTol);
+
+    delete tm;
+}
+
+//============================================================================//
+
+TEST(Test_2_Hello_World)
+{
+    //------------------------------------------------------------------------//
+    thread_manager* tm = thread_manager::get_thread_manager();
+    int niter = 20;
+    //------------------------------------------------------------------------//
+    auto _run1 = [] (int n)
+    {
+        mad::auto_lock l(_mutex);
+        tmcout << "Hello World! - iteration #" << n << std::endl;
+    };
+    //------------------------------------------------------------------------//
+    tmcout << "\nRunning loop #1 (run_loop)..." << std::endl;
+    mad::task_group<void> tg1;
+    tm->run_loop(&tg1, _run1, 0, niter);
+    tg1.join();
+
+    delete tm;
+}
+
+//============================================================================//
+
+TEST(Test_3_Hello_World_2)
+{
+    //------------------------------------------------------------------------//
+    thread_manager* tm = thread_manager::get_thread_manager();
+    int niter = 20;
+    //------------------------------------------------------------------------//
+    mad::atomic<int> n(niter);
+    //------------------------------------------------------------------------//
+    auto _run2 = [&] ()
+    {
+        int _n = ++n;
+        mad::auto_lock l(_mutex);
+        tmcout << "Hello World! - iteration #" << _n << std::endl;
+    };
+    //------------------------------------------------------------------------//
+    tmcout << "\nRunning loop #2 (exec)..." << std::endl;
+    mad::task_group<void> tg2;
+    for(int i = 0; i < niter; ++i)
+        tm->exec(&tg2, _run2);
+    tg2.join();
+
+    delete tm;
 }
 
 //============================================================================//

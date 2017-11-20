@@ -105,8 +105,6 @@ void vtask_group::wait()
             break;
     }
 
-    wait_internal();
-
     if(m_task_count > 0)
     {
         long_type ntask = m_task_count;

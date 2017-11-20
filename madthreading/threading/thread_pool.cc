@@ -214,7 +214,6 @@ int thread_pool::initialize_threadpool()
                               << std::endl;
             }
 #endif
-            tid->detach();
         }
         catch(std::runtime_error& e)
         {
@@ -339,7 +338,7 @@ int thread_pool::destroy_threadpool()
 
 void thread_pool::execute_thread()
 {
-    task_ptr task = nullptr;
+    task_pointer task = nullptr;
     while(true)
     {
         //--------------------------------------------------------------------//
@@ -392,8 +391,10 @@ void thread_pool::execute_thread()
 
 //============================================================================//
 
-void thread_pool::run(task_ptr task)
+void thread_pool::run(task_pointer task)
 {
+    if(!task.get())
+        return;
     // execute task
     (*task)();
 
@@ -402,7 +403,7 @@ void thread_pool::run(task_ptr task)
 
 //============================================================================//
 
-int thread_pool::add_task(task_ptr task)
+int thread_pool::add_task(task_pointer task)
 {
 
 #ifdef VERBOSE_THREAD_POOL
@@ -411,7 +412,7 @@ int thread_pool::add_task(task_ptr task)
 
     if(!is_alive_flag) // if we haven't built thread-pool, just execute
     {
-        run(task_ptr(task));
+        run(task_pointer(task));
         return 0;
     }
 
@@ -426,7 +427,7 @@ int thread_pool::add_task(task_ptr task)
         initialize_threadpool();
 
     // TODO: put a limit on how many tasks can be added at most
-    m_main_tasks.push_back(task_ptr(task));
+    m_main_tasks.push_back(task_pointer(task));
 
     // wake up one thread that is waiting for a task to be available
     m_task_cond.notify_one();

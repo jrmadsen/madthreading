@@ -29,18 +29,17 @@ template <typename _Tp,typename _Arg = _Tp>
 class task_group : public mad::details::vtask_group
 {
 public:
-    template <typename _Key, typename _Type>
-    using map_type = std::unordered_map<_Key, _Type>;
+    template <typename _Type>
+    using list_type = std::deque<_Type>;
 
     typedef _Tp                                     result_type;
     typedef task_group<_Tp>                         this_type;
     typedef std::promise<_Tp>                       promise_type;
     typedef std::future<_Tp>                        future_type;
-    typedef std::tuple<bool, future_type, _Tp*>     data_type;
-    typedef map_type<task_type*, data_type>         task_list_t;
+    typedef std::tuple<bool, future_type, _Tp>      data_type;
+    typedef list_type<data_type>                    task_list_t;
     typedef typename task_list_t::iterator          iterator;
     typedef typename task_list_t::const_iterator    const_iterator;
-    typedef std::deque<future_type>                 future_list_t;
     typedef std::function<_Tp(_Tp&, _Arg)>          function_type;
 
 public:
@@ -64,18 +63,15 @@ public:
 
     //------------------------------------------------------------------------//
     // add task
-    this_type& add(task_type* _t, future_type&& _f);
+    this_type& add(future_type&& _f);
     //------------------------------------------------------------------------//
     // wait to finish
     _Tp join(_Tp accum = _Tp());
 
 protected:
     //------------------------------------------------------------------------//
-    // used by vtask_group
-    virtual void wait_internal() final;
-    //------------------------------------------------------------------------//
     // get a specific task
-    _Arg get(details::vtask* ptr);
+    _Arg get(data_type& _data);
 
 protected:
     // Protected variables
@@ -91,27 +87,22 @@ template <>
 class task_group<void, void> : public mad::details::vtask_group
 {
 public:
-    template <typename _Key, typename _Type>
-    using map_type = std::unordered_map<_Key, _Type>;
+    template <typename _Type>
+    using list_type = std::deque<_Type>;
 
-    typedef void                                        result_type;
-    typedef task_group<void>                            this_type;
-    typedef std::promise<void>                          promise_type;
-    typedef std::future<void>                           future_type;
-    typedef std::tuple<bool, future_type>               data_type;
-    typedef map_type<task_type*, data_type>             task_list_t;
-    typedef typename task_list_t::iterator              iterator;
-    typedef typename task_list_t::const_iterator        const_iterator;
-    typedef std::deque<future_type>                     future_list_t;
+    typedef void                                    result_type;
+    typedef task_group<void>                        this_type;
+    typedef std::future<void>                       future_type;
+    typedef std::tuple<bool, future_type>           data_type;
+    typedef list_type<data_type>                    task_list_t;
+    typedef typename task_list_t::iterator          iterator;
+    typedef typename task_list_t::const_iterator    const_iterator;
 
 public:
     // Constructor and Destructors
     task_group(thread_pool* tp = nullptr) : details::vtask_group(tp) { }
     ~task_group()
-    {
-        for(auto& itr : m_task_list)
-            delete itr.first;
-    }
+    { }
 
 public:
     // Get tasks with non-void return types
@@ -128,31 +119,27 @@ public:
 
     //------------------------------------------------------------------------//
     // add task
-    this_type& add(task_type* _t, future_type&& _f)
+    this_type& add(future_type&& _f)
     {
-        m_task_list[_t] = data_type(false, std::move(_f));
+        m_task_list.push_back(data_type(false, std::move(_f)));
         return *this;
     }
     //------------------------------------------------------------------------//
     // wait to finish
-    void join() { this->wait(); }
+    void join()
+    {
+        this->wait();
+        for(auto& itr : *this)
+            this->get(itr);
+    }
 
 protected:
     //------------------------------------------------------------------------//
-    // used by vtask_group
-    virtual void wait_internal() final
-    {
-        for(auto& itr : m_task_list)
-            itr.first->wait();
-    }
-    //------------------------------------------------------------------------//
     // get specific task
-    void get(details::vtask* ptr)
+    void get(data_type& _data)
     {
-        data_type& _data = m_task_list[ptr];
         if(!std::get<0>(_data))
         {
-            ptr->wait();
             std::get<1>(_data).get();
             std::get<0>(_data) = true;
         }
@@ -161,8 +148,6 @@ protected:
 protected:
     // Private variables
     task_list_t         m_task_list;
-    promise_type        m_promise;
-
 };
 
 //----------------------------------------------------------------------------//

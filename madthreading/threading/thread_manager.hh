@@ -268,8 +268,8 @@ public:
     void exec(mad::task<_Args...>* _task)
     {
         typedef mad::task<_Args...> task_type;
-        typedef std::shared_ptr<task_type> task_ptr;
-        m_data->tp()->add_task(task_ptr(_task));
+        typedef std::shared_ptr<task_type> task_pointer;
+        m_data->tp()->add_task(task_pointer(_task));
     }
 
     //------------------------------------------------------------------------//
@@ -294,8 +294,8 @@ public:
     void exec(mad::task_group<_Ret>* tg, _Func function, _Args... args)
     {
         typedef task<_Ret, _Args...> task_type;
-        typedef std::shared_ptr<task_type> task_ptr;
-        m_data->tp()->add_task(task_ptr(new task_type(tg, function, args...)));
+        typedef std::shared_ptr<task_type> task_pointer;
+        m_data->tp()->add_task(task_pointer(new task_type(tg, function, args...)));
     }
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func>
@@ -303,8 +303,8 @@ public:
     void exec(mad::task_group<_Ret>* tg, _Func function)
     {
         typedef task<_Ret> task_type;
-        typedef std::shared_ptr<task_type> task_ptr;
-        m_data->tp()->add_task(task_ptr(new task_type(tg, function)));
+        typedef std::shared_ptr<task_type> task_pointer;
+        m_data->tp()->add_task(task_pointer(new task_type(tg, function)));
     }
     //------------------------------------------------------------------------//
 
@@ -317,10 +317,10 @@ public:
     void run(mad::task_group<_Ret>* tg, _Func function, _Args... args)
     {
         typedef task<_Ret, _Args...> task_type;
-        typedef std::shared_ptr<task_type> task_ptr;
+        typedef std::shared_ptr<task_type> task_pointer;
         task_list_t _tasks(size(), nullptr);
         for(size_type i = 0; i < size(); ++i)
-            _tasks[i] = task_ptr(new task_type(tg, function, args...));
+            _tasks[i] = task_pointer(new task_type(tg, function, args...));
         m_data->tp()->add_tasks(_tasks);
     }
     //------------------------------------------------------------------------//
@@ -329,10 +329,10 @@ public:
     void run(mad::task_group<_Ret>* tg, _Func function)
     {
         typedef task<_Ret> task_type;
-        typedef std::shared_ptr<task_type> task_ptr;
+        typedef std::shared_ptr<task_type> task_pointer;
         task_list_t _tasks(size(), nullptr);
         for(size_type i = 0; i < size(); ++i)
-            _tasks[i] = task_ptr(new task_type(tg, function));
+            _tasks[i] = task_pointer(new task_type(tg, function));
         m_data->tp()->add_tasks(_tasks);
     }
     //------------------------------------------------------------------------//
@@ -352,9 +352,9 @@ public:
                   _Func function, const _Arg1& _s, const _Arg& _e)
     {
         typedef task<_Ret, _Arg> task_type;
-        typedef std::shared_ptr<task_type> task_ptr;
+        typedef std::shared_ptr<task_type> task_pointer;
         for(size_type i = _s; i < _e; ++i)
-            m_data->tp()->add_task(task_ptr(new task_type(tg, function, i)));
+            m_data->tp()->add_task(task_pointer(new task_type(tg, function, i)));
     }
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func, typename InputIterator>
@@ -363,9 +363,9 @@ public:
                   _Func function, InputIterator _s, InputIterator _e)
     {
         typedef task<_Ret, InputIterator> task_type;
-        typedef std::shared_ptr<task_type> task_ptr;
+        typedef std::shared_ptr<task_type> task_pointer;
         for(InputIterator itr = _s; itr != _e; ++itr)
-            m_data->tp()->add_task(task_ptr(new task_type(tg, function, itr)));
+            m_data->tp()->add_task(task_pointer(new task_type(tg, function, itr)));
     }
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func, typename _Arg1, typename _Arg>
@@ -377,7 +377,7 @@ public:
                   uint64_t chunks)
     {
         typedef task<_Ret, _Arg, _Arg> task_type;
-        typedef std::shared_ptr<task_type> task_ptr;
+        typedef std::shared_ptr<task_type> task_pointer;
 
         _Arg _grainsize = (chunks == 0) ? size() : chunks;
         _Arg _diff = (_e - _s)/_grainsize;
@@ -388,7 +388,7 @@ public:
             _Arg _l = _f + _diff; // last
             if(i+1 == _n)
                 _l = _e;
-            m_data->tp()->add_task(task_ptr(new task_type(tg, function, _f, _l)));
+            m_data->tp()->add_task(task_pointer(new task_type(tg, function, _f, _l)));
         }
     }
     //------------------------------------------------------------------------//

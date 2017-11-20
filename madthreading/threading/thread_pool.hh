@@ -60,9 +60,9 @@ class thread_pool
 public:
     typedef mad::details::vtask                             task_type;
     typedef std::size_t                                     size_type;
-    typedef std::shared_ptr<task_type>                      task_ptr;
+    typedef std::shared_ptr<task_type>                      task_pointer;
     typedef std::vector<std::thread*>                       ThreadContainer_t;
-    typedef std::deque<task_ptr, Allocator_t(task_ptr)>     task_list_t;
+    typedef std::deque<task_pointer, Allocator_t(task_pointer)>     task_list_t;
     typedef std::vector<bool, Allocator_t(bool)>            JoinContainer_t;
     typedef mutex                                           lock_t;
     typedef ulong_ts                                        task_count_type;
@@ -88,7 +88,7 @@ public:
 
 public:
     // add tasks for threads to process
-    int add_task(task_ptr task);
+    int add_task(task_pointer task);
     // add a generic container with iterator
     template <typename Container_t>
     int add_tasks(Container_t&);
@@ -113,7 +113,7 @@ public:
 protected:
     void  execute_thread(); // function thread sits in
     void  background_thread(); // function background threads sit in
-    void  run(task_ptr);
+    void  run(task_pointer);
     bool  is_initialized() const;
 
 protected:

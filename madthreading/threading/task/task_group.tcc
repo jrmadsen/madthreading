@@ -33,30 +33,15 @@ task_group<_Tp, _Arg>::task_group(_Func _join, thread_pool* tp)
 
 template <typename _Tp, typename _Arg>
 task_group<_Tp, _Arg>::~task_group()
-{
-    for(auto& itr : m_task_list)
-    {
-        delete itr.first;
-        delete std::get<2>(itr.second);
-    }
-}
-
-//============================================================================//
-
-template <typename _Tp, typename _Arg>
-void task_group<_Tp, _Arg>::wait_internal()
-{
-    for(auto& itr : m_task_list)
-        itr.first->wait();
-}
+{ }
 
 //============================================================================//
 
 template <typename _Tp, typename _Arg>
 inline typename task_group<_Tp, _Arg>::this_type&
-task_group<_Tp, _Arg>::add(task_type* _t, future_type&& _f)
+task_group<_Tp, _Arg>::add(future_type&& _f)
 {
-    m_task_list[_t] = data_type(false, std::move(_f), new _Tp());
+    m_task_list.push_back(data_type(false, std::move(_f), _Tp()));
     return *this;
 }
 
@@ -67,23 +52,21 @@ inline _Tp task_group<_Tp, _Arg>::join(_Tp accum)
 {
     this->wait();
     for(auto& itr : *this)
-        accum = m_join_function(accum, this->get(itr.first));
+        accum = m_join_function(accum, this->get(itr));
     return accum;
 }
 
 //============================================================================//
 
 template <typename _Tp, typename _Arg>
-_Arg task_group<_Tp, _Arg>::get(details::vtask* ptr)
+_Arg task_group<_Tp, _Arg>::get(data_type& _data)
 {
-    data_type& _data = m_task_list[ptr];
     if(!std::get<0>(_data))
     {
-        ptr->wait();
-        *std::get<2>(_data) = std::get<1>(_data).get();
+        std::get<2>(_data) = std::get<1>(_data).get();
         std::get<0>(_data) = true;
     }
-    return *std::get<2>(_data);
+    return std::get<2>(_data);
 }
 
 //============================================================================//

@@ -108,52 +108,10 @@ int main(int argc, char** argv)
         tm->exec(&tg2, _run2);
     tg2.join();
 
-
     //========================================================================//
     // RUN #3
     //========================================================================//
-    /*std::list<int> _list;
-    fill(_list, 0, niter);
-    tmcout << "\nRunning loop #3 (run_loop<list::iterator>)..." << std::endl;
-    mad::task_group tg3;
-    tm->run_loop(&tg3, _run_itr<std::list<int>::iterator>, _list.begin(), _list.end());
-    tg3.join();*/
-
-
-    //========================================================================//
-    // RUN #4
-    //========================================================================//
-    /*std::deque<int> _deque;
-    fill(_deque, niter, niter+niter);
-    tmcout << "\nRunning loop #4 (run_loop<deque::iterator>)..." << std::endl;
-    auto func = std::bind(_run_itr<std::deque<int>::iterator>, _1);
-    mad::task_group tg4;
-    tm->run_loop(&tg4, func, _deque.begin(), _deque.end());
-    tg4.join();*/
-
-
-    //========================================================================//
-    // RUN #5
-    //========================================================================//
-    tmcout << "\nRunning #5 (> 4 arguments)..." << std::endl;
-    auto arg4 = 2;
-    auto arg5 = 4.5f;
-    auto arg6 = 1;
-    auto func1 = [arg4, arg5, arg6] (int arg1, double arg2, long arg3)
-    {
-          full_func(arg1, arg2, arg3, arg4, arg5, arg6);
-    };
-    auto func2 = std::bind(full_func, _1, _2, _3, arg4, arg5, arg6);
-    mad::task_group<void> tg5;
-    tm->exec(&tg5, func1, 1, 1.3, 5L);
-    tm->exec(&tg5, func2, 3, 4.1, 7L);
-    tg5.join();
-
-
-    //========================================================================//
-    // RUN #6
-    //========================================================================//
-    auto _run6 = [&] (const double& d1, const double& d2,
+    auto _run3 = [&] (const double& d1, const double& d2,
                       const double& d3, const double& d4,
                       const double& d5, const double& d6)
     {
@@ -169,17 +127,17 @@ int main(int argc, char** argv)
                 std::numeric_limits<double>::digits>(random_engine);
     };
     //------------------------------------------------------------------------//
-    tmcout << "\nRunning exec #6 (6 params w/ C++11 variadic templates)..."
+    tmcout << "\nRunning exec #3 (6 params w/ C++11 variadic templates)..."
            << std::endl;
     auto prec = std::cout.precision();
     std::cout.precision(4);
     std::cout.setf(std::ios::fixed);
-    mad::task_group<void> tg;
+    mad::task_group<void> tg3;
     for(int i = 0; i < niter; ++i)
-        tm->exec(&tg, _run6,
+        tm->exec(&tg3, _run3,
                  canonical(), canonical(), canonical(),
                  canonical(), canonical(), canonical());
-    tg.join();
+    tg3.join();
     std::cout.precision(prec);
     std::cout.unsetf(std::ios::fixed);
 
