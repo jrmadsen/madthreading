@@ -6,6 +6,8 @@ import time
 import async
 import pythreading
 
+waitForFutures = False
+
 pythreading.thread_manager(4)
 
 def fibonacci(n):
@@ -28,6 +30,10 @@ for i in range(50, 100):
     futures.append(async.work(i))
 
 async.write("(Python) Finished any calls to C++ code... Any future C++ output demonstrates C++ running in the background alongside Python...")
+
+if waitForFutures == True:
+    for n in range(0, len(futures)):
+        futures[n].wait()
 
 sum = 0
 for n in range(0, len(futures)):

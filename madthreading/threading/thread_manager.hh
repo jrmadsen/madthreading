@@ -258,11 +258,11 @@ public:
     template <typename _Ret, typename _Func, typename... _Args>
     std::future<_Ret> async(_Func func, _Args... args)
     {
-        typedef mad::packaged_task<_Ret, _Args...> task_type;
-        std::shared_ptr<task_type> _ptask(new task_type(func, args...));
+        typedef mad::packaged_task<_Ret, _Args...>  task_type;
+        typedef std::shared_ptr<task_type>          task_pointer;
+        task_pointer _ptask(new task_type(func, std::forward<_Args>(args)...));
         m_data->tp()->add_task(_ptask);
-        std::future<_Ret> _f = _ptask->get_future();
-        return _f;
+        return _ptask->get_future();
     }
 
 public:
@@ -275,7 +275,8 @@ public:
     {
         typedef task<_Ret, _Args...> task_type;
         typedef std::shared_ptr<task_type> task_pointer;
-        m_data->tp()->add_task(task_pointer(new task_type(tg, func, args...)));
+        m_data->tp()->add_task(tg->store(task_pointer(new task_type(tg, func,
+                                            std::forward<_Args>(args)...))));
     }
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func>
@@ -284,7 +285,7 @@ public:
     {
         typedef task<_Ret> task_type;
         typedef std::shared_ptr<task_type> task_pointer;
-        m_data->tp()->add_task(task_pointer(new task_type(tg, func)));
+        m_data->tp()->add_task(tg->store(task_pointer(new task_type(tg, func))));
     }
     //------------------------------------------------------------------------//
 
@@ -300,7 +301,8 @@ public:
         typedef std::shared_ptr<task_type> task_pointer;
         task_list_t _tasks(size(), nullptr);
         for(size_type i = 0; i < size(); ++i)
-            _tasks[i] = task_pointer(new task_type(tg, func, args...));
+            _tasks[i] = tg->store(task_pointer(new task_type(tg, func,
+                                            std::forward<_Args>(args)...)));
         m_data->tp()->add_tasks(_tasks);
     }
     //------------------------------------------------------------------------//
@@ -312,7 +314,7 @@ public:
         typedef std::shared_ptr<task_type> task_pointer;
         task_list_t _tasks(size(), nullptr);
         for(size_type i = 0; i < size(); ++i)
-            _tasks[i] = task_pointer(new task_type(tg, func));
+            _tasks[i] = tg->store(task_pointer(new task_type(tg, func)));
         m_data->tp()->add_tasks(_tasks);
     }
     //------------------------------------------------------------------------//
@@ -333,7 +335,8 @@ public:
         typedef task<_Ret, _Arg> task_type;
         typedef std::shared_ptr<task_type> task_pointer;
         for(size_type i = _s; i < _e; ++i)
-            m_data->tp()->add_task(task_pointer(new task_type(tg, func, i)));
+            m_data->tp()->add_task(tg->store(task_pointer(new task_type(tg,
+                                                                func, i))));
     }
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func, typename InputIterator>
@@ -344,7 +347,8 @@ public:
         typedef task<_Ret, InputIterator> task_type;
         typedef std::shared_ptr<task_type> task_pointer;
         for(InputIterator itr = _s; itr != _e; ++itr)
-            m_data->tp()->add_task(task_pointer(new task_type(tg, func, itr)));
+            m_data->tp()->add_task(tg->store(task_pointer(new task_type(tg,
+                                                                func, itr))));
     }
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func, typename _Arg1, typename _Arg>
@@ -367,7 +371,8 @@ public:
             _Arg _l = _f + _diff; // last
             if(i+1 == _n)
                 _l = _e;
-            m_data->tp()->add_task(task_pointer(new task_type(tg, func, _f, _l)));
+            m_data->tp()->add_task(tg->store(task_pointer(new task_type(tg,
+                                                            func, _f, _l))));
         }
     }
     //------------------------------------------------------------------------//

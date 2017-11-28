@@ -26,7 +26,7 @@ class thread_pool;
 //----------------------------------------------------------------------------//
 
 template <typename _Tp,typename _Arg = _Tp>
-class task_group : public mad::details::vtask_group
+class task_group : public details::vtask_group
 {
 public:
     template <typename _Type>
@@ -84,7 +84,7 @@ protected:
 //----------------------------------------------------------------------------//
 // specialization for void type
 template <>
-class task_group<void, void> : public mad::details::vtask_group
+class task_group<void, void> : public details::vtask_group
 {
 public:
     template <typename _Type>

@@ -59,12 +59,15 @@ namespace details
 class vtask_group
 {
 public:
-    typedef mad::details::vtask                     task_type;
+    template <typename _Tp> using container_type = std::deque<_Tp>;
+
+    typedef vtask                                   task_type;
     typedef std::size_t                             size_type;
     typedef mad::mutex                              lock_t;
     typedef long_ts                                 task_count_type;
     typedef mad::condition                          condition_t;
     typedef std::shared_ptr<task_type>              task_pointer;
+    typedef container_type<task_pointer>            vtask_list_type;
 
 public:
     // Constructor and Destructors
@@ -94,6 +97,9 @@ public:
     thread_pool*& pool()       { return m_pool; }
     thread_pool*  pool() const { return m_pool; }
 
+    task_pointer store(task_pointer ptr)
+    { vtask_list.push_back(ptr); return ptr; }
+
 protected:
     // check if any tasks are still pending
     int pending() { return m_task_count; }
@@ -113,6 +119,10 @@ protected:
         STOPPED = 1,
         NONINIT = 2
     };
+
+private:
+    vtask_list_type vtask_list;
+
 };
 
 } // namespace details
