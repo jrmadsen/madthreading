@@ -132,7 +132,7 @@ before_install:
     - export PYROOTPATH=$(dirname ${PYBINPATH})
     - export PATH=${PYBINPATH}:${PATH}
     - export CMAKE_PREFIX_PATH=${PYROOTPATH}:${CMAKE_PREFIX_PATH}
-    - export PYTHON_VERSION="$(which python | awk '{print $NF}')"
+    - export PYTHON_VERSION="$(python --version | awk '{print $NF}')"
     - echo "CC = ${CC} $(${CC} -dumpversion)"
     - echo "CXX = ${CXX} $(${CXX} -dumpversion)"
     - echo "Python = $(which python) [version ${PYTHON_VERSION}]"
@@ -154,7 +154,7 @@ install:
         -DBUILD_CXXSTD=${CXXSTD} -DENABLE_UNIT_TEST=ON
         -DUSE_TBB=${ENABLE_TBB} -DUSE_OPENMP=${ENABLE_OMP}
         -DUSE_TCMALLOC=OFF -DUSE_SSE=${ENABLE_SSE}
-        -DUSE_PYBIND11=ON ${PWD}/..
+        -DUSE_PYBIND11=ON -DPYTHON_EXECUTABLE=$(which python) ${PWD}/..
     - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
     - make -j2
     
