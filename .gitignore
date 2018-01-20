@@ -1,2 +1,5 @@
 # QtCreater generated file
 CMakeLists.txt.user
+
+# build folders
+/build-*
