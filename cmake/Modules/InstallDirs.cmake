@@ -69,24 +69,14 @@ set(CMAKE_INSTALL_LIBDIR_DEFAULT ${_LIBDIR_DEFAULT}
 
 # ---------------------------------------------------------------------------- #
 #   Add one for cmake export
-set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR_DEFAULT}/cmake/${CMAKE_PROJECT_NAME}"
+set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_DATAROOTDIR}/cmake/${CMAKE_PROJECT_NAME}"
     CACHE PATH "CMake export directory")
 unset(_LIBDIR_DEFAULT)
 
 # ---------------------------------------------------------------------------- #
-#   Add one for cmake export
-if(NOT "${PYTHON_VERSION_STRING}" STREQUAL "")
-    GET_VERSION_COMPONENTS(PYTHON "${PYTHON_VERSION_STRING}")
-endif(NOT "${PYTHON_VERSION_STRING}" STREQUAL "")
-STRING(TOLOWER "${CMAKE_PROJECT_NAME}" LPROJECT_NAME)
-set(CMAKE_INSTALL_PYTHONDIR
-    "${CMAKE_INSTALL_LIBDIR_DEFAULT}/python${PYTHON_SHORT_VERSION}/site-packages/${LPROJECT_NAME}"
-    CACHE PATH "CMake python install directory" FORCE)
-
-# ---------------------------------------------------------------------------- #
 #   Add the cmake full directory variable
 #
-foreach(TYPE CMAKE PYTHON)
+foreach(TYPE CMAKE)
     if(NOT IS_ABSOLUTE ${CMAKE_INSTALL_${TYPE}DIR})
         set(CMAKE_INSTALL_FULL_${TYPE}DIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_${TYPE}DIR}")
     else()

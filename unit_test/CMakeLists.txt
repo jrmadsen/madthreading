@@ -4,9 +4,9 @@ if(NOT ENABLE_UNIT_TEST)
 endif()
 
 include(TestingMacros)
-include(GenericCMakeFunctions)
+include(GenericFunctions)
 
-include_directories(${PROJECT_SOURCE_DIR})
+include_directories(${PROJECT_SOURCE_DIR}/source ${TIMEMORY_INCLUDE_DIRS})
 
 add_option(BATCH_MODE "Enable building but not running of unit test" OFF)
 

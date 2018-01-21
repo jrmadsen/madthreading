@@ -1,37 +1,37 @@
 cmake_minimum_required(VERSION 3.1.3 FATAL_ERROR)
 
-project(madthreading C CXX)
+project(madthreading LANGUAGES C CXX VERSION 3.0.0)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules
-                      ${PROJECT_SOURCE_DIR}/cmake/Packages
-                      ${CMAKE_MODULE_PATH})
+    ${PROJECT_SOURCE_DIR}/cmake/Packages
+    ${CMAKE_MODULE_PATH})
+
+set(CMAKE_USER_MAKE_RULES_OVERRIDE_C
+    ${CMAKE_SOURCE_DIR}/cmake/Modules/MakeRulesC.cmake)
 
 set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX
     ${CMAKE_SOURCE_DIR}/cmake/Modules/MakeRulesCXX.cmake)
 
+include(Compilers)
 include(MakeRulesC)
 include(MakeRulesCXX)
-include(GenericCMakeFunctions)
+include(GenericFunctions)
 SET_PROJECT_VERSION("3" "0" "0"
     "Multithreading API using C++11 threads. Task-based with thread-pool with asynchronous execution")
 SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
 SET(CMAKE_INSTALL_MESSAGE LAZY)
-
 message(STATUS "Project: ${PROJECT_NAME}")
 message(STATUS "Version: ${${PROJECT_NAME}_VERSION}")
 
 include(VersionUpdate)
 include(InstallDirs)
-include(GenericCMakeOptions)
+include(GenericOptions)
 include(Packages)
 include(LibraryBuildOptions)
 include(MacroUtilities)
 include(LibrarySuffixes)
 
 OPTION_USE_OPENMP(ON)
-OPTION_RETURN_TYPE_COMPILER_WARNINGS(OFF NO_FEATURE)
-OPTION_EXTRA_COMPILER_WARNINGS(OFF NO_FEATURE)
-OPTION_GPROF(OFF NO_FEATURE)
 ADD_OPTION(BUILD_EXAMPLES "Build the examples" ON)
 
 string(TOUPPER ${CMAKE_BUILD_TYPE} UPPER_BUILD_TYPE)
@@ -52,10 +52,7 @@ endforeach()
 include(ConfigureCXXSTD)
 set(CMAKE_CXX_FLAGS "-std=${BUILD_CXXSTD} ${CMAKE_CXX_FLAGS}")
 
-if(USE_PYBIND11)
-    add_subdirectory(pybind11)
-endif(USE_PYBIND11)
-add_subdirectory(madthreading)
+add_subdirectory(source)
 add_subdirectory(unit_test)
 
 #------------------------------------------------------------------------------#

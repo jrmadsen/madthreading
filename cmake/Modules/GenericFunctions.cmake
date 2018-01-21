@@ -1,4 +1,9 @@
 
+# - Include guard
+if(__genericfunctions_isloaded)
+  return()
+endif()
+set(__genericfunctions_isloaded YES)
 
 include(CMakeParseArguments)
 
@@ -32,6 +37,36 @@ endfunction()
 
 
 ################################################################################
+#   Macro to add to string
+################################################################################
+macro(add _VAR _FLAG)
+    if(NOT "${_FLAG}" STREQUAL "")
+        if("${${_VAR}}" STREQUAL "")
+            set(${_VAR} "${_FLAG}")
+        else()
+            set(${_VAR} "${${_VAR}} ${_FLAG}")
+        endif()
+    endif()
+endmacro()
+
+
+################################################################################
+#    Add Package definitions
+################################################################################
+macro(ADD_PACKAGE_DEFINITIONS PKG)
+    add_definitions(-DUSE_${PKG})
+endmacro()
+
+
+################################################################################
+#    Remove Package definitions
+################################################################################
+macro(REMOVE_PACKAGE_DEFINITIONS PKG)
+    remove_definitions(-DUSE_${PKG})
+endmacro()
+
+
+################################################################################
 # function - capitalize - make a string capitalized (first letter is capital)
 #   usage:
 #       capitalize("SHARED" CShared)
@@ -47,26 +82,6 @@ function(capitalize str var)
     string(CONCAT str "${_first}" "${_remainder}")
     set(${var} "${str}" PARENT_SCOPE)
 endfunction()
-
-
-################################################################################
-#   Propagate to parent scope
-################################################################################
-macro(Propagate SET_VARIABLE)
-    set(${SET_VARIABLE} ${${SET_VARIABLE}} PARENT_SCOPE)
-endmacro()
-
-
-################################################################################
-#   Propagate to parent scope
-################################################################################
-macro(PropagateSG SET_VARIABLE)
-    set(SG_${SET_VARIABLE}_H ${SG_${SET_VARIABLE}_H} PARENT_SCOPE)
-    set(SG_${SET_VARIABLE}_I ${SG_${SET_VARIABLE}_I} PARENT_SCOPE)
-    set(PROJECT_FOLDERS ${PROJECT_FOLDERS} ${SET_VARIABLE})
-    set(PROJECT_FOLDERS ${PROJECT_FOLDERS} PARENT_SCOPE)
-    #message(STATUS "Adding ${SET_VARIABLE} to PROJECT_FOLDERS : ${PROJECT_FOLDERS}")
-endmacro()
 
 
 ################################################################################
@@ -108,48 +123,6 @@ endfunction()
 
 
 ################################################################################
-#    Undefined set
-################################################################################
-macro(undefset _ARG)
-    if(NOT DEFINED ${_ARG})
-        set(${_ARG} )
-    endif()
-endmacro()
-
-
-################################################################################
-#    Add Package definitions
-################################################################################
-macro(ADD_PACKAGE_DEFINITIONS PKG)
-    add_definitions(-DUSE_${PKG})
-endmacro()
-
-
-################################################################################
-#    Remove Package definitions
-################################################################################
-macro(REMOVE_PACKAGE_DEFINITIONS PKG)
-    remove_definitions(-DUSE_${PKG})
-endmacro()
-
-
-################################################################################
-#    Add definitions if <OPTION> is true
-################################################################################
-macro(ADD_DEFINITIONS_IF OPT)
-    if(${OPT})
-        set(DEFS ${ARGN})
-        if("${DEFS}" STREQUAL "")
-            set(DEFS ${OPT})
-        endif("${DEFS}" STREQUAL "")
-        foreach(_ARG ${DEFS})
-            add_definitions(-D${_ARG})
-        endforeach(_ARG ${ARGN})
-    endif(${OPT})
-endmacro()
-
-
-################################################################################
 #    Remove duplicates if string exists
 ################################################################################
 macro(REMOVE_DUPLICATES _ARG)
@@ -157,99 +130,6 @@ macro(REMOVE_DUPLICATES _ARG)
         list(REMOVE_DUPLICATES ${_ARG})
     endif()
 endmacro()
-
-
-################################################################################
-#    List subdirectories
-################################################################################
-function(list_subdirectories return_val current_dir return_relative)
-    if(NOT EXISTS ${current_dir})
-        message(FATAL_ERROR "ERROR in LIST_SUBDIRECTORIES : ${current_dir} does not exist")
-    endif()
-    # get everything in folder
-    file(GLOB sub_dirs ${current_dir}/*)
-    #message(STATUS "EVERYTHING: ${sub_dirs}")
-    set(list_of_dirs )
-    foreach(dir ${sub_dirs})
-        #message(STATUS "Checking ${dir} for subdirectories...")
-        if(IS_DIRECTORY ${dir})
-            #message(STATUS "${dir} is a subdirectory")
-            if (${return_relative})
-                get_filename_component(dir ${dir} NAME)
-                list(APPEND list_of_dirs ${dir})
-            else()
-                list(APPEND list_of_dirs ${dir})
-            endif()
-        endif()
-    endforeach()
-    set(${return_val} ${list_of_dirs} PARENT_SCOPE)
-endfunction()
-
-
-################################################################################
-#   Generate Source Grouping for list of files
-################################################################################
-
-macro(GenerateSourceGroupTree STRIP)
-
-    foreach(_dir ${${STRIP}})
-        get_filename_component(_dirpath "${_dir}" PATH)
-        foreach(_file ${ARGN})
-
-            string(REPLACE "${_dirpath}/" "" _file_r ${_file})
-
-            get_filename_component(_file_r ${_file_r} PATH)
-            set(_list )
-            set(_path ${_file_r})
-            while(NOT "${_path}" STREQUAL "")
-
-                get_filename_component(_tmp ${_path} NAME)
-                list(APPEND _list ${_tmp})
-
-                set(_last_path ${_path})
-                get_filename_component(_path ${_path} PATH)
-                # check that we are not at upper-most directory (infinite loop)
-                if("${_path}" STREQUAL "${_last_path}")
-                    break()
-                endif()
-            endwhile()
-
-            if(_list)
-                list(REVERSE _list)
-                set(_str "")
-                foreach(_entry ${_list})
-                    set(_str "${_str}\\${_entry}")
-                endforeach()
-
-                source_group("${_str}" FILES ${_file})
-            endif()
-        endforeach()
-    endforeach()
-
-endmacro()
-
-
-################################################################################
-#   Find a static library
-################################################################################
-
-function(find_static_library OUT LIB_NAME)
-
-    if (WIN32 OR MSVC)
-        set(CMAKE_FIND_LIBRARY_SUFFIXES ".lib")
-    elseif (UNIX)
-        set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-    endif()
-
-    find_library(FOUND ${LIB_NAME})
-
-    if(NOT FOUND)
-        message(SEND_ERROR "Unable to find static library ${LIB_NAME}")
-    endif()
-
-    set(${OUT} ${FOUND} PARENT_SCOPE)
-
-endfunction()
 
 
 ################################################################################
@@ -388,5 +268,168 @@ function(write_config_file FILE_NAME WRITE_PATH)
     endif()
 
 endfunction()
+
+################################################################################
+#   remove a file from a list of files
+################################################################################
+macro(REMOVE_FILE _LIST _NAME)
+
+    # loop over the list
+    foreach(_FILE ${${_LIST}})
+        # get the base filename
+        get_filename_component(_BASE ${_FILE} NAME)
+        # check if full filename or base filename is exact match for
+        # name provided
+        if("${_BASE}" STREQUAL "${_NAME}" OR
+           "${_FILE}" STREQUAL "${_NAME}")
+            # remove from list
+            list(REMOVE_ITEM ${_LIST} ${_FILE})
+
+        endif("${_BASE}" STREQUAL "${_NAME}" OR
+              "${_FILE}" STREQUAL "${_NAME}")
+
+    endforeach(_FILE ${${_LIST}})
+
+endmacro(REMOVE_FILE _LIST _NAME)
+
+################################################################################
+#   check a return value
+################################################################################
+
+function(check_return _VAR)
+    if("${${_VAR}}" GREATER 0)
+        message(WARNING "Error code for ${_VAR} is greater than zero: ${${_VAR}}")
+    endif("${${_VAR}}" GREATER 0)
+endfunction(check_return _VAR)
+
+################################################################################
+#   numerically sort a list
+################################################################################
+
+function(numeric_sort _VAR)
+    set(_LIST ${ARGN})
+    set(NOT_FINISHED ON)
+    while(NOT_FINISHED)
+        set(_N 0)
+        list(LENGTH _LIST _L)
+        math(EXPR _L "${_L}-1")
+        set(NOT_FINISHED OFF)
+        while(_N LESS _L)
+            math(EXPR _P "${_N}+1")
+            list(GET _LIST ${_N} _A)
+            list(GET _LIST ${_P} _B)
+            if(_B LESS _A)
+                list(REMOVE_AT _LIST ${_P})
+                list(INSERT _LIST ${_N} ${_B})
+                set(NOT_FINISHED ON)
+            endif(_B LESS _A)
+            math(EXPR _N "${_N}+1")
+        endwhile(_N LESS _L)
+    endwhile(NOT_FINISHED)
+    set(${_VAR} ${_LIST} PARENT_SCOPE)
+endfunction(numeric_sort _LIST)
+
+################################################################################
+#   Get a parameter from a CMake file
+#   - useful when variable is set to CACHE but needed as non-cache
+################################################################################
+
+function(GET_PARAMETER _VAR _FILE _PARAM)
+
+    execute_process(COMMAND ${CMAKE_COMMAND} -DFILE=${_FILE} -DQUERY=${_PARAM}
+        -P ${CMAKE_SOURCE_DIR}/cmake/Scripts/GetParam.cmake
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    OUTPUT_VARIABLE PARAM
+    RESULT_VARIABLE RET
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+    string(REGEX REPLACE "^-- " "" PARAM "${PARAM}")
+    if(NOT RET GREATER 0)
+        set(${_VAR} ${PARAM} PARENT_SCOPE)
+    else(NOT RET GREATER 0)
+        message(FATAL_ERROR "Error retrieving ${_PARAM} value from \"${_FILE}\"")
+    endif(NOT RET GREATER 0)
+
+endfunction(GET_PARAMETER _VAR _FILE _PARAM)
+
+################################################################################
+#   get value in [0-9][0-9] format
+################################################################################
+
+function(GET_00 _VAR _VAL)
+    if(${_VAL} LESS 10)
+        set(${_VAR} "0${_VAL}" PARENT_SCOPE)
+    else()
+        set(${_VAR} "${_VAL}" PARENT_SCOPE)
+    endif()
+endfunction(GET_00 _VAR _VAL)
+
+################################################################################
+# Get the hostname
+################################################################################
+
+function(GET_HOSTNAME VAR)
+    find_program(HOSTNAME_COMMAND NAMES hostname)
+    execute_process(COMMAND ${HOSTNAME_COMMAND}
+        OUTPUT_VARIABLE HOSTNAME WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    set(${VAR} ${HOSTNAME} PARENT_SCOPE)
+endfunction(GET_HOSTNAME VAR)
+
+################################################################################
+# Function for usine "uname" for OS data
+################################################################################
+
+function(GET_UNAME NAME FLAG)
+    find_program(UNAME_COMMAND NAMES uname)
+    # checking if worked
+    set(_RET 1)
+    # iteration limiting
+    set(_NITER 0)
+    # empty
+    set(_NAME "")
+    while(_RET GREATER 0 AND _NITER LESS 100 AND "${_NAME}" STREQUAL "")
+        execute_process(COMMAND ${UNAME_COMMAND} ${FLAG}
+            OUTPUT_VARIABLE _NAME
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            RESULT_VARIABLE _RET)
+        math(EXPR _NITER "${_NITER}+1")
+    endwhile(_RET GREATER 0 AND _NITER LESS 100 AND "${_NAME}" STREQUAL "")
+    # fail if not successful
+    if(_RET GREATER 0)
+        message(FATAL_ERROR
+            "Unable to successfully execute: '${UNAME_COMMAND} ${FLAG}'")
+    endif(_RET GREATER 0)
+    # set the variable in parent scope
+    set(${NAME} ${_NAME} PARENT_SCOPE)
+endfunction(GET_UNAME NAME FLAG)
+
+################################################################################
+# Get the OS system name (e.g. Darwin, Linux)
+################################################################################
+
+function(GET_OS_SYSTEM_NAME VAR)
+    get_uname(_VAR -s)
+    set(${VAR} ${_VAR} PARENT_SCOPE)
+endfunction(GET_OS_SYSTEM_NAME VAR)
+
+################################################################################
+# Get the OS node name (e.g. JRM-macOS-DOE.local, cori09)
+################################################################################
+
+function(GET_OS_NODE_NAME VAR)
+    get_uname(_VAR -n)
+    set(${VAR} ${_VAR} PARENT_SCOPE)
+endfunction(GET_OS_NODE_NAME VAR)
+
+################################################################################
+# Get the OS machine hardware name (e.g. x86_64)
+################################################################################
+
+function(GET_OS_MACHINE_HARDWARE_NAME VAR)
+    get_uname(_VAR -m)
+    set(${VAR} ${_VAR} PARENT_SCOPE)
+endfunction(GET_OS_MACHINE_HARDWARE_NAME VAR)
+
 
 cmake_policy(POP)

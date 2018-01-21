@@ -4,7 +4,7 @@ if(NOT ENABLE_UNIT_TEST)
 endif()
 
 include(TestingMacros)
-include(GenericCMakeFunctions)
+include(GenericFunctions)
 
 if(BATCH_MODE)
     Add_Unit_Test(BATCH

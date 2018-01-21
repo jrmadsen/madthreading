@@ -24,23 +24,25 @@
 # CMAKE_CONFIGURATION_TYPES if appropriate to the build tool being used.
 #
 
+
 #-----------------------------------------------------------------------
 # Update build type information ONLY for single mode build tools, adding
 # default type if none has been set, but otherwise leaving value alone.
 # NB: this doesn't allow "None" for the build type - would need something
 # more sophiticated using an internal cache variable.
-# Good enough for now!
 #
 if(NOT CMAKE_BUILD_TYPE)
     # Default to a Release build if nothing else...
     set(CMAKE_BUILD_TYPE Release
-      CACHE STRING "Choose the type of build, options are: Release Debug RelWithDebInfo MinSizeRel."
-      FORCE)
+      CACHE STRING "Choose the type of build, options are: Release MinSizeRel Debug RelWithDebInfo MinSizeRel."
+      FORCE
+      )
 else()
     # Force to the cache, but use existing value.
     set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}"
-        CACHE STRING "Choose the type of build, options are: Release Debug RelWithDebInfo MinSizeRel."
-        FORCE)
+      CACHE STRING "Choose the type of build, options are: Release MinSizeRel Debug RelWithDebInfo MinSizeRel."
+      FORCE
+      )
 endif()
 
 #-----------------------------------------------------------------------
@@ -49,16 +51,21 @@ endif()
 set(CONFIG_TYPES Debug Release RelWithDebInfo MinSizeRel
     CACHE STRING "Configuration types")
 mark_as_advanced(CONFIG_TYPES)
-foreach(LANG C CXX)
-    # configuration types
-    foreach(type ${CONFIG_TYPES})
-        string(TOUPPER "${type}" UTYPE)
+foreach(type ${CONFIG_TYPES})
+    string(TOUPPER "${type}" UTYPE)
+    foreach(LANG C CXX)
         unset(CMAKE_${LANG}_FLAGS_${UTYPE} CACHE)
-        set(CMAKE_${LANG}_FLAGS_${UTYPE} "${CMAKE_${LANG}_FLAGS_${UTYPE}_INIT} ${CMAKE_${LANG}_FLAGS_EXTRA}")
+        set(CMAKE_${LANG}_FLAGS_${UTYPE}
+            "${CMAKE_${LANG}_FLAGS_${UTYPE}_INIT} ${CMAKE_${LANG}_FLAGS_EXTRA}"
+            CACHE STRING "Compile flags for ${LANG} - ${type}")
         string(REPLACE "  " " " CMAKE_${LANG}_FLAGS_${UTYPE} "${CMAKE_${LANG}_FLAGS_${UTYPE}}")
         string(REPLACE "  " " " CMAKE_${LANG}_FLAGS_${UTYPE} "${CMAKE_${LANG}_FLAGS_${UTYPE}}")
-    endforeach()
+    endforeach(LANG C CXX)
+endforeach()
+
+foreach(LANG C CXX)
     unset(CMAKE_${LANG}_FLAGS CACHE)
-    set(CMAKE_${LANG}_FLAGS "${CMAKE_${LANG}_FLAGS_INIT}")
+    set(CMAKE_${LANG}_FLAGS "${CMAKE_${LANG}_FLAGS_INIT}" CACHE STRING
+        "Build flags for ${LANG}")
 endforeach(LANG C CXX)
 

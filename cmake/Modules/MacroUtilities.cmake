@@ -46,6 +46,8 @@ if(NOT CMAKE_VERSION VERSION_LESS 3.1)
     cmake_policy(SET CMP0054 NEW)
 endif()
 
+include(CMakeDependentOption)
+
 #-----------------------------------------------------------------------
 # CMAKE EXTENSIONS
 #-----------------------------------------------------------------------
@@ -54,9 +56,25 @@ endif()
 #
 macro(set_ifnot _var _value)
   if(NOT DEFINED ${_var})
-    set(${_var} ${_value})
+    set(${_var} ${_value} ${ARGN})
   endif()
 endmacro()
+
+#-----------------------------------------------------------------------
+# function - capitalize - make a string capitalized (first letter is capital)
+#   usage:
+#       capitalize("SHARED" CShared)
+#   message(STATUS "-- CShared is \"${CShared}\"")
+#   $ -- CShared is "Shared"
+function(capitalize str var)
+    # make string lower
+    string(TOLOWER "${str}" str)
+    string(SUBSTRING "${str}" 0 1 _first)
+    string(TOUPPER "${_first}" _first)
+    string(SUBSTRING "${str}" 1 -1 _remainder)
+    string(CONCAT str "${_first}" "${_remainder}")
+    set(${var} "${str}" PARENT_SCOPE)
+endfunction()
 
 #-----------------------------------------------------------------------
 # macro set_ifnot_match(<var> <value>)
@@ -334,11 +352,7 @@ function(subConfigureRootSearchPath _package_name _search_other)
         if(_search_other)
             string(TOUPPER "${_package_name}" ALT_PACKAGE_NAME)
             if("${ALT_PACKAGE_NAME}" STREQUAL "${_package_name}")
-                string(TOLOWER "${_package_name}" ALT_PACKAGE_NAME)
-                string(SUBSTRING "${ALT_PACKAGE_NAME}" 0 1 FIRST)
-                string(SUBSTRING "${ALT_PACKAGE_NAME}" 1 -1 REST)
-                string(TOUPPER "${FIRST}" FIRST)
-                string(CONCAT ALT_PACKAGE_NAME "${FIRST}" "${REST}")
+                capitalize("${_package_name}" ALT_PACKAGE_NAME)
                 subConfigureRootSearchPath(${ALT_PACKAGE_NAME} OFF)
             else()
                 subConfigureRootSearchPath(${ALT_PACKAGE_NAME} OFF)
@@ -495,7 +509,25 @@ MACRO(ADD_OPTION _NAME _MESSAGE _DEFAULT)
     ELSE()
         MARK_AS_ADVANCED(${_NAME})
     ENDIF()
-ENDMACRO()
+ENDMACRO(ADD_OPTION _NAME _MESSAGE _DEFAULT)
+
+
+#------------------------------------------------------------------------------#
+# function add_dependent_option(<OPTION_NAME> <DOCSRING>
+#                               <CONDITION_TRUE_SETTING> <CONDITION>
+#                               <DEFAULT_SETTING> [NO_FEATURE])
+#          Add an option and add as a feature if NO_FEATURE is not provided
+#
+MACRO(ADD_DEPENDENT_OPTION _NAME _MESSAGE _COND_SETTING _COND _DEFAULT)
+    SET(_FEATURE ${ARGN})
+    CMAKE_DEPENDENT_OPTION(${_NAME} "${_MESSAGE}" ${_COND_SETTING}
+        "${_COND}" ${_DEFAULT})
+    IF(NOT "${_FEATURE}" STREQUAL "NO_FEATURE")
+        ADD_FEATURE(${_NAME} "${_MESSAGE}")
+    ELSE()
+        MARK_AS_ADVANCED(${_NAME})
+    ENDIF()
+ENDMACRO(ADD_DEPENDENT_OPTION _NAME _MESSAGE _DEFAULT _COND _COND_SETTING)
 
 
 #------------------------------------------------------------------------------#
@@ -522,6 +554,17 @@ function(print_enabled_features)
                    NOT "${${_feature}}" STREQUAL "TRUE")
                     set(_currentFeatureText "${_currentFeatureText}: ${_desc} -- [\"${${_feature}}\"]")
                 else()
+                    string(REGEX REPLACE "^USE_" "" _feature_tmp "${_feature}")
+                    string(TOLOWER "${_feature_tmp}" _feature_tmp_l)
+                    capitalize("${_feature_tmp}" _feature_tmp_c)
+                    foreach(_var _feature_tmp _feature_tmp_l _feature_tmp_c)
+                        set(_ver "${${${_var}}_VERSION}")
+                        if(NOT "${_ver}" STREQUAL "")
+                            set(_desc "${_desc} -- [found version ${_ver}]")
+                            break()
+                        endif()
+                        unset(_ver)
+                    endforeach(_var _feature_tmp _feature_tmp_l _feature_tmp_c)
                     set(_currentFeatureText "${_currentFeatureText}: ${_desc}")
                 endif()
                 set(_desc NOTFOUND)
@@ -545,11 +588,6 @@ function(print_enabled_features)
                 endif()
             endforeach()
 
-            # print that following are enabled subfeatures
-            #if(_enabled_subfeatures)
-            #    set(_currentFeatureText "${_currentFeatureText}\n\t-- The following subfeatures of ${_feature} are defined/enabled:")
-            #endif()
-
             # loop over enabled subfeatures
             foreach(_subfeature ${_enabled_subfeatures})
                 # add subfeature to text
@@ -568,11 +606,6 @@ function(print_enabled_features)
                     set(_subdesc NOTFOUND)
                 endif(_subdesc)
             endforeach(_subfeature)
-
-            # print that following are disabled subfeatures
-            #if(_disabled_subfeatures)
-            #    set(_currentFeatureText "${_currentFeatureText}\n\t-- The following subfeatures of ${_feature} are NOT defined/enabled:")
-            #endif()
 
             # loop over disabled subfeatures
             foreach(_subfeature ${_disabled_subfeatures})

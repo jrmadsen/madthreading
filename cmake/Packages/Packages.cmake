@@ -19,47 +19,83 @@ function(print _name)
 endfunction()
 
 ################################################################################
+function(git_submodule_update RESULT_VARIABLE)
 
+    find_package(Git)
+    set(_RET 0)
+    if(Git_FOUND)
+        message(STATUS "Checking out submodules...")
+        execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+            RESULT_VARIABLE RET
+            OUTPUT_QUIET)
+        set(_RET ${RET})
+    endif(Git_FOUND)
+    set(${RESULT_VARIABLE} ${_RET} PARENT_SCOPE)
+    
+endfunction(git_submodule_update)
 ################################################################################
 
 
 include(MacroUtilities)
-include(GenericCMakeFunctions)
+include(GenericFunctions)
 include(CMakeDependentOption)
 include(Compilers)
+include(FindPackageHandleStandardArgs)
+
 
 ################################################################################
 #
-#        PyBind11
+#        TiMemory
 #
 ################################################################################
 # git submodule
-add_option(USE_PYBIND11 "Generate Python interfaces with PyBind11" ON)
-if(USE_PYBIND11)
-    set(PYBIND11_DIR ${CMAKE_SOURCE_DIR}/pybind11)
-    set(PYBIND11_INCLUDE_DIR ${PYBIND11_DIR}/include)
+add_option(USE_TIMEMORY "Use TiMemory subpackage" ON)
+if(USE_TIMEMORY)
+    set(TIMEMORY_DIR ${PROJECT_SOURCE_DIR}/source/timemory)
+    set(TIMEMORY_INCLUDE_DIR ${TIMEMORY_DIR}/source 
+        ${TIMEMORY_DIR}/source/cereal/include ${TIMEMORY_DIR}/pybind11/include)
 
-    # set PYBIND11_FOUND
-    set(PYBIND11_FOUND OFF)
-    if(EXISTS "${PYBIND11_DIR}" AND EXISTS "${PYBIND11_INCLUDE_DIR}" AND
-    IS_DIRECTORY "${PYBIND11_DIR}" AND IS_DIRECTORY "${PYBIND11_INCLUDE_DIR}")
+    function(error_with_timemory)
 
-        set(PYBIND11_FOUND ON)
+        message(STATUS "TiMemory is a git submodule and has not been cloned")
+        message(STATUS "run: git submodule update --init --remote --recursive")
+        message(STATUS "  NOTE: ${ARGN}")
+        message(FATAL_ERROR "TiMemory not found")
 
-    endif(EXISTS "${PYBIND11_DIR}" AND EXISTS "${PYBIND11_INCLUDE_DIR}" AND
-    IS_DIRECTORY "${PYBIND11_DIR}" AND IS_DIRECTORY "${PYBIND11_INCLUDE_DIR}")
+    endfunction(error_with_timemory)
+    
+    # set TIMEMORY_FOUND
+    set(TIMEMORY_FOUND OFF)
+    if(NOT EXISTS "${TIMEMORY_DIR}/CMakeLists.txt")
+        git_submodule_update(RET)
+        
+        if(RET)
+            error_with_timemory("Submodule update failed")
+        endif(RET)
+        
+        if(EXISTS "${TIMEMORY_DIR}/CMakeLists.txt")
+            set(TIMEMORY_FOUND ON)
+        else(EXISTS "${TIMEMORY_DIR}/CMakeLists.txt")
+            set(TIMEMORY_FOUND OFF)
+        endif(EXISTS "${TIMEMORY_DIR}/CMakeLists.txt")
+
+    else(NOT EXISTS "${TIMEMORY_DIR}/CMakeLists.txt")
+    
+        set(TIMEMORY_FOUND ON)
+        
+    endif(NOT EXISTS "${TIMEMORY_DIR}/CMakeLists.txt")
 
     # check if found
-    if(NOT PYBIND11_FOUND)
-        message(STATUS "PyBind11 is a git submodule and has not been cloned")
-        message(STATUS "run: git submodule update --init --remote --recursive")
-        message(FATAL_ERROR "PyBind11 not found")
-    endif(NOT PYBIND11_FOUND)
+    if(NOT TIMEMORY_FOUND)
+    
+        error_with_timemory("Submodule update worked but pybind11 still failed")
+        
+    endif(NOT TIMEMORY_FOUND)
 
-    set(USE_PYBIND11 ON)
-    set(PYBIND11_INCLUDE_DIRS ${PYBIND11_DIR}/include)
-    list(APPEND EXTERNAL_INCLUDE_DIRS ${PYBIND11_INCLUDE_DIRS})
-endif(USE_PYBIND11)
+    set(TIMEMORY_INCLUDE_DIRS ${TIMEMORY_INCLUDE_DIR})
+    
+endif(USE_TIMEMORY)
 
 
 ################################################################################
@@ -70,7 +106,6 @@ endif(USE_PYBIND11)
 
 set(CMAKE_THREAD_PREFER_PTHREADS ON)
 find_package(Threads REQUIRED)
-list(APPEND EXTERNAL_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
 
 
 ################################################################################
@@ -112,7 +147,6 @@ if(USE_TCMALLOC)
     else()
         message(FATAL_ERROR "Unable to find tcmalloc library")
     endif()
-    list(APPEND EXTERNAL_LIBRARIES ${TCMALLOC_LIBRARIES})
 endif()
 
 
@@ -124,7 +158,7 @@ endif()
 
 add_option(USE_BOOST "Enable BOOST Libraries" OFF)
 
-foreach(_component chrono python serialization signals system thread timer)
+foreach(_component serialization signals system)
     STRING(TOUPPER ${_component} _COMPONENT)
     if(USE_BOOST)
         add_subfeature(USE_BOOST USE_BOOST_${_COMPONENT} "Use Boost ${_component} library")
@@ -145,8 +179,6 @@ if(USE_BOOST)
     find_package(Boost 1.53 REQUIRED COMPONENTS ${Boost_COMPONENTS})
     if(Boost_FOUND)
         include_directories(${Boost_INCLUDE_DIRS})
-        list(APPEND EXTERNAL_LIBRARIES ${Boost_LIBRARIES})
-        list(APPEND EXTERNAL_INCLUDE_DIRS ${Boost_INCLUDE_DIRS})
         foreach(_component ${Boost_COMPONENTS})
             STRING(TOUPPER ${_component} _COMPONENT)
             add_definitions(-DUSE_BOOST_${_COMPONENT})
@@ -173,23 +205,15 @@ endif()
 add_option(USE_TBB "Enable Intel Thread Building Blocks (TBB)" OFF)
 
 if(USE_TBB)
-    if(NOT CMAKE_COMPILER_IS_INTEL_ICC AND NOT CMAKE_COMPILER_IS_INTEL_ICPC)
-        ConfigureRootSearchPath(TBB)
 
-        find_package(TBB REQUIRED)
-        if(TBB_FOUND)
-            include_directories(${TBB_INCLUDE_DIRS})
-            list(APPEND EXTERNAL_LIBRARIES ${TBB_LIBRARIES})
-            list(APPEND EXTERNAL_INCLUDE_DIRS ${TBB_INCLUDE_DIRS})
-        endif()
+    ConfigureRootSearchPath(TBB)
+    find_package(TBB REQUIRED COMPONENTS malloc)
 
-        add_subfeature(USE_TBB TBB_ROOT "Root directory of TBB install")
-    elseif(CMAKE_COMPILER_IS_INTEL_ICC OR CMAKE_COMPILER_IS_INTEL_ICPC)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -tbb")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -tbb")
+    add_definitions(-DUSE_TBB)
+    if(TBB_MALLOC_FOUND)
+        add_definitions(-DUSE_TBB_MALLOC)
     endif()
-    add_package_definitions(TBB)
-    add_package_definitions(TBB_MALLOC)
+
 endif()
 
 
@@ -201,28 +225,52 @@ endif()
 
 add_option(USE_MKL "Enable Intel Math Kernel Library (MKL)" OFF)
 if(USE_MKL)
-    if(NOT CMAKE_COMPILER_IS_INTEL_ICC AND NOT CMAKE_COMPILER_IS_INTEL_ICPC)
-        ConfigureRootSearchPath(MKL)
 
-        set(MKL_THREADING "Sequential")
-        find_package(MKL REQUIRED)
-        if(MKL_FOUND)
-            include_directories(${MKL_INCLUDE_DIRS})
-            list(APPEND EXTERNAL_LIBRARIES ${MKL_LIBRARIES})
-            list(APPEND EXTERNAL_INCLUDE_DIRS ${MKL_INCLUDE_DIRS})
-        endif()
+    ConfigureRootSearchPath(MKL)
 
-        add_subfeature(USE_MKL MKL_ROOT "Root directory of MKL install")
-        foreach(_def ${MKL_DEFINITIONS})
-            add_definitions(-D${_def})
-        endforeach()
-        list(APPEND EXTERNAL_LINK_FLAGS "${MKL_CXX_LINK_FLAGS}")
-    elseif(CMAKE_COMPILER_IS_INTEL_ICC OR CMAKE_COMPILER_IS_INTEL_ICPC)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mkl")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mkl")
+    set(MKL_COMPONENTS rt) # mkl_rt as default
+
+    if(CMAKE_C_COMPILER_IS_GNU OR CMAKE_CXX_COMPILER_IS_GNU)
+        set_ifnot(MKL_THREADING OpenMP)
+        set(MKL_COMPONENTS gnu_thread core intel_lp64)
+        find_package(GOMP REQUIRED)
     endif()
-    add_package_definitions(MKL)
+
+    find_package(MKL REQUIRED COMPONENTS ${MKL_COMPONENTS})
+
+    foreach(_def ${MKL_DEFINITIONS})
+        add_definitions(-D${_def})
+    endforeach()
+    add(EXTERNAL_LINK_FLAGS "${MKL_CXX_LINK_FLAGS}")
+    add_definitions(-DUSE_MKL)
+
 endif()
+
+
+
+################################################################################
+# --- setting definitions: EXTERNAL_INCLUDE_DIRS,   ---------------------------#
+#                          EXTERNAL_LIBRARIES       ---------------------------#
+################################################################################
+
+set(EXTERNAL_INCLUDE_DIRS
+    ${MKL_INCLUDE_DIRS}
+    ${TBB_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
+    ${TIMEMORY_INCLUDE_DIRS}
+)
+
+set(EXTERNAL_LIBRARIES ${CMAKE_THREAD_LIBS_INIT}
+    ${MKL_LIBRARIES}
+    ${GOMP_LIBRARIES}
+    ${TBB_LIBRARIES}
+    ${Coverage_LIBRARIES}
+    ${TCMALLOC_LIBRARIES}
+    ${Boost_LIBRARIES}
+)
+
+REMOVE_DUPLICATES(EXTERNAL_INCLUDE_DIRS)
+REMOVE_DUPLICATES(EXTERNAL_LIBRARIES)
 
 
 ################################################################################
@@ -242,6 +290,7 @@ if(USE_SSE)
     endforeach()
     unset(SSE_DEFINITIONS)
 
+    add(CMAKE_C_FLAGS_EXTRA "${SSE_FLAGS}")
     add(CMAKE_CXX_FLAGS_EXTRA "${SSE_FLAGS}")
 
 else(USE_SSE)
@@ -249,6 +298,7 @@ else(USE_SSE)
     foreach(type SSE2 SSE3 SSSE3 SSE4_1 AVX AVX2)
         remove_definitions(-DHAS_${type})
     endforeach()
+
 endif(USE_SSE)
 
 
@@ -257,35 +307,23 @@ endif(USE_SSE)
 #        Architecture Flags
 #
 ################################################################################
+add_option(USE_ARCH "Enable architecture optimizations" OFF)
 
-add_option(USE_ARCHITECTURE "Enable architecture optimizations" OFF)
-include(Architecture)
-
-if(USE_ARCHITECTURE OR USE_SSE)
+if(USE_ARCH OR USE_SSE)
+    include(Architecture)
 
     ArchitectureFlags(ARCH_FLAGS)
     add(CMAKE_C_FLAGS_EXTRA "${ARCH_FLAGS}")
     add(CMAKE_CXX_FLAGS_EXTRA "${ARCH_FLAGS}")
 
-endif()
-
-
-################################################################################
-#
-#        clean up...
-#
-################################################################################
-set(_types LIBRARIES INCLUDE_DIRS)
-foreach(_type ${_types})
-    if(NOT "${EXTERNAL_${_type}}" STREQUAL "")
-        list(REMOVE_DUPLICATES EXTERNAL_${_type})
-    endif()
-endforeach()
-unset(_types)
+endif(USE_ARCH OR USE_SSE)
 
 if(USE_BOOST)
     if(Boost_FOUND)
         set(Boost_FOUND ON)
     endif()
 endif()
+
+add_c_flags(CMAKE_C_FLAGS_EXTRA "${CMAKE_C_FLAGS_EXTRA}")
+add_cxx_flags(CMAKE_CXX_FLAGS_EXTRA "${CMAKE_CXX_FLAGS_EXTRA}")
 

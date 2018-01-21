@@ -8,16 +8,6 @@
 # using include_directories
 #
 #
-# ADD_COMPILE_DEFINITIONS - add compile defintions to a list of files
-# ================================
-# ADD_COMPILE_DEFINITIONS(SOURCES src1 src2 ...
-#                                COMPILE_DEFINITIONS def1 def 2)
-#
-# Here, SOURCES is the list of source files to which compile definitions
-# will be added. COMPILE_DEFINITIONS gives the list of definitions that
-# should be added. These definitions will be appended to any existing
-# definitions given to the sources.
-#
 
 # - Include guard
 if(__macrodefinemodule_isloaded)
@@ -28,19 +18,18 @@ set(__macrodefinemodule_isloaded YES)
 include(CMakeParseArguments)
 
 
-
 #-----------------------------------------------------------------------
-# macro add_compile_definitions(SOURCES <source1> ... <sourceN>
-#                                      COMPILE_DEFINITIONS <def1> ... <defN>
+# macro add_compile_flags(SOURCES <source1> ... <sourceN>
+#                                      COMPILE_FLAGS <def1> ... <defN>
 #                                      )
 #       Add extra compile definitions to a specific list of sources.
 #       Macroized to handle the need to specify absolute paths.
 #
-macro(add_compile_definitions)
+macro(add_compile_flags)
     cmake_parse_arguments(ADDDEF
         ""
         ""
-        "SOURCES;COMPILE_DEFINITIONS"
+        "SOURCES;COMPILE_FLAGS"
         ${ARGN}
     )
 
@@ -50,29 +39,37 @@ macro(add_compile_definitions)
 
     # Now for each file, add the definitions
     foreach(_acd_source ${ADDDEF_SOURCES})
+        # add base path
+        if(NOT IS_ABSOLUTE ${_acd_source})
+            set(_acd_full_source ${_ACD_BASE_PATH}/${_acd_source})
+        else()
+            set(_acd_full_source ${_acd_source})
+        endif()
+        
         # Extract any existing compile definitions
         get_source_file_property(_acd_existing_properties
-                                 ${_ACD_BASE_PATH}/src/${_acd_source}
-                                 COMPILE_DEFINITIONS)
+                                 ${_acd_full_source}
+                                 COMPILE_FLAGS)
 
         if(_acd_existing_properties)
             set(_acd_new_defs ${_acd_existing_properties}
-                              ${ADDDEF_COMPILE_DEFINITIONS})
+                              ${ADDDEF_COMPILE_FLAGS})
         else()
-            set(_acd_new_defs ${ADDDEF_COMPILE_DEFINITIONS})
+            set(_acd_new_defs ${ADDDEF_COMPILE_FLAGS})
         endif()
 
         # quote compile defs because this must epand to space separated list
-        set_source_files_properties(${_ACD_BASE_PATH}/src/${_acd_source}
-                                    PROPERTIES COMPILE_DEFINITIONS "${_acd_new_defs}")
+        set_source_files_properties(${_acd_full_source}
+                                    PROPERTIES COMPILE_FLAGS "${_acd_new_defs}")
     endforeach()
 endmacro()
 
+
 #-----------------------------------------------------------------------
 # macro define_module(NAME <name>
-#                            HEADER_EXT <header_ext1> <header_ext2> ... <header_extN>
-#                            SOURCE_EXT <source_ext1> <source_ext2> ... <source_extN>
-#                            LINK_LIBRARIES <lib1> ... <lib2>)
+#           HEADER_EXT <header_ext1> <header_ext2> ... <header_extN>
+#           SOURCE_EXT <source_ext1> <source_ext2> ... <source_extN>
+#           LINK_LIBRARIES <lib1> ... <lib2>)
 #       Define a  Module's source extensions and what internal and external
 #       libraries it links to.
 #
@@ -80,7 +77,7 @@ macro(define_module)
     cmake_parse_arguments(DEFMOD
         "NO_SOURCE_GROUP"
         "NAME;HEADER_DIR;SOURCE_DIR;LANG"
-        "HEADER_EXT;SOURCE_EXT;HEADERS;SOURCES;EXCLUDE;LINK_LIBRARIES;NOTIFY_EXCLUDE"
+        "HEADER_EXT;SOURCE_EXT;HEADERS;SOURCES;EXCLUDE;LINK_LIBRARIES;NOTIFY_EXCLUDE;COMPILE_FLAGS"
         ${ARGN}
         )
 
@@ -166,7 +163,7 @@ macro(define_module)
 
     # Remove the explicitly excluded files
     foreach(_ignore ${DEFMOD_EXCLUDE})
-        # loop over headers
+        # loop over the header extensions
         if(${MODULE_NAME}_HEADERS)
             # loop over the header extensions
             foreach(_ext ${DEFMOD_HEADER_EXT})
@@ -214,6 +211,11 @@ macro(define_module)
             ${CMAKE_CURRENT_LIST_DIR}/modules.cmake)
     endif()
 
+    if(DEFMOD_COMPILE_FLAGS)
+        add_compile_flags(SOURCES ${${MODULE_NAME}_HEADERS} ${${MODULE_NAME}_SOURCES}
+            COMPILE_FLAGS ${DEFMOD_COMPILE_FLAGS})
+    endif(DEFMOD_COMPILE_FLAGS)
+        
     if(NOT ${DEFMOD_NO_SOURCE_GROUP})
         set_property(GLOBAL APPEND PROPERTY SOURCE_GROUPS ${MODULE_NAME})
         STRING(REPLACE "." "\\\\" _mod_name ${MODULE_NAME})
@@ -226,40 +228,4 @@ macro(define_module)
     endif()
 
 endmacro()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
