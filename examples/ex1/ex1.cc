@@ -12,12 +12,12 @@
 #include <random>
 
 #include <madthreading/types.hh>
-#include <madthreading/utility/timer.hh>
+#include <timemory/timer.hpp>
 #include <madthreading/threading/thread_manager.hh>
 #include <madthreading/threading/auto_lock.hh>
 #include <madthreading/threading/threading.hh>
-#include <madthreading/utility/auto_timer.hh>
-#include <madthreading/utility/timing_manager.hh>
+#include <timemory/auto_timer.hpp>
+#include <timemory/timing_manager.hpp>
 
 using namespace std::placeholders;
 using mad::ulong_type;
@@ -161,12 +161,12 @@ int main(int argc, char** argv)
     for(int i = 0; i < niter; ++i)
         tm->exec(&tg4, fibonacci, 44);
     {
-        mad::util::auto_timer t("fibonacci calculation");
+        TIMEMORY_AUTO_TIMER("fibonacci_calculation");
         auto sum = tg4.join();
         std::cout << " sum = " << sum << std::endl;
     }
 
-    mad::util::timing_manager::instance()->report();
+    mad::timing_manager::instance()->report();
 
     return 0;
 }

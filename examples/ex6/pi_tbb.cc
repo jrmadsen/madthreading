@@ -11,7 +11,7 @@
 #include <iomanip>
 
 #include <madthreading/types.hh>
-#include <madthreading/utility/timer.hh>
+#include <timemory/timer.hpp>
 #include <madthreading/threading/thread_manager.hh>
 #include "../Common.hh"
 
@@ -76,7 +76,8 @@ int main(int, char** argv)
     tbb::task_scheduler_init init(num_threads);
 
     //========================================================================//
-    mad::util::timer t;
+    mad::timer t;
+    t.start();
 
     ComputePi pi_body(step);
 

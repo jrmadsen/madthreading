@@ -15,7 +15,6 @@ GLOBAL_OBJECT_TARGET(INSTALL_HEADERS
         atomics/sources.cmake
         threading/sources.cmake
         threading/task/sources.cmake
-        vectorization/sources.cmake
         utility/sources.cmake
 )
 

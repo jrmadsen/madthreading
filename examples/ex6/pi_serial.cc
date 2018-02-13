@@ -8,7 +8,7 @@
 #include <iomanip>
 
 #include <madthreading/types.hh>
-#include <madthreading/utility/timer.hh>
+#include <timemory/timer.hpp>
 #include <madthreading/threading/thread_manager.hh>
 #include "../Common.hh"
 
@@ -21,7 +21,8 @@ int main(int, char** argv)
     double_type sum = 0.0;
 
     //========================================================================//
-    mad::util::timer t;
+    mad::timer t;
+    t.start();
 
     pragma_simd()
     for(ulong_type i = 0; i < num_steps; ++i)

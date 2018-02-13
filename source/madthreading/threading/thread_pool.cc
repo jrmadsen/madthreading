@@ -37,6 +37,7 @@
 #include "madthreading/allocator/allocator_list.hh"
 #include "madthreading/threading/thread_manager.hh"
 #include "madthreading/utility/fpe_detection.hh"
+#include "timemory/utility.hpp"
 
 #include <cstdlib>
 
@@ -84,18 +85,19 @@ thread_pool::thread_pool(bool _use_affinity)
   m_task_lock() // recursive
 {
 
-#ifdef VERBOSE_THREAD_POOL
-    tmcout << "Constructing ThreadPool of size "
-              << m_pool_size << std::endl;
-#endif
+    if(mad::get_env<int32_t>("MAD_VERBOSE", 0) > 0)
+    {
+        tmcout << "Constructing ThreadPool of size "
+               << m_pool_size << std::endl;
+    }
 
-#ifdef FPE_DEBUG
-        fpe_settings::fpe_set ops;
-        ops.insert(fpe::underflow);
-        ops.insert(fpe::overflow);
-        EnableInvalidOperationDetection(ops);
-#endif
-
+    if(mad::get_env<int32_t>("MAD_FPE_DEBUG", 0) > 0)
+    {
+        fpe::fpe_settings::fpe_set ops;
+        ops.insert(fpe::fpe::underflow);
+        ops.insert(fpe::fpe::overflow);
+        fpe::EnableInvalidOperationDetection(ops);
+    }
 }
 
 //============================================================================//
@@ -107,16 +109,17 @@ thread_pool::thread_pool(size_type pool_size, bool _use_affinity)
   m_task_lock() // recursive
 {
 
-#ifdef VERBOSE_THREAD_POOL
-    tmcout << "Constructing ThreadPool of size " << m_pool_size << std::endl;
-#endif
+    if(mad::get_env<int32_t>("MAD_VERBOSE", 0) > 0)
+        tmcout << "Constructing ThreadPool of size "
+               << m_pool_size << std::endl;
 
-#ifdef FPE_DEBUG
-        fpe_settings::fpe_set ops;
-        ops.insert(fpe::underflow);
-        ops.insert(fpe::overflow);
-        EnableInvalidOperationDetection(ops);
-#endif
+    if(mad::get_env<int32_t>("MAD_FPE_DEBUG", 0) > 0)
+    {
+        fpe::fpe_settings::fpe_set ops;
+        ops.insert(fpe::fpe::underflow);
+        ops.insert(fpe::fpe::overflow);
+        fpe::EnableInvalidOperationDetection(ops);
+    }
 
 }
 
@@ -159,10 +162,9 @@ void thread_pool::start_thread(void* arg)
     {
         mad::lock_t lock(tid_mutex);
         tids[std::this_thread::get_id()] = tids.size();
-#ifdef VERBOSE_THREAD_POOL
-        tmcout << "--> [MAIN THREAD QUEUE] thread ids size: " << tids.size()
-                  << std::endl;
-#endif
+        if(mad::get_env<int32_t>("MAD_VERBOSE", 0) > 0)
+            tmcout << "--> [MAIN THREAD QUEUE] thread ids size: "
+                   << tids.size() << std::endl;
     }
     thread_pool* tp = (thread_pool*) arg;
     tp->execute_thread();
@@ -177,11 +179,10 @@ int thread_pool::initialize_threadpool()
 
     is_alive_flag = true;
 
-#ifdef VERBOSE_THREAD_POOL
-    tmcout << "--> Creating " << m_pool_size
-              << " threads ... " << m_main_threads.size() << " already exist"
-              << std::endl;
-#endif
+    if(mad::get_env<int32_t>("MAD_VERBOSE", 0) > 0)
+        tmcout << "--> Creating " << m_pool_size
+               << " threads ... " << m_main_threads.size() << " already exist"
+               << std::endl;
 
     //--------------------------------------------------------------------//
     // destroy any existing thread pool
@@ -238,10 +239,9 @@ int thread_pool::initialize_threadpool()
 
     m_pool_size = m_main_threads.size();
 
-#ifdef VERBOSE_THREAD_POOL
-    tmcout << "--> " << m_pool_size
-              << " threads created by the thread pool" << std::endl;
-#endif
+    if(mad::get_env<int32_t>("MAD_VERBOSE", 0) > 0)
+        tmcout << "--> " << m_pool_size
+               << " threads created by the thread pool" << std::endl;
 
     // thread pool size doesn't match with join vector
     // this will screw up joining later
@@ -318,10 +318,9 @@ int thread_pool::destroy_threadpool()
         //--------------------------------------------------------------------//
     }
 
-#ifdef VERBOSE_THREAD_POOL
-    tmcout << "--> " << m_pool_size
-              << " threads exited from the thread pool" << std::endl;
-#endif
+    if(mad::get_env<int32_t>("MAD_VERBOSE", 0) > 0)
+        tmcout << "--> " << m_pool_size
+               << " threads exited from the thread pool" << std::endl;
 
     // clean up
     for(auto& itr : m_main_threads)
@@ -405,10 +404,6 @@ void thread_pool::run(task_pointer task)
 
 int thread_pool::add_task(task_pointer task)
 {
-
-#ifdef VERBOSE_THREAD_POOL
-    tmcout << "Adding task..." << std::endl;
-#endif
 
     if(!is_alive_flag) // if we haven't built thread-pool, just execute
     {

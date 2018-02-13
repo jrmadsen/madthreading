@@ -9,7 +9,7 @@
 #include <iomanip>
 
 #include <madthreading/types.hh>
-#include <madthreading/utility/timer.hh>
+#include <timemory/timer.hpp>
 #include <madthreading/threading/thread_manager.hh>
 #include "../Common.hh"
 
@@ -49,7 +49,8 @@ int main(int, char** argv)
     //------------------------------------------------------------------------//
 
     //========================================================================//
-    mad::util::timer t;
+    mad::timer t;
+    t.start();
 
     sum = tbb::parallel_reduce(range_t(0, num_steps), sum, compute_block, join);
 

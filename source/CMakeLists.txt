@@ -14,6 +14,7 @@ set(PYBIND11_CPP_STANDARD -std=c++${CMAKE_CXX_STANDARD}
     CACHE STRING "PyBind11 CXX standard" FORCE)
 set(TIMEMORY_NAMESPACE mad CACHE STRING "Namespace of TiMemory" FORCE)    
 set(TIMEMORY_SUBMODULE ON CACHE BOOL "Let TiMemory know it is a submodule")
+add_definitions(-DNAME_TIM=${TIMEMORY_NAMESPACE})
 
 add_subdirectory(timemory)
 
@@ -32,5 +33,9 @@ set(CMAKE_INSTALL_PYTHONDIR
 set(CMAKE_INSTALL_FULL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_PYTHONDIR})
 set(PYTHON_INSTALL_DIR      ${CMAKE_INSTALL_PYTHONDIR})
 
+add_library(timemory-library STATIC IMPORTED)
+set_target_properties(timemory-library PROPERTIES
+    IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/libtimemory${CMAKE_STATIC_LIBRARY_SUFFIX})
+list(APPEND EXTERNAL_LIBRARIES timemory-library)
 
 add_subdirectory(madthreading)

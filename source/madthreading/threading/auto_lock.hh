@@ -43,7 +43,7 @@
 namespace mad
 {
 
-using auto_lock = std::lock_guard<mad::mutex>;
+using auto_lock = std::unique_lock<mad::mutex>;
 
 } // namespace mad
 

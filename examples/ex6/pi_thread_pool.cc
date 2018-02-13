@@ -11,7 +11,7 @@
 #include <iomanip>
 
 #include <madthreading/types.hh>
-#include <madthreading/utility/timer.hh>
+#include <timemory/timer.hpp>
 #include <madthreading/threading/thread_manager.hh>
 #include "../Common.hh"
 
@@ -39,7 +39,8 @@ int main(int, char** argv)
     };
 
     //========================================================================//
-    mad::util::timer t;
+    mad::timer t;
+    t.start();
 
     tm->run_loop(&tg, compute_block, 0, num_steps, num_threads);
     tg.join();

@@ -8,7 +8,7 @@
 #include <iomanip>
 
 #include <madthreading/types.hh>
-#include <madthreading/utility/timer.hh>
+#include <timemory/timer.hpp>
 #include <madthreading/threading/thread_manager.hh>
 #include "../Common.hh"
 
@@ -82,8 +82,8 @@ int main(int, char** argv)
     //------------------------------------------------------------------------//
 
     //========================================================================//
-    mad::util::timer t;
-
+    mad::timer t;
+    t.start();
 
     std::vector<ProxyStruct*> proxies(num_threads, 0);
     std::vector<pthread_t> threads(num_threads);

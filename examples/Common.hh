@@ -12,7 +12,7 @@
 #ifndef common_hh_
 #define common_hh_
 
-#include <madthreading/utility/timer.hh>
+#include <timemory/timer.hpp>
 #include <madthreading/utility/constants.hh>
 #include <madthreading/utility/tools.hh>
 
@@ -55,7 +55,7 @@
 //----------------------------------------------------------------------------//
 
 template <typename _Step_t, typename _Pi_t>
-inline void report(_Step_t num_steps, _Pi_t pi, mad::util::timer& t,
+inline void report(_Step_t num_steps, _Pi_t pi, mad::timer& t,
                    std::string prefix = "",
                    std::ostream& os = std::cout)
 {
@@ -115,13 +115,13 @@ void fmt(std::ofstream& of, double d[3])
 
 template <typename _Step_t>
 inline void report(_Step_t num_steps,
-                   const double& pi, mad::util::timer& t,
+                   const double& pi, mad::timer& t,
                    std::string prefix = "",
                    std::ostream& os = std::cout)
 {
     os.precision(8);
     double delta = (pi - mad::dat::PI);
-    os << " " << std::setw(35)
+    os << " " << std::setw(25)
        << prefix << ((prefix.length() > 0) ? ": " : "")
        << " pi with "
        << num_steps << " steps is "

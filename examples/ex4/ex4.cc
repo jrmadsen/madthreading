@@ -18,7 +18,7 @@
 #include <chrono>
 #include <x86intrin.h>
 
-#include <madthreading/utility/timer.hh>
+#include <timemory/timer.hpp>
 #include <madthreading/allocator/aligned_allocator.hh>
 #include "../Common.hh"
 
@@ -270,7 +270,8 @@ int main(int argc, char** argv)
 
     //========================================================================//
     {
-        mad::util::timer t;
+        mad::timer t;
+        t.start();
         tv_vec sum(size, 0.0);
         for(uint64_t i = 0; i < num_steps; ++i)
             sum += (static_cast<double>(i)-0.5)*step;
@@ -279,7 +280,8 @@ int main(int argc, char** argv)
     }
     //========================================================================//
     {
-        mad::util::timer t;
+        mad::timer t;
+        t.start();
         tv_array sum(size, 0.0);
         for(uint64_t i = 0; i < num_steps; ++i)
             sum += (static_cast<double>(i)-0.5)*step;
@@ -293,7 +295,8 @@ int main(int argc, char** argv)
     tv_array aincr = tv_array(size, 0.0);
     //========================================================================//
     {
-        mad::util::timer t;
+        mad::timer t;
+        t.start();
         tv_vec sum(size, 0.0);
         for(uint64_t i = 0; i < num_steps; ++i)
         {
@@ -305,7 +308,8 @@ int main(int argc, char** argv)
     }
     //========================================================================//
     {
-        mad::util::timer t;
+        mad::timer t;
+        t.start();
         tv_array sum(size, 0.0);
         for(uint64_t i = 0; i < num_steps; ++i)
         {

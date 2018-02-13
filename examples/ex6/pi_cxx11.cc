@@ -9,7 +9,7 @@
 #include <thread>
 
 #include <madthreading/types.hh>
-#include <madthreading/utility/timer.hh>
+#include <timemory/timer.hpp>
 #include <madthreading/threading/thread_manager.hh>
 #include "../Common.hh"
 
@@ -39,7 +39,8 @@ int main(int, char** argv)
     //------------------------------------------------------------------------//
 
     //========================================================================//
-    mad::util::timer t;
+    mad::timer t;
+    t.start();
 
     std::vector<std::thread> threads(num_threads);
     ulong_type diff = num_steps/num_threads;

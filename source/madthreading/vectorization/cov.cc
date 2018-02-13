@@ -23,7 +23,7 @@
 #include "cov.hh"
 #include "memory.hh"
 #include "aligned_allocator.hh"
-#include "timer.hh"
+#include "timemory/timer.hpp"
 
 #include <cstring>
 #include <iostream>
@@ -292,7 +292,7 @@ void mad::cov::accumulate_zmap_input(int rank, int fc)
            << std::setw(2) << rank << ", "
            << std::setw(2) << fc << ") [ ";
 
-    mad::util::timer t(3, prefix.str());
+    mad::timer t(prefix.str(), "");
     t.start();
 
     accumulate_zmap(nsub, subsize, nnz, nsamp, indx_submap, indx_pix,

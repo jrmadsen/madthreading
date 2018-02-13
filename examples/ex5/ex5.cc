@@ -19,7 +19,7 @@
 #include <thread>
 
 #include <madthreading/types.hh>
-#include <madthreading/utility/timer.hh>
+#include <timemory/timer.hpp>
 #include <madthreading/threading/thread_manager.hh>
 #include <madthreading/allocator/allocator.hh>
 #include <madthreading/utility/constants.hh>

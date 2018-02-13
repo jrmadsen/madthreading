@@ -52,6 +52,9 @@
 namespace mad
 {
 
+namespace fpe
+{
+
 #ifdef CXX11
 enum class fpe
 {
@@ -115,6 +118,8 @@ private:
 
 //============================================================================//
 
+} // namespace fpe
+
 } // namespace mad
 
 #if !(defined(__bgq__))
@@ -129,6 +134,9 @@ private:
 #     include <cxxabi.h>
 
 namespace mad
+{
+
+namespace fpe
 {
 
 //============================================================================//
@@ -384,6 +392,9 @@ static inline int fedisableexcept (unsigned int excepts)
 namespace mad
 {
 
+namespace fpe
+{
+
 //============================================================================//
 
 static inline int feenableexcept (unsigned int excepts)
@@ -543,6 +554,8 @@ static void DisableInvalidOperationDetection()
 
 //============================================================================//
 
+} // namespace fpe
+
 } // namespace mad
 
 //============================================================================//
@@ -556,6 +569,8 @@ static void DisableInvalidOperationDetection() { }
 
 //============================================================================//
 
+} // namespace fpe
+
 } // namespace mad
 
 //============================================================================//
@@ -567,13 +582,18 @@ static void DisableInvalidOperationDetection() { }
 
 namespace mad
 {
+namespace fpe
+{
 
 //============================================================================//
 
-static bool EnableInvalidOperationDetection() { return false; }
+static bool EnableInvalidOperationDetection(fpe_settings::fpe_set = {})
+{ return false; }
 static void DisableInvalidOperationDetection() { }
 
 //============================================================================//
+
+} // namespace fpe
 
 } // namespace mad
 
@@ -589,7 +609,8 @@ namespace mad
 
 //============================================================================//
 
-static bool EnableInvalidOperationDetection() { return false; }
+static bool EnableInvalidOperationDetection(fpe_settings::fpe_set = {})
+{ return false; }
 static void DisableInvalidOperationDetection() { }
 
 //============================================================================//

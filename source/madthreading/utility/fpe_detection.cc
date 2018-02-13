@@ -34,6 +34,9 @@
 namespace mad
 {
 
+namespace fpe
+{
+
 //============================================================================//
 
 int GetEnvironmentVariable(const std::string& ID, int _default)
@@ -207,6 +210,8 @@ std::string fpe_settings::str()
 }
 
 //============================================================================//
+
+} // nampespace fpe
 
 } // namespace mad
 

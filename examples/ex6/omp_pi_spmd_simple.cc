@@ -43,7 +43,7 @@
 #include <iomanip>
 
 #include <madthreading/types.hh>
-#include <madthreading/utility/timer.hh>
+#include <timemory/timer.hpp>
 #include <madthreading/threading/thread_manager.hh>
 #include "../Common.hh"
 
@@ -61,7 +61,8 @@ int main (int, char** argv)
     double_type* sum = new double_type[num_threads];
 
     //========================================================================//
-    mad::util::timer t;
+    mad::timer t;
+    t.start();
 
     #pragma omp parallel
     {
