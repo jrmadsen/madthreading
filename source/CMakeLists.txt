@@ -15,6 +15,7 @@ set(PYBIND11_CPP_STANDARD -std=c++${CMAKE_CXX_STANDARD}
 set(TIMEMORY_NAMESPACE mad CACHE STRING "Namespace of TiMemory" FORCE)    
 set(TIMEMORY_SUBMODULE ON CACHE BOOL "Let TiMemory know it is a submodule")
 add_definitions(-DNAME_TIM=${TIMEMORY_NAMESPACE})
+add_option(USE_MPI "Compile TiMemory with MPI support" OFF)
 
 add_subdirectory(timemory)
 
