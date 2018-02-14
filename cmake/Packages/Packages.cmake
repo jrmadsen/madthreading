@@ -253,24 +253,26 @@ endif()
 #
 ################################################################################
 
-find_package(MPI REQUIRED)
+if(USE_MPI)
+    find_package(MPI REQUIRED)
 
-# Add the MPI-specific compiler and linker flags
-add(CMAKE_CXX_FLAGS  "${MPI_CXX_COMPILE_FLAGS}")
-add(CMAKE_EXE_LINKER_FLAGS "${MPI_CXX_LINK_FLAGS}")
-list(APPEND EXTERNAL_INCLUDE_DIRS
-    ${MPI_INCLUDE_PATH} ${MPI_C_INCLUDE_PATH} ${MPI_CXX_INCLUDE_PATH})
-foreach(_DIR ${EXTERNAL_INCLUDE_DIRS})
-    include_directories(SYSTEM ${_DIR})
-endforeach(_DIR ${EXTERNAL_INCLUDE_DIRS})
+    # Add the MPI-specific compiler and linker flags
+    add(CMAKE_CXX_FLAGS  "${MPI_CXX_COMPILE_FLAGS}")
+    add(CMAKE_EXE_LINKER_FLAGS "${MPI_CXX_LINK_FLAGS}")
+    list(APPEND EXTERNAL_INCLUDE_DIRS
+        ${MPI_INCLUDE_PATH} ${MPI_C_INCLUDE_PATH} ${MPI_CXX_INCLUDE_PATH})
+    foreach(_DIR ${EXTERNAL_INCLUDE_DIRS})
+        include_directories(SYSTEM ${_DIR})
+    endforeach(_DIR ${EXTERNAL_INCLUDE_DIRS})
 
-set(MPI_LIBRARIES )
-foreach(_TYPE C_LIBRARIES CXX_LIBRARIES EXTRA_LIBRARY)
-    set(_TYPE MPI_${_TYPE})
-    if(${_TYPE})
-        list(APPEND MPI_LIBRARIES ${${_TYPE}})
-    endif(${_TYPE})
-endforeach(_TYPE C_LIBRARIES CXX_LIBRARIES EXTRA_LIBRARY)
+    set(MPI_LIBRARIES )
+    foreach(_TYPE C_LIBRARIES CXX_LIBRARIES EXTRA_LIBRARY)
+        set(_TYPE MPI_${_TYPE})
+        if(${_TYPE})
+            list(APPEND MPI_LIBRARIES ${${_TYPE}})
+        endif(${_TYPE})
+    endforeach(_TYPE C_LIBRARIES CXX_LIBRARIES EXTRA_LIBRARY)
+endif(USE_MPI)
 
 
 ################################################################################
