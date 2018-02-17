@@ -14,17 +14,13 @@
 #include "madthreading/utility/fpe_detection.hh"
 #include <functional>
 
-namespace mad
-{
-
-using namespace std::placeholders;
 
 //============================================================================//
 
 template <typename _Tp, typename _Arg>
 template <typename _Func>
-task_group<_Tp, _Arg>::task_group(_Func _join, thread_pool* tp)
-: details::vtask_group(tp)
+mad::task_group<_Tp, _Arg>::task_group(_Func _join, mad::thread_pool* tp)
+: mad::details::vtask_group(tp)
 {
     this->set_join_function<_Func>(_join);
 }
@@ -32,14 +28,14 @@ task_group<_Tp, _Arg>::task_group(_Func _join, thread_pool* tp)
 //============================================================================//
 
 template <typename _Tp, typename _Arg>
-task_group<_Tp, _Arg>::~task_group()
+mad::task_group<_Tp, _Arg>::~task_group()
 { }
 
 //============================================================================//
 
 template <typename _Tp, typename _Arg>
 template <typename _Func>
-void task_group<_Tp, _Arg>::set_join_function(_Func _join)
+void mad::task_group<_Tp, _Arg>::set_join_function(_Func _join)
 {
     using std::placeholders::_1;
     using std::placeholders::_2;
@@ -50,7 +46,7 @@ void task_group<_Tp, _Arg>::set_join_function(_Func _join)
 
 template <typename _Tp, typename _Arg>
 inline void
-task_group<_Tp, _Arg>::add(future_type&& _f)
+mad::task_group<_Tp, _Arg>::add(future_type&& _f)
 {
     m_task_list.push_back(data_type(false, std::move(_f), _Tp()));
 }
@@ -58,7 +54,7 @@ task_group<_Tp, _Arg>::add(future_type&& _f)
 //============================================================================//
 
 template <typename _Tp, typename _Arg>
-inline _Tp task_group<_Tp, _Arg>::join(_Tp accum)
+inline _Tp mad::task_group<_Tp, _Arg>::join(_Tp accum)
 {
     this->wait();
     for(auto& itr : *this)
@@ -76,7 +72,7 @@ inline _Tp task_group<_Tp, _Arg>::join(_Tp accum)
 //============================================================================//
 
 template <typename _Tp, typename _Arg>
-_Arg task_group<_Tp, _Arg>::get(data_type& _data)
+_Arg mad::task_group<_Tp, _Arg>::get(data_type& _data)
 {
     if(!std::get<0>(_data))
     {
@@ -88,4 +84,3 @@ _Arg task_group<_Tp, _Arg>::get(data_type& _data)
 
 //============================================================================//
 
-} // namespace mad
