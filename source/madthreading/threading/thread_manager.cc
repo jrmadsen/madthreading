@@ -36,26 +36,22 @@ namespace mad
 
 //============================================================================//
 
-thread_manager* thread_manager::fgInstance = nullptr;
-
-//============================================================================//
-
-thread_manager* thread_manager::Instance() { return instance(); }
+thread_manager* thread_manager::f_instance = nullptr;
 
 //============================================================================//
 
 thread_manager* thread_manager::instance()
 {
-    if(!fgInstance)
+    if(!f_instance)
     {
         auto nthreads = std::thread::hardware_concurrency();
         std::cout << "Allocating mad::thread_manager with " << nthreads
                   << " thread(s)..." << std::endl;
-        new thread_manager(nthreads);
+        auto tp = new mad::thread_pool(nthreads);
+        new thread_manager(tp);
     }
-    return fgInstance;
+    return f_instance;
 }
-
 
 //============================================================================//
 
@@ -66,12 +62,12 @@ void thread_manager::check_instance(thread_manager* local_instance)
     static std::string null_msg
             = "Local instance to \"mad::thread_manager\" is a null pointer!";
 
-    if(fgInstance)
+    if(f_instance)
         throw std::runtime_error(exist_msg);
     else if(!local_instance)
         throw std::runtime_error(null_msg);
     else
-        fgInstance = local_instance;
+        f_instance = local_instance;
 }
 
 //============================================================================//
@@ -79,13 +75,14 @@ void thread_manager::check_instance(thread_manager* local_instance)
 thread_manager* thread_manager::get_thread_manager(const int64_t& nthreads,
                                                    const int& verbose)
 {
-    mad::thread_manager* tm = fgInstance;
+    mad::thread_manager* tm = f_instance;
     if(!tm)
     {
         if(verbose > 0)
             std::cout << "Allocating mad::thread_manager with " << nthreads
                       << " thread(s)..." << std::endl;
-        tm = new thread_manager(nthreads);
+        auto tp = new mad::thread_pool(nthreads);
+        tm = new thread_manager(tp);
     }
     // don't reallocate
     /*else if((int64_t) tm->size() != nthreads)
@@ -106,40 +103,25 @@ thread_manager* thread_manager::get_thread_manager(const int64_t& nthreads,
 
 //============================================================================//
 
-thread_manager::size_type
-thread_manager::max_threads = 4*std::thread::hardware_concurrency();
-
-//============================================================================//
-
-thread_manager::thread_manager()
-: m_data(new data_type)
+thread_manager::thread_manager(mad::thread_pool*& _pool)
+: m_pool(_pool)
 {
     check_instance(this);
-}
-
-//============================================================================//
-
-thread_manager::thread_manager(size_type _n, bool _use_affinity)
-: m_data(new data_type(_n))
-{
-    check_instance(this);
-    this->use_affinity(_use_affinity);
 }
 
 //============================================================================//
 
 thread_manager::~thread_manager()
 {
-    finalize();
-    delete m_data;
-    m_data = nullptr;
-    fgInstance = nullptr;
+    delete m_pool;
+    m_pool = nullptr;
+    f_instance = nullptr;
 }
 
 //============================================================================//
 
 thread_manager::thread_manager(const thread_manager& rhs)
-: m_data(rhs.m_data)
+: m_pool(rhs.m_pool)
 { }
 
 //============================================================================//
@@ -149,7 +131,7 @@ thread_manager& thread_manager::operator=(const thread_manager& rhs)
     if(this == &rhs)
         return *this;
 
-    m_data = rhs.m_data;
+    m_pool = rhs.m_pool;
 
     return *this;
 }

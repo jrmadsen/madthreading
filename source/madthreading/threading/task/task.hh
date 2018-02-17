@@ -34,6 +34,7 @@
 #include "madthreading/threading/task/vtask.hh"
 #include "madthreading/threading/task/task_group.hh"
 #include <stdexcept>
+#include <functional>
 
 #define forward_args_t(_Args, _args) std::forward<_Args>(std::move(_args))...
 
@@ -43,16 +44,18 @@ namespace mad
 //============================================================================//
 
 /// \brief The task class is supplied to thread_pool.
-template <typename _Ret, typename... _Args>
+template <typename _Ret, typename _Arg, typename... _Args>
 class packaged_task : public details::vtask
 {
 public:
-    typedef _Ret                            result_type;
-    typedef std::function<_Ret(_Args...)>   function_type;
-    typedef std::promise<result_type>       promise_type;
-    typedef std::future<result_type>        future_type;
-    typedef std::packaged_task<_Ret()>      packaged_task_type;
-    typedef task_group<_Ret>                task_group_type;
+    typedef packaged_task<_Ret, _Arg, _Args...>            this_type;
+    typedef _Ret                                            result_type;
+    typedef std::function<_Ret(_Args...)>                   function_type;
+    typedef task_group<_Ret, _Arg>                         task_group_type;
+    typedef typename task_group_type::promise_type          promise_type;
+    typedef typename task_group_type::future_type           future_type;
+    typedef typename task_group_type::packaged_task_type    packaged_task_type;
+    //typedef Allocator<this_type>                          allocator_type;
 
 public:
     // pass a free function pointer
@@ -76,16 +79,18 @@ private:
 //============================================================================//
 
 /// \brief The task class is supplied to thread_pool.
-template <typename _Ret, typename... _Args>
+template <typename _Ret, typename _Arg, typename... _Args>
 class task : public details::vtask
 {
 public:
-    typedef _Ret                            result_type;
-    typedef std::function<_Ret(_Args...)>   function_type;
-    typedef std::promise<result_type>       promise_type;
-    typedef std::future<result_type>        future_type;
-    typedef std::packaged_task<_Ret()>      packaged_task_type;
-    typedef task_group<_Ret>                task_group_type;
+    typedef task<_Ret, _Arg, _Args...>                    this_type;
+    typedef _Ret                                            result_type;
+    typedef std::function<_Ret(_Args...)>                   function_type;
+    typedef task_group<_Ret, _Arg>                         task_group_type;
+    typedef typename task_group_type::promise_type          promise_type;
+    typedef typename task_group_type::future_type           future_type;
+    typedef typename task_group_type::packaged_task_type    packaged_task_type;
+    //typedef Allocator<this_type>                          allocator_type;
 
 public:
     // pass a free function pointer
@@ -94,6 +99,14 @@ public:
       m_ptask(std::bind(func, forward_args_t(_Args, args)))
     {
         tg->add(m_ptask.get_future());
+    }
+
+    // pass a free function pointer
+    task(task_group_type& tg, function_type func, _Args... args)
+    : details::vtask(&tg),
+      m_ptask(std::bind(func, forward_args_t(_Args, args)))
+    {
+        tg.add(m_ptask.get_future());
     }
 
     virtual ~task() { }
@@ -113,16 +126,18 @@ private:
 
 /// \brief The task class is supplied to thread_pool.
 template <>
-class task<void> : public details::vtask
+class task<void, void> : public details::vtask
 {
 public:
-    typedef void                                _Ret;
-    typedef _Ret                                result_type;
-    typedef std::function<result_type()>        function_type;
-    typedef std::promise<result_type>           promise_type;
-    typedef std::future<result_type>            future_type;
-    typedef std::packaged_task<result_type()>   packaged_task_type;
-    typedef task_group<result_type>             task_group_type;
+    typedef task<void, void>                              this_type;
+    typedef void                                            _Ret;
+    typedef _Ret                                            result_type;
+    typedef std::function<_Ret()>                           function_type;
+    typedef task_group<_Ret, _Ret>                         task_group_type;
+    typedef typename task_group_type::promise_type          promise_type;
+    typedef typename task_group_type::future_type           future_type;
+    typedef typename task_group_type::packaged_task_type    packaged_task_type;
+    //typedef Allocator<this_type>                          allocator_type;
 
 public:
     // pass a free function pointer
@@ -131,6 +146,13 @@ public:
       m_ptask(func)
     {
         tg->add(m_ptask.get_future());
+    }
+
+    task(task_group_type& tg, function_type func)
+    : details::vtask(&tg),
+      m_ptask(func)
+    {
+        tg.add(m_ptask.get_future());
     }
 
     virtual ~task() { }

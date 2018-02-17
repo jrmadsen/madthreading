@@ -78,8 +78,9 @@ int main(int argc, char** argv)
     if(argc > 1)
         niter = atoi(argv[argc-1]);
 
-    mad::thread_manager* tm
-        = new mad::thread_manager(mad::thread_manager::GetEnvNumThreads(4));
+    auto num_threads = mad::thread_manager::GetEnvNumThreads(4);
+    mad::thread_pool* tp = new mad::thread_pool(num_threads);
+    mad::thread_manager* tm = new mad::thread_manager(tp);
 
     tmcout << "Number of threads: " << tm->size() << std::endl;
     static mad::mutex mutex;
@@ -96,7 +97,7 @@ int main(int argc, char** argv)
     //------------------------------------------------------------------------//
     tmcout << "\nRunning loop #1 (run_loop)..." << std::endl;
     mad::task_group<void> tg1;
-    tm->run_loop(&tg1, _run1, 0, niter);
+    tm->run_loop(tg1, _run1, 0, niter);
     tg1.join();
     //========================================================================//
 
@@ -116,7 +117,7 @@ int main(int argc, char** argv)
     tmcout << "\nRunning loop #2 (exec)..." << std::endl;
     mad::task_group<void> tg2;
     for(int i = 0; i < niter; ++i)
-        tm->exec(&tg2, _run2);
+        tm->exec(tg2, _run2);
     tg2.join();
 
     //========================================================================//
@@ -145,7 +146,7 @@ int main(int argc, char** argv)
     std::cout.setf(std::ios::fixed);
     mad::task_group<void> tg3;
     for(int i = 0; i < niter; ++i)
-        tm->exec(&tg3, _run3,
+        tm->exec(tg3, _run3,
                  canonical(), canonical(), canonical(),
                  canonical(), canonical(), canonical());
     tg3.join();
@@ -159,7 +160,7 @@ int main(int argc, char** argv)
            << std::flush;
     mad::task_group<int64_t> tg4([](int64_t& a, const int64_t& b) { return a + b; });
     for(int i = 0; i < niter; ++i)
-        tm->exec(&tg4, fibonacci, 44);
+        tm->exec(tg4, fibonacci, 44);
     {
         TIMEMORY_AUTO_TIMER("fibonacci_calculation");
         auto sum = tg4.join();
@@ -168,6 +169,7 @@ int main(int argc, char** argv)
 
     mad::timing_manager::instance()->report();
 
+    delete tm;
     return 0;
 }
 

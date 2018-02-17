@@ -21,17 +21,6 @@
 // SOFTWARE.
 //
 
-//
-//
-//
-//
-//
-// created by jrmadsen on Wed Jul 22 09:15:04 2015
-//
-//
-//
-//
-
 
 #ifndef thread_pool_hh_
 #define thread_pool_hh_
@@ -58,40 +47,42 @@ namespace mad
 class thread_pool
 {
 public:
-    typedef mad::details::vtask                             task_type;
-    typedef std::size_t                                     size_type;
-    typedef std::shared_ptr<task_type>                      task_pointer;
-    typedef std::vector<std::thread*>                       ThreadContainer_t;
-    typedef std::deque<task_pointer, Allocator_t(task_pointer)>     task_list_t;
-    typedef std::vector<bool, Allocator_t(bool)>            JoinContainer_t;
-    typedef mutex                                           lock_t;
-    typedef ulong_ts                                        task_count_type;
-    typedef volatile int                                    pool_state_type;
-    typedef mad::condition                                  condition_t;
-    typedef std::map<void*, task_type*>                     TaskMap_t;
-    typedef std::map<void*, volatile bool>                  JoinMap_t;
-    typedef std::map<std::thread::id, uint64_t>             tid_type;
+    typedef details::vtask                           task_type;
+    typedef std::size_t                             size_type;
+    typedef std::shared_ptr<task_type>              task_pointer;
+    typedef std::vector<mad::thread*>                  ThreadContainer_t;
+    typedef std::deque<task_pointer>                task_list_t;
+    typedef std::vector<bool>                       BoolContainer_t;
+    typedef mad::mutex                                 lock_t;
+    typedef std::atomic_uint64_t                    task_count_type;
+    typedef volatile int                            pool_state_type;
+    typedef mad::condition                             condition_t;
+    typedef std::map<mad::thread::id, uint64_t>          tid_type;
+    typedef std::map<mad::thread::id, task_list_t>       thread_task_list_t;
 
 public:
     // Constructor and Destructors
-    // affinity assigns threads to certain cores
-    explicit thread_pool(bool _use_affinity = false);
-    thread_pool(size_type pool_size, bool _use_affinity = false);
+    thread_pool(const size_type& pool_size, bool _use_affinity = false);
     // Virtual destructors are required by abstract classes
     // so add it by default, just in case
     virtual ~thread_pool();
 
 public:
     // Public functions
-    int initialize_threadpool(); // start the threads
-    int destroy_threadpool(); // destroy the threads
+    size_type initialize_threadpool(size_type); // start the threads
+    size_type destroy_threadpool(); // destroy the threads
+    size_type stop_thread();
 
 public:
     // add tasks for threads to process
-    int add_task(task_pointer task);
+    size_type add_task(task_pointer task);
+    size_type add_thread_task(mad::thread::id id, task_pointer task);
     // add a generic container with iterator
     template <typename Container_t>
-    int add_tasks(Container_t&);
+    size_type add_tasks(Container_t&);
+
+    mad::thread* get_thread(size_type _n) const;
+    mad::thread* get_thread(std::thread::id id) const;
 
 public:
     // get the pool state
@@ -99,16 +90,15 @@ public:
     // see how many main task threads there are
     size_type size() const { return m_pool_size; }
     // set the thread pool size
-    void set_size(size_type _n) { m_pool_size = _n; }
-    // affinity assigns threads to cores, only affects threads when
-    // first initialized
-    void use_affinity(bool _val) { m_use_affinity = _val; }
+    void resize(size_type _n);
+    // affinity assigns threads to cores, assignment at constructor
+    bool using_affinity() const { return m_use_affinity; }
+    bool is_alive() { return m_alive_flag.load(); }
 
 public:
     // read FORCE_NUM_THREADS environment variable
     static int64_t GetEnvNumThreads(int64_t _default = -1);
     static const tid_type& GetThreadIDs() { return tids; }
-    static volatile bool& is_alive() { return is_alive_flag; }
 
 protected:
     void  execute_thread(); // function thread sits in
@@ -118,12 +108,13 @@ protected:
 
 protected:
     // called in THREAD INIT
-    static void start_thread(void* arg);
+    static void start_thread(thread_pool* arg);
 
 private:
     // Private variables
     // random
     bool m_use_affinity;
+    std::atomic_bool m_alive_flag;
     size_type m_pool_size;
     pool_state_type m_pool_state;
 
@@ -133,37 +124,59 @@ private:
     condition_t m_task_cond;
 
     // containers
-    ThreadContainer_t   m_main_threads;   // storage for threads
+    BoolContainer_t     m_is_joined;      // join list
+    BoolContainer_t     m_is_stopped;     // lets thread know to stop
+    ThreadContainer_t   m_main_threads;   // storage for active threads
+    ThreadContainer_t   m_stop_threads;   // storage for stopped threads
     task_list_t         m_main_tasks;     // storage for tasks
-    JoinContainer_t     m_is_joined;
+    thread_task_list_t  m_thread_tasks;   // storage for thread-specific tasks
 
+private:
+    // Private static variables
     static tid_type tids;
-    static volatile bool is_alive_flag;
 
 private:
     thread_pool(const thread_pool&)
     : m_use_affinity(false),
+      m_alive_flag(false),
       m_pool_size(0),
       m_pool_state(0),
       m_task_lock(), // recursive
       m_task_cond(),
+      m_is_joined(BoolContainer_t()),
+      m_is_stopped(BoolContainer_t()),
       m_main_threads(ThreadContainer_t()),
+      m_stop_threads(ThreadContainer_t()),
       m_main_tasks(task_list_t()),
-      m_is_joined(JoinContainer_t())
+      m_thread_tasks(thread_task_list_t())
     { }
 
     thread_pool& operator=(const thread_pool&) { return *this; }
 
 };
 
-} // namespace mad
-
+//----------------------------------------------------------------------------//
+inline mad::thread*
+thread_pool::get_thread(size_type _n) const
+{
+    return (_n < m_main_threads.size()) ? m_main_threads[_n] : nullptr;
+}
+//----------------------------------------------------------------------------//
+inline mad::thread*
+thread_pool::get_thread(std::thread::id id) const
+{
+    for(const auto& itr : m_main_threads)
+        if(itr->get_id() == id)
+            return itr;
+    return nullptr;
+}
 //----------------------------------------------------------------------------//
 template <typename Container_t>
-int mad::thread_pool::add_tasks(Container_t& c)
+thread_pool::size_type
+thread_pool::add_tasks(Container_t& c)
 {
 
-    if(!is_alive_flag) // if we haven't built thread-pool, just execute
+    if(!m_alive_flag) // if we haven't built thread-pool, just execute
     {
         for(auto& itr : c)
             run(itr);
@@ -171,10 +184,6 @@ int mad::thread_pool::add_tasks(Container_t& c)
     }
 
     m_task_lock.lock();
-
-    // if the thread pool hasn't been initialize, initialize it
-    if(!is_initialized())
-        initialize_threadpool();
 
     // TODO: put a limit on how many tasks can be added at most
     for(auto& itr : c)
@@ -198,5 +207,7 @@ int mad::thread_pool::add_tasks(Container_t& c)
     return c.size();
 }
 //----------------------------------------------------------------------------//
+
+} // namespace mad
 
 #endif

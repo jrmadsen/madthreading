@@ -54,6 +54,8 @@ namespace mad
 
     typedef std::thread::id Pid_t;
 
+    using namespace std::this_thread;
+
 } // namespace mad
 
 

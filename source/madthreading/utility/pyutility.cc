@@ -24,7 +24,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/embed.h>
 
-#include "madthreading/utility/memory.hh"
 
 //----------------------------------------------------------------------------//
 
@@ -35,12 +34,6 @@ PYBIND11_MODULE(pyutility, util)
 
     util.doc() = "Utility functions";
 
-    util.def("process_mem_usage", &mad::memory::process_mem_usage,
-             "Get virtual memory and RSS size")
-        .def("get_peak_rss", &mad::memory::getPeakRSS,
-             "Get peak resident set size (RSS)")
-        .def("get_current_rss", &mad::memory::getCurrentRSS,
-             "Get current resident set size (RSS)");
 }
 
 //----------------------------------------------------------------------------//

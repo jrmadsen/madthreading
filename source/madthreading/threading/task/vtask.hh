@@ -51,12 +51,12 @@ class vtask_group;
 class vtask : public mad::Allocator
 {
 public:
-    typedef vtask*          iterator;
-    typedef const vtask*    const_iterator;
-    typedef size_t          size_type;
-    typedef mad::condition  cond_t;
-    typedef mad::mutex      lock_t;
-    typedef mad::long_ts    count_t;
+    typedef vtask                   this_type;
+    typedef vtask*                  iterator;
+    typedef const vtask*            const_iterator;
+    typedef size_t                  size_type;
+    typedef std::atomic_uint64_t    count_t;
+    //typedef Allocator<this_type>    allocator_type;
 
 public:
     vtask(vtask_group* _group = nullptr) : m_vgroup(_group) { }

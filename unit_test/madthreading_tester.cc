@@ -15,6 +15,7 @@
 #include <madthreading/types.hh>
 #include <timemory/timer.hpp>
 #include <madthreading/threading/thread_manager.hh>
+#include <madthreading/threading/thread_pool.hh>
 #include <madthreading/utility/constants.hh>
 
 using namespace mad;
@@ -29,12 +30,14 @@ static mad::mutex _mutex;
 // T1
 TEST(Test_1_pi_pool)
 {
-    //std::cout << "Running Test_1_pi_pool..." << std::endl;
-    ulong_type num_steps = NUM_STEPS;
+    std::cout << "Running Test_1_pi_pool..." << std::endl;
+    uint64_t num_steps = NUM_STEPS;
     double_type step = 1.0/static_cast<double_type>(num_steps);
     double_ts sum = 0.0;
-    ulong_type num_threads = 4;
-    thread_manager* tm = new thread_manager(num_threads);
+
+    uint64_t num_threads = std::thread::hardware_concurrency();
+    thread_pool* tp = new thread_pool(num_threads);
+    thread_manager* tm = new thread_manager(tp);
 
     //------------------------------------------------------------------------//
     auto compute_block = [&sum, step] (const ulong_type& s, const ulong_type& e)
@@ -48,7 +51,7 @@ TEST(Test_1_pi_pool)
     };
     //------------------------------------------------------------------------//
     mad::task_group<void> tg;
-    tm->run_loop(&tg, compute_block, 0, num_steps, num_threads);
+    tm->run_loop(tg, compute_block, 0, num_steps, num_threads);
     tg.join();
 
     CHECK_CLOSE(step*sum, dat::PI, CheckTol);
@@ -61,7 +64,9 @@ TEST(Test_1_pi_pool)
 TEST(Test_2_Hello_World)
 {
     //------------------------------------------------------------------------//
-    thread_manager* tm = thread_manager::get_thread_manager();
+    uint64_t num_threads = std::thread::hardware_concurrency();
+    thread_pool* tp = new thread_pool(num_threads);
+    thread_manager* tm = new thread_manager(tp);
     int niter = 20;
     //------------------------------------------------------------------------//
     auto _run1 = [] (int n)
@@ -72,7 +77,7 @@ TEST(Test_2_Hello_World)
     //------------------------------------------------------------------------//
     tmcout << "\nRunning loop #1 (run_loop)..." << std::endl;
     mad::task_group<void> tg1;
-    tm->run_loop(&tg1, _run1, 0, niter);
+    tm->run_loop(tg1, _run1, 0, niter);
     tg1.join();
 
     delete tm;
@@ -83,7 +88,9 @@ TEST(Test_2_Hello_World)
 TEST(Test_3_Hello_World_2)
 {
     //------------------------------------------------------------------------//
-    thread_manager* tm = thread_manager::get_thread_manager();
+    uint64_t num_threads = std::thread::hardware_concurrency();
+    thread_pool* tp = new thread_pool(num_threads);
+    thread_manager* tm = new thread_manager(tp);
     int niter = 20;
     //------------------------------------------------------------------------//
     mad::atomic<int> n(niter);
@@ -98,7 +105,7 @@ TEST(Test_3_Hello_World_2)
     tmcout << "\nRunning loop #2 (exec)..." << std::endl;
     mad::task_group<void> tg2;
     for(int i = 0; i < niter; ++i)
-        tm->exec(&tg2, _run2);
+        tm->exec(tg2, _run2);
     tg2.join();
 
     delete tm;

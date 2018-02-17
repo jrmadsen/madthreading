@@ -59,15 +59,17 @@ namespace details
 class vtask_group
 {
 public:
-    template <typename _Tp> using container_type = std::deque<_Tp>;
+    template <typename _Tp, typename _Alloc = std::allocator<_Tp>>
+    using container_type = std::deque<_Tp, _Alloc>;
 
-    typedef vtask                                   task_type;
-    typedef std::size_t                             size_type;
-    typedef mad::mutex                              lock_t;
-    typedef long_ts                                 task_count_type;
-    typedef mad::condition                          condition_t;
-    typedef std::shared_ptr<task_type>              task_pointer;
-    typedef container_type<task_pointer>            vtask_list_type;
+    typedef vtask                         task_type;
+    typedef std::size_t                     size_type;
+    typedef mad::mutex                         lock_t;
+    typedef std::atomic_int64_t             task_count_type;
+    typedef std::atomic_uint                clear_count_type;
+    typedef mad::condition                     condition_t;
+    typedef std::shared_ptr<task_type>      task_pointer;
+    typedef container_type<task_pointer>    vtask_list_type;
 
 public:
     // Constructor and Destructors
@@ -97,8 +99,17 @@ public:
     thread_pool*& pool()       { return m_pool; }
     thread_pool*  pool() const { return m_pool; }
 
-    task_pointer store(task_pointer ptr)
-    { vtask_list.push_back(ptr); return ptr; }
+    task_pointer& store(task_pointer&& ptr)
+    { vtask_list.push_back(ptr); return vtask_list.back(); }
+
+    virtual void clear() { vtask_list.clear(); }
+
+    //------------------------------------------------------------------------//
+    // set the number of join calls before clear (zero == never)
+    void set_clear_frequency(uint32_t val) { m_clear_freq.store(val); }
+    //------------------------------------------------------------------------//
+    // get the number of join calls before clear
+    uint32_t get_clear_frequency() const { return m_clear_freq.load(); }
 
 protected:
     // check if any tasks are still pending
@@ -106,11 +117,13 @@ protected:
     
 protected:
     // Private variables
-    task_count_type m_task_count;
-    uint64_t        m_id;
-    thread_pool*    m_pool;
-    condition_t     m_task_cond;
-    lock_t          m_task_lock;
+    clear_count_type    m_clear_count;
+    clear_count_type    m_clear_freq;
+    task_count_type     m_task_count;
+    uint64_t            m_id;
+    thread_pool*       m_pool;
+    condition_t         m_task_cond;
+    lock_t              m_task_lock;
 
 protected:
     enum class state : int

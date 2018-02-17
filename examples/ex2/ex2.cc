@@ -27,7 +27,8 @@ int main(int, char**)
     double_type step = 1.0/static_cast<double_type>(num_steps);
     double_ts sum = 0.0;
     ulong_type num_threads = thread_manager::GetEnvNumThreads(1);
-    thread_manager* tm = new thread_manager(num_threads);
+    thread_pool* tp = new thread_pool(num_threads);
+    thread_manager* tm = new thread_manager(tp);
 
     //------------------------------------------------------------------------//
     auto x = [step] (const ulong_type& i) { return (i-0.5)*step; };
@@ -49,10 +50,12 @@ int main(int, char**)
     t.start();
 
     mad::task_group<double_type> tg(accum);
-    tm->run_loop(&tg, compute_block, 0, num_steps, num_threads);
+    tm->run_loop(tg, compute_block, 0, num_steps, num_threads);
     sum = tg.join();
 
     report(num_steps, step*sum, t.stop_and_return(), "mad_thread_pool");
     //========================================================================//
+
+    delete tm;
 }
 

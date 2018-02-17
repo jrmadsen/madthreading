@@ -44,13 +44,15 @@ static ulong_ts m_group_count = 0;
 //============================================================================//
 
 vtask_group::vtask_group(thread_pool* tp)
-: m_task_count(0),
+: m_clear_count(0),
+  m_clear_freq(1),
+  m_task_count(0),
   m_id(m_group_count++),
   m_pool(tp),
   m_task_lock()
 {
     if(!m_pool)
-        m_pool = mad::thread_manager::instance()->thread_pool();
+        m_pool = mad::thread_manager::instance()->get_thread_pool();
 }
 
 //============================================================================//

@@ -35,7 +35,8 @@ using namespace mad;
 int main(int, char**)
 {
     ulong_type num_threads = thread_manager::GetEnvNumThreads(1);
-    thread_manager* tm = new thread_manager(num_threads);
+    thread_pool* tp = new thread_pool(num_threads);
+    thread_manager* tm = new thread_manager(tp);
     ulong_type nchar = 10;
 
     string sentence = "";
@@ -67,8 +68,8 @@ int main(int, char**)
     for(ulong_type j = 0; j < nchar; ++j)
     {
         for(ulong_type i = 0; i < nchar; ++i)
-            tm->exec(&tg1, block_b);
-        tm->exec(&tg1, block_a);
+            tm->exec(tg1, block_b);
+        tm->exec(tg1, block_a);
     }
     tg1.join();
     //========================================================================//
@@ -84,15 +85,16 @@ int main(int, char**)
     {
         mad::task_group<void> tg2b;
         for(ulong_type i = 0; i < nchar; ++i)
-            tm->exec(&tg2b, block_b);
+            tm->exec(tg2b, block_b);
         // here we want thread_group 2b to finish
         tg2b.join();
-        tm->exec(&tg2a, block_a);
+        tm->exec(tg2a, block_a);
     }
     tg2a.join();
     //========================================================================//
 
     tmcout << "Sentence B: " << sentence << endl;
+
     delete tm;
     return (soln != sentence && sentA == sentence);
 }

@@ -60,12 +60,9 @@ inline int ncores()
 
 //============================================================================//
 
+static mad::mutex io_mutex;
 static mad::mutex tid_mutex;
-
-//============================================================================//
-
 thread_pool::tid_type thread_pool::tids;
-volatile bool thread_pool::is_alive_flag = false;
 
 //============================================================================//
 
@@ -77,50 +74,28 @@ static const int NONINIT = 2;
 }
 
 //============================================================================//
-
-thread_pool::thread_pool(bool _use_affinity)
-: m_use_affinity(_use_affinity),
-  m_pool_size(ncores()),
-  m_pool_state(state::NONINIT),
-  m_task_lock() // recursive
+// static member function that calls the member function we want the thread to
+// run
+void thread_pool::start_thread(thread_pool* tp)
 {
 
     if(mad::get_env<int32_t>("MAD_VERBOSE", 0) > 0)
     {
-        tmcout << "Constructing ThreadPool of size "
-               << m_pool_size << std::endl;
+        mad::auto_lock lock(tid_mutex);
+        tids[std::this_thread::get_id()] = tids.size();
     }
-
-    if(mad::get_env<int32_t>("MAD_FPE_DEBUG", 0) > 0)
-    {
-        fpe::fpe_settings::fpe_set ops;
-        ops.insert(fpe::fpe::underflow);
-        ops.insert(fpe::fpe::overflow);
-        fpe::EnableInvalidOperationDetection(ops);
-    }
+    tp->execute_thread();
 }
 
 //============================================================================//
 
-thread_pool::thread_pool(size_type pool_size, bool _use_affinity)
+thread_pool::thread_pool(const size_type& pool_size, bool _use_affinity)
 : m_use_affinity(_use_affinity),
-  m_pool_size(pool_size),
-  m_pool_state(state::NONINIT),
-  m_task_lock() // recursive
+  m_alive_flag(false),
+  m_pool_size(0),
+  m_pool_state(state::NONINIT)
 {
-
-    if(mad::get_env<int32_t>("MAD_VERBOSE", 0) > 0)
-        tmcout << "Constructing ThreadPool of size "
-               << m_pool_size << std::endl;
-
-    if(mad::get_env<int32_t>("MAD_FPE_DEBUG", 0) > 0)
-    {
-        fpe::fpe_settings::fpe_set ops;
-        ops.insert(fpe::fpe::underflow);
-        ops.insert(fpe::fpe::overflow);
-        fpe::EnableInvalidOperationDetection(ops);
-    }
-
+    this->initialize_threadpool(pool_size);
 }
 
 //============================================================================//
@@ -129,10 +104,14 @@ thread_pool::~thread_pool()
 {
     // Release resources
     if (m_pool_state != state::STOPPED)
-        destroy_threadpool();
+    {
+        size_type ret = destroy_threadpool();
+        while(ret > 0)
+            ret = stop_thread();
+    }
 
     // wait until thread pool is fully destroyed
-    while(mad::thread_pool::is_alive());
+    while(thread_pool::is_alive());
     // delete thread-local allocator and erase thread IDS
     if(mad::details::allocator_list_tl::get_allocator_list_if_exists())
     {
@@ -154,67 +133,51 @@ bool thread_pool::is_initialized() const
 
 //============================================================================//
 
-// We can't pass a non-static member function to CORETHREADCREATE.
-// So created the static member function that calls the member function
-// we want to run in the thread.
-void thread_pool::start_thread(void* arg)
+void thread_pool::resize(size_type _n)
 {
-    {
-        mad::lock_t lock(tid_mutex);
-        tids[std::this_thread::get_id()] = tids.size();
-        if(mad::get_env<int32_t>("MAD_VERBOSE", 0) > 0)
-            tmcout << "--> [MAIN THREAD QUEUE] thread ids size: "
-                   << tids.size() << std::endl;
-    }
-    thread_pool* tp = (thread_pool*) arg;
-    tp->execute_thread();
+    if(_n == m_pool_size)
+        return;
+    initialize_threadpool(_n);
 }
 
 //============================================================================//
 
-int thread_pool::initialize_threadpool()
+thread_pool::size_type
+thread_pool::initialize_threadpool(size_type proposed_size)
 {
-    if(m_pool_size == 1)
+    if(proposed_size == 1)
         return 1;
 
-    is_alive_flag = true;
-
-    if(mad::get_env<int32_t>("MAD_VERBOSE", 0) > 0)
-        tmcout << "--> Creating " << m_pool_size
-               << " threads ... " << m_main_threads.size() << " already exist"
-               << std::endl;
+    m_alive_flag.store(true);
 
     //--------------------------------------------------------------------//
-    // destroy any existing thread pool
+    // if started, stop some thread if smaller or return if equal
     if(m_pool_state == state::STARTED)
-        destroy_threadpool();
+    {
+        if(m_pool_size > proposed_size)
+        {
+            while(stop_thread() > proposed_size);
+            return m_pool_size;
+        }
+        else if(m_pool_size == proposed_size)
+            return m_pool_size;
+    }
 
     //--------------------------------------------------------------------//
-    m_pool_state = state::STARTED;
+    // lock any existing threads in thread-pool
+    mad::auto_lock _task_lock(m_task_lock);
 
-    for (size_type i = 0; i < m_pool_size; i++)
+    if(!m_alive_flag.load())
+        m_pool_state = state::STARTED;
+
+    for (size_type i = m_pool_size; i < proposed_size; i++)
     {
         // add the threads
-        thread* tid = new std::thread;
+        mad::thread* tid = new mad::thread;
         bool _add_thread = true;
         try
         {
-            *tid = std::thread(thread_pool::start_thread, (void*)(this));
-#if defined(ALLOW_AFFINITY)
-            if(m_use_affinity)
-            {
-                // Create a cpu_set_t object representing a set of CPUs. Clear it and mark
-                // only CPU i as set.
-                cpu_set_t cpuset;
-                CPU_ZERO(&cpuset);
-                CPU_SET(i, &cpuset);
-                int rc = pthread_setaffinity_np(tid->native_handle(),
-                                                sizeof(cpu_set_t), &cpuset);
-                if (rc != 0)
-                    std::cerr << "Error calling pthread_setaffinity_np: " << rc
-                              << std::endl;
-            }
-#endif
+            *tid = std::thread(thread_pool::start_thread, this);
         }
         catch(std::runtime_error& e)
         {
@@ -227,12 +190,30 @@ int thread_pool::initialize_threadpool()
             _add_thread = false;
         }
 
+#if defined(ALLOW_AFFINITY)
+        if(m_use_affinity)
+        {
+            // Create a cpu_set_t object representing a set of CPUs. Clear it and mark
+            // only CPU i as set.
+            cpu_set_t cpuset;
+            CPU_ZERO(&cpuset);
+            CPU_SET(i, &cpuset);
+            int rc = pthread_setaffinity_np(tid->native_handle(),
+                                            sizeof(cpu_set_t), &cpuset);
+            if (rc != 0)
+                std::cerr << "Error calling pthread_setaffinity_np: " << rc
+                          << std::endl;
+        }
+#endif
+
         // successful creation of thread
         if(_add_thread)
         {
             m_main_threads.push_back(std::move(tid));
-            // TODO: FIGURE THIS OUT
+            // list of joined thread booleans
             m_is_joined.push_back(false);
+            // thread-local task queue
+            m_thread_tasks.insert(std::make_pair(tid->get_id(), task_list_t()));
         }
     }
     //------------------------------------------------------------------------//
@@ -261,9 +242,10 @@ int thread_pool::initialize_threadpool()
 
 //============================================================================//
 
-int thread_pool::destroy_threadpool()
+thread_pool::size_type
+thread_pool::destroy_threadpool()
 {
-    if(!is_alive_flag)
+    if(!m_alive_flag.load())
         return 0;
 
     // Note: this is not for synchronization, its for thread communication!
@@ -271,14 +253,12 @@ int thread_pool::destroy_threadpool()
     // the modified m_pool_state may not show up to other threads until its
     // modified in a lock!
     //------------------------------------------------------------------------//
-    m_task_lock.lock();
-    m_pool_state = state::STOPPED;
-    m_task_lock.unlock();
-
-    //------------------------------------------------------------------------//
-    // notify all threads we are shutting down
-    m_task_cond.notify_all();
-    //------------------------------------------------------------------------//
+    {
+        mad::auto_lock _task_lock(m_task_lock);
+        m_pool_state = state::STOPPED;
+        // notify all threads we are shutting down
+        m_task_cond.notify_all();
+    }
 
     if(m_is_joined.size() != m_main_threads.size())
     {
@@ -325,24 +305,72 @@ int thread_pool::destroy_threadpool()
     // clean up
     for(auto& itr : m_main_threads)
         delete itr;
+
     m_main_threads.clear();
     m_is_joined.clear();
 
-    is_alive_flag = false;
+    m_alive_flag.store(false);
 
     return 0;
 }
 
 //============================================================================//
 
+thread_pool::size_type
+thread_pool::stop_thread()
+{
+    if(!m_alive_flag.load() || m_pool_size == 0)
+        return 0;
+
+    //------------------------------------------------------------------------//
+    // notify all threads we are shutting down
+    m_task_lock.lock();
+    m_is_stopped.push_back(true);
+    m_task_cond.notify_one();
+    m_task_lock.unlock();
+    //------------------------------------------------------------------------//
+
+    // lock up the task queue
+    mad::auto_lock _task_lock(m_task_lock);
+
+    while(!m_stop_threads.empty())
+    {
+        // get the thread
+        mad::thread* t = m_stop_threads.back();
+        // let thread finish
+        t->join();
+        // remove from stopped
+        m_stop_threads.pop_back();
+        // remove from main
+        for(auto itr = m_main_threads.begin(); itr != m_main_threads.end(); ++itr)
+            if((*itr)->get_id() == t->get_id())
+            {
+                m_main_threads.erase(itr);
+                break;
+            }
+        // remove from join list
+        m_is_joined.pop_back();
+        // delete thread
+        delete t;
+    }
+
+    m_pool_size = m_main_threads.size();
+    return m_main_threads.size();
+}
+
+//============================================================================//
+
 void thread_pool::execute_thread()
 {
+    // thread-local task pointer
     task_pointer task = nullptr;
+
+    // threads stay in this loop forever until thread-pool destroyed
     while(true)
     {
         //--------------------------------------------------------------------//
         // Try to pick a task
-        m_task_lock.lock();
+        mad::auto_lock _task_lock(m_task_lock);
         //--------------------------------------------------------------------//
 
         // We need to put condition.wait() in a loop for two reasons:
@@ -355,36 +383,68 @@ void thread_pool::execute_thread()
         {
             // Wait until there is a task in the queue
             // Unlock mutex while wait, then lock it back when signaled
-            m_task_cond.wait(m_task_lock);
+            m_task_cond.wait(_task_lock);
+            //G4CONDITIONWAIT( &m_task_cond, &_task_lock );
         }
 
         // If the thread was waked to notify process shutdown, return from here
         if (m_pool_state == state::STOPPED)
-        {
+        {                
             // has exited.
-            m_task_lock.unlock();
-            //----------------------------------------------------------------//
-            if(mad::details::allocator_list_tl::get_allocator_list_if_exists()
-               && tids.find(std::this_thread::get_id()) != tids.end())
-                mad::details::allocator_list_tl::get_allocator_list()
-                        ->Destroy(tids.find(std::this_thread::get_id())->second, 1);
-            //----------------------------------------------------------------//
             return;
         }
 
-        // get the task
-        task = m_main_tasks.front();
-        m_main_tasks.pop_front();
-        //--------------------------------------------------------------------//
+        // single thread stoppage
+        if(m_is_stopped.size() > 0)
+        {
+            if(m_is_stopped.back())
+                m_stop_threads.push_back(get_thread(std::this_thread::get_id()));
+            m_is_stopped.pop_back();
+            _task_lock.unlock();
+            return;
+        }
 
-        // Unlock
-        m_task_lock.unlock();
-        //--------------------------------------------------------------------//
+        // check thread-specific queue first and process all tasks
+        if(m_thread_tasks[std::this_thread::get_id()].size() > 0)
+        {
+            // the queue is thread-local
+            _task_lock.unlock();
+            while(!m_thread_tasks[std::this_thread::get_id()].empty())
+            {
+                // get the task
+                task = m_thread_tasks[std::this_thread::get_id()].front();
+                m_thread_tasks[std::this_thread::get_id()].pop_front();
+                //------------------------------------------------------------//
 
-        // execute the task
-        run(task);
-        //--------------------------------------------------------------------//
+                // execute the task
+                run(task);
+                //------------------------------------------------------------//
+            }
+            // before we proceed to check m_main_tasks we need to acquire lock
+            // released above
+            _task_lock.lock();
+        }
 
+        // the global queue of tasks
+        if(m_main_tasks.size() > 0)
+        {
+            // get the task
+            task = m_main_tasks.front();
+            m_main_tasks.pop_front();
+            //----------------------------------------------------------------//
+
+            // Unlock
+            _task_lock.unlock();
+            //----------------------------------------------------------------//
+
+            // execute the task
+            run(task);
+            //----------------------------------------------------------------//
+        }
+        else // no main tasks, unlock and continue to beginning of loop
+        {
+            _task_lock.unlock();
+        }
     }
 }
 
@@ -402,10 +462,11 @@ void thread_pool::run(task_pointer task)
 
 //============================================================================//
 
-int thread_pool::add_task(task_pointer task)
+thread_pool::size_type
+thread_pool::add_task(task_pointer task)
 {
 
-    if(!is_alive_flag) // if we haven't built thread-pool, just execute
+    if(!m_alive_flag.load()) // if we haven't built thread-pool, just execute
     {
         run(task_pointer(task));
         return 0;
@@ -417,24 +478,49 @@ int thread_pool::add_task(task_pointer task)
 
     m_task_lock.lock();
 
-    // if the thread pool hasn't been initialize, initialize it
-    if(m_pool_state == state::NONINIT)
-        initialize_threadpool();
-
     // TODO: put a limit on how many tasks can be added at most
-    m_main_tasks.push_back(task_pointer(task));
+    m_main_tasks.push_back(task);
 
     // wake up one thread that is waiting for a task to be available
     m_task_cond.notify_one();
 
     m_task_lock.unlock();
 
-    return 0;
+    return 1;
 }
 
 //============================================================================//
 
-long_type thread_pool::GetEnvNumThreads(long_type _default)
+thread_pool::size_type
+thread_pool::add_thread_task(mad::thread::id id, task_pointer task)
+{
+
+    if(!m_alive_flag.load()) // if we haven't built thread-pool, just execute
+    {
+        run(task_pointer(task));
+        return 0;
+    }
+
+    // do outside of lock because is thread-safe and needs to be updated as
+    // soon as possible
+    task->operator++();
+
+    m_task_lock.lock();
+
+    // TODO: put a limit on how many tasks can be added at most
+    m_thread_tasks[id].push_back(task);
+
+    // wake up one thread that is waiting for a task to be available
+    m_task_cond.notify_all();
+
+    m_task_lock.unlock();
+
+    return 1;
+}
+
+//============================================================================//
+
+int64_t thread_pool::GetEnvNumThreads(int64_t _default)
 {
     char* env_nthreads;
     env_nthreads = getenv("MAD_NUM_THREADS");
@@ -446,7 +532,7 @@ long_type thread_pool::GetEnvNumThreads(long_type _default)
     {
         std::string str_nthreads = std::string(env_nthreads);
         std::istringstream iss(str_nthreads);
-        long_type _n = 0;
+        int64_t _n = 0;
         iss >> _n;
         return _n;
     }
