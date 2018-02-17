@@ -40,6 +40,7 @@
 #include <map>
 #include <queue>
 #include <stack>
+#include <atomic>
 
 namespace mad
 {
@@ -47,18 +48,18 @@ namespace mad
 class thread_pool
 {
 public:
-    typedef details::vtask                           task_type;
+    typedef details::vtask                          task_type;
     typedef std::size_t                             size_type;
     typedef std::shared_ptr<task_type>              task_pointer;
-    typedef std::vector<mad::thread*>                  ThreadContainer_t;
+    typedef std::vector<mad::thread*>               ThreadContainer_t;
     typedef std::deque<task_pointer>                task_list_t;
     typedef std::vector<bool>                       BoolContainer_t;
-    typedef mad::mutex                                 lock_t;
+    typedef mad::mutex                              lock_t;
     typedef std::atomic_uint64_t                    task_count_type;
     typedef volatile int                            pool_state_type;
-    typedef mad::condition                             condition_t;
-    typedef std::map<mad::thread::id, uint64_t>          tid_type;
-    typedef std::map<mad::thread::id, task_list_t>       thread_task_list_t;
+    typedef mad::condition                          condition_t;
+    typedef std::map<mad::thread::id, uint64_t>     tid_type;
+    typedef std::map<mad::thread::id, task_list_t>  thread_task_list_t;
 
 public:
     // Constructor and Destructors
