@@ -43,6 +43,8 @@
 #include <cstdint>
 #include <unordered_map>
 #include <map>
+#include <atomic>
+#include <cstdint>
 
 //----------------------------------------------------------------------------//
 
@@ -62,12 +64,12 @@ public:
     template <typename _Tp, typename _Alloc = std::allocator<_Tp>>
     using container_type = std::deque<_Tp, _Alloc>;
 
-    typedef vtask                         task_type;
+    typedef vtask                           task_type;
     typedef std::size_t                     size_type;
-    typedef mad::mutex                         lock_t;
-    typedef std::atomic_int64_t             task_count_type;
-    typedef std::atomic_uint                clear_count_type;
-    typedef mad::condition                     condition_t;
+    typedef mad::mutex                      lock_t;
+    typedef std::atomic<int64_t>            task_count_type;
+    typedef std::atomic<uint64_t>           clear_count_type;
+    typedef mad::condition                  condition_t;
     typedef std::shared_ptr<task_type>      task_pointer;
     typedef container_type<task_pointer>    vtask_list_type;
 

@@ -41,6 +41,7 @@
 #include <queue>
 #include <stack>
 #include <atomic>
+#include <cstdint>
 
 namespace mad
 {
@@ -55,7 +56,7 @@ public:
     typedef std::deque<task_pointer>                task_list_t;
     typedef std::vector<bool>                       BoolContainer_t;
     typedef mad::mutex                              lock_t;
-    typedef std::atomic_uint64_t                    task_count_type;
+    typedef std::atomic<uint64_t>                   task_count_type;
     typedef volatile int                            pool_state_type;
     typedef mad::condition                          condition_t;
     typedef std::map<mad::thread::id, uint64_t>     tid_type;
@@ -115,7 +116,7 @@ private:
     // Private variables
     // random
     bool m_use_affinity;
-    std::atomic_bool m_alive_flag;
+    std::atomic<bool> m_alive_flag;
     size_type m_pool_size;
     pool_state_type m_pool_state;
 

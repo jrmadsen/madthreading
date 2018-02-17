@@ -36,6 +36,8 @@
 #include <array>
 #include <future>
 #include <thread>
+#include <atomic>
+#include <cstdint>
 
 namespace mad
 {
@@ -55,7 +57,7 @@ public:
     typedef vtask*                  iterator;
     typedef const vtask*            const_iterator;
     typedef size_t                  size_type;
-    typedef std::atomic_uint64_t    count_t;
+    typedef std::atomic<uint64_t>   count_t;
     //typedef Allocator<this_type>    allocator_type;
 
 public:
