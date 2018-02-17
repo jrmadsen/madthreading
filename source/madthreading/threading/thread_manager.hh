@@ -39,8 +39,6 @@
 #include "madthreading/threading/task/task_group.hh"
 #include "madthreading/allocator/allocator.hh"
 
-// task.hh defines mad::function and mad::bind if CXX11 or USE_BOOST
-
 #include <algorithm>
 #include <numeric>
 #include <iomanip>

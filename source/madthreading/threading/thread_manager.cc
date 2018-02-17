@@ -28,19 +28,15 @@
 //
 //
 
-
 #include "madthreading/threading/thread_manager.hh"
 
-namespace mad
-{
+//============================================================================//
+
+mad::thread_manager* mad::thread_manager::f_instance = nullptr;
 
 //============================================================================//
 
-thread_manager* thread_manager::f_instance = nullptr;
-
-//============================================================================//
-
-thread_manager* thread_manager::instance()
+mad::thread_manager* mad::thread_manager::instance()
 {
     if(!f_instance)
     {
@@ -55,7 +51,7 @@ thread_manager* thread_manager::instance()
 
 //============================================================================//
 
-void thread_manager::check_instance(thread_manager* local_instance)
+void mad::thread_manager::check_instance(thread_manager* local_instance)
 {
     static std::string exist_msg
             = "Instance of singleton \"mad::thread_manager\" already exists!";
@@ -72,7 +68,7 @@ void thread_manager::check_instance(thread_manager* local_instance)
 
 //============================================================================//
 
-thread_manager* thread_manager::get_thread_manager(const int64_t& nthreads,
+mad::thread_manager* mad::thread_manager::get_thread_manager(const int64_t& nthreads,
                                                    const int& verbose)
 {
     mad::thread_manager* tm = f_instance;
@@ -103,7 +99,7 @@ thread_manager* thread_manager::get_thread_manager(const int64_t& nthreads,
 
 //============================================================================//
 
-thread_manager::thread_manager(mad::thread_pool*& _pool)
+mad::thread_manager::thread_manager(mad::thread_pool*& _pool)
 : m_pool(_pool)
 {
     check_instance(this);
@@ -111,7 +107,7 @@ thread_manager::thread_manager(mad::thread_pool*& _pool)
 
 //============================================================================//
 
-thread_manager::~thread_manager()
+mad::thread_manager::~thread_manager()
 {
     delete m_pool;
     m_pool = nullptr;
@@ -120,13 +116,13 @@ thread_manager::~thread_manager()
 
 //============================================================================//
 
-thread_manager::thread_manager(const thread_manager& rhs)
+mad::thread_manager::thread_manager(const thread_manager& rhs)
 : m_pool(rhs.m_pool)
 { }
 
 //============================================================================//
 
-thread_manager& thread_manager::operator=(const thread_manager& rhs)
+mad::thread_manager& mad::thread_manager::operator=(const thread_manager& rhs)
 {
     if(this == &rhs)
         return *this;
@@ -137,5 +133,3 @@ thread_manager& thread_manager::operator=(const thread_manager& rhs)
 }
 
 //============================================================================//
-
-} // namespace mad
