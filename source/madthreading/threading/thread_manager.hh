@@ -84,7 +84,7 @@ public:
     static long id(_Tp thread_self)
     {
         long _id = -1;
-        static mad::mutex _mtx;
+        static ::mad::mutex _mtx;
         auto_lock l(_mtx);
         thread_manager* _tm = thread_manager::instance();
         if(!_tm)
@@ -158,7 +158,7 @@ public:
     template <typename _Ret, typename _Func, typename... _Args>
     std::future<_Ret> async(_Func func, _Args... args)
     {
-        typedef mad::packaged_task<_Ret, _Ret, _Args...>  task_type;
+        typedef ::mad::packaged_task<_Ret, _Ret, _Args...>  task_type;
         typedef std::shared_ptr<task_type>      task_pointer;
 
         task_pointer _ptask(new task_type(func, std::forward<_Args>(args)...));
@@ -192,7 +192,7 @@ public:
     // public thread-specific exec functions
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Arg, typename _Func, typename... _Args>
-    void exec(task_group<_Ret, _Arg>& tg, mad::thread::id tid, _Func func, _Args... args)
+    void exec(task_group<_Ret, _Arg>& tg, thread::id tid, _Func func, _Args... args)
     {
         typedef task<_Ret, _Arg, _Args...>    task_type;
         typedef std::shared_ptr<task_type>      task_pointer;
@@ -203,7 +203,7 @@ public:
     }
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Arg, typename _Func>
-    void exec(task_group<_Ret, _Arg>& tg, mad::thread::id tid, _Func func)
+    void exec(task_group<_Ret, _Arg>& tg, thread::id tid, _Func func)
     {
         typedef task<_Ret, _Arg>              task_type;
         typedef std::shared_ptr<task_type>      task_pointer;
@@ -223,7 +223,7 @@ public:
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Arg,
               typename _Func, typename _Arg1, typename _Arg2>
-    void run_loop(mad::task_group<_Ret, _Arg>& tg,
+    void run_loop(task_group<_Ret, _Arg>& tg,
                   _Func func, const _Arg1& _s, const _Arg2& _e)
     {
         typedef task<_Ret, _Arg> task_type;
@@ -235,7 +235,7 @@ public:
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Arg,
               typename _Func, typename InputIterator>
-    void run_loop(mad::task_group<_Ret, _Arg>& tg,
+    void run_loop(task_group<_Ret, _Arg>& tg,
                   _Func func, InputIterator _s, InputIterator _e)
     {
         typedef task<_Ret, _Arg, InputIterator> task_type;
@@ -247,7 +247,7 @@ public:
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Arg,
               typename _Func, typename _Arg1, typename _Arg2>
-    void run_loop(mad::task_group<_Ret, _Arg>& tg,
+    void run_loop(task_group<_Ret, _Arg>& tg,
                   _Func func,
                   const _Arg1& _s,
                   const _Arg2& _e,
@@ -286,12 +286,12 @@ public:
     // looks for environment variable FORCE_NUM_THREADS
     static int64_t GetEnvNumThreads(int64_t _default = -1)
     {
-        return mad::thread_pool::GetEnvNumThreads(_default);
+        return thread_pool::GetEnvNumThreads(_default);
     }
     //------------------------------------------------------------------------//
     static int64_t get_env_num_threads(int64_t _default = -1)
     {
-        return mad::thread_pool::GetEnvNumThreads(_default);
+        return thread_pool::GetEnvNumThreads(_default);
     }
     //------------------------------------------------------------------------//
     /// get the singleton pointer if exists and allocate nthreads in the
