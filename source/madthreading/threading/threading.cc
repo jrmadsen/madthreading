@@ -43,18 +43,13 @@
    #include <sys/syscall.h>
 #endif
 
-namespace mad
-{
-
-Pid_t Threading::GetPidId()
+mad::Pid_t mad::Threading::GetPidId()
 {
     // In multithreaded mode return Thread ID
     return std::this_thread::get_id();
 }
 
-int Threading::GetNumberOfCores()
+int mad::Threading::GetNumberOfCores()
 {
     return std::thread::hardware_concurrency();
 }
-
-} // namespace mad

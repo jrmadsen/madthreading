@@ -29,6 +29,7 @@
 //
 
 #include "madthreading/threading/thread_manager.hh"
+#include "madthreading/threading/thread_pool.hh"
 
 //============================================================================//
 

@@ -94,8 +94,8 @@
         #define ThreadLocal __thread
     #endif
 #elif defined(WIN32)
-    #define ThreadLocalStatic static __declspec(thread)
-    #define ThreadLocal __declspec(thread)
+    #define ThreadLocalStatic static thread_local
+    #define ThreadLocal thread_local
 #elif defined(__IBMC__) || defined(__IBMCPP__)
     #define ThreadLocalStatic static __thread
     #define ThreadLocal __thread

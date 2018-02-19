@@ -158,8 +158,8 @@ public:
     template <typename _Ret, typename _Func, typename... _Args>
     std::future<_Ret> async(_Func func, _Args... args)
     {
-        typedef ::mad::packaged_task<_Ret, _Ret, _Args...>  task_type;
-        typedef std::shared_ptr<task_type>      task_pointer;
+        typedef packaged_task<_Ret, _Ret, _Args...>     task_type;
+        typedef std::shared_ptr<task_type>              task_pointer;
 
         task_pointer _ptask(new task_type(func, std::forward<_Args>(args)...));
         m_pool->add_task(_ptask);
