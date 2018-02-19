@@ -16,12 +16,12 @@ using namespace mad;
 
 int main(int, char** argv)
 {
-    ulong_type num_steps = GetEnvNumSteps(500000000UL);
-    double_type step = 1.0/static_cast<double_type>(num_steps);
-    double_type sum = 0.0;
+    ulong_t num_steps = GetEnvNumSteps(500000000UL);
+    double_t step = 1.0/static_cast<double_t>(num_steps);
+    double_t sum = 0.0;
 
     //------------------------------------------------------------------------//
-    auto x = [step] (const ulong_type& i) { return (i-0.5)*step; };
+    auto x = [step] (const ulong_t& i) { return (i-0.5)*step; };
     //------------------------------------------------------------------------//
 
     //========================================================================//
@@ -29,7 +29,7 @@ int main(int, char** argv)
     t.start();
 
     pragma_simd()
-    for(ulong_type i = 0; i < num_steps; ++i)
+    for(ulong_t i = 0; i < num_steps; ++i)
     {
         sum += 4.0/(1.0 + x(i)*x(i));
     }
@@ -37,7 +37,7 @@ int main(int, char** argv)
     report(num_steps, step*sum, t.stop_and_return(), argv[0]);
     //========================================================================//
 
-    double_type pi = step * sum;
+    double_t pi = step * sum;
     return (fabs(pi - M_PI) > PI_EPSILON);
 }
 

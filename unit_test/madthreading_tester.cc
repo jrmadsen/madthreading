@@ -32,20 +32,20 @@ TEST(Test_1_pi_pool)
 {
     std::cout << "Running Test_1_pi_pool..." << std::endl;
     uint64_t num_steps = NUM_STEPS;
-    double_type step = 1.0/static_cast<double_type>(num_steps);
-    double_ts sum = 0.0;
+    double_t step = 1.0/static_cast<double_t>(num_steps);
+    atomic_double_t sum = 0.0;
 
     uint64_t num_threads = std::thread::hardware_concurrency();
     thread_pool* tp = new thread_pool(num_threads);
     thread_manager* tm = new thread_manager(tp);
 
     //------------------------------------------------------------------------//
-    auto compute_block = [&sum, step] (const ulong_type& s, const ulong_type& e)
+    auto compute_block = [&sum, step] (const ulong_t& s, const ulong_t& e)
     {
-        auto x = [step] (const ulong_type& i) { return (i-0.5)*step; };
-        double_type tl_sum = 0.0;
+        auto x = [step] (const ulong_t& i) { return (i-0.5)*step; };
+        double_t tl_sum = 0.0;
         pragma_simd()
-        for(ulong_type i = s; i < e; ++i)
+        for(ulong_t i = s; i < e; ++i)
             tl_sum += 4.0/(1.0 + x(i)*x(i));
         sum += tl_sum;
     };

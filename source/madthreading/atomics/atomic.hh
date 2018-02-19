@@ -35,13 +35,6 @@
 
 #include "madthreading/atomics/atomic_typedefs.hh"
 
-#if defined(USE_BOOST_SERIALIZATION)
-#   include <boost/serialization/split_member.hpp>
-#   include <boost/serialization/version.hpp>
-#   include <boost/serialization/access.hpp>
-#   include <boost/serialization/serialization.hpp>
-#endif
-
 //----------------------------------------------------------------------------//
 
 namespace mad
@@ -202,35 +195,6 @@ public:
 
 protected:
     Base_t _value;
-
-#if defined(USE_BOOST_SERIALIZATION)
-private:
-    //------------------------------------------------------------------------//
-    friend class boost::serialization::access;
-    //------------------------------------------------------------------------//
-    template <typename Archive>
-    void save(Archive& ar, const unsigned int /*version*/) const
-    {
-        value_type _val = this->load();
-        ar << _val;
-    }
-    //------------------------------------------------------------------------//
-    template <typename Archive>
-    void load(Archive& ar, const unsigned int /*version*/)
-    {
-        value_type _val = 0;
-        ar >> _val;
-        store(_val);
-    }
-    //------------------------------------------------------------------------//
-    template <typename Archive>
-    void serialize(Archive& ar, const unsigned int file_version)
-    {
-        ar.template register_type<_Tp>();
-        boost::serialization::split_member(ar, *this, file_version);
-    }
-    //------------------------------------------------------------------------//
-#endif
 };
 
 

@@ -34,10 +34,10 @@ using namespace mad;
 
 int main(int, char**)
 {
-    ulong_type num_threads = thread_manager::GetEnvNumThreads(1);
+    ulong_t num_threads = thread_manager::GetEnvNumThreads(1);
     thread_pool* tp = new thread_pool(num_threads);
     thread_manager* tm = new thread_manager(tp);
-    ulong_type nchar = 10;
+    ulong_t nchar = 10;
 
     string sentence = "";
     static mad::mutex mtx;
@@ -65,9 +65,9 @@ int main(int, char**)
     // note: thread sleep in block_b will help ensure the resulting sentence
     //  is out of order
     mad::task_group<void> tg1;
-    for(ulong_type j = 0; j < nchar; ++j)
+    for(ulong_t j = 0; j < nchar; ++j)
     {
-        for(ulong_type i = 0; i < nchar; ++i)
+        for(ulong_t i = 0; i < nchar; ++i)
             tm->exec(tg1, block_b);
         tm->exec(tg1, block_a);
     }
@@ -81,10 +81,10 @@ int main(int, char**)
     //========================================================================//
     // new task group is created implicitly
     mad::task_group<void> tg2a;
-    for(ulong_type j = 0; j < nchar; ++j)
+    for(ulong_t j = 0; j < nchar; ++j)
     {
         mad::task_group<void> tg2b;
-        for(ulong_type i = 0; i < nchar; ++i)
+        for(ulong_t i = 0; i < nchar; ++i)
             tm->exec(tg2b, block_b);
         // here we want thread_group 2b to finish
         tg2b.join();

@@ -28,7 +28,6 @@
 //
 //
 
-#include "madthreading/threading/thread_pool.hh"
 #include "madthreading/threading/thread_manager.hh"
 
 //============================================================================//
@@ -82,14 +81,6 @@ mad::thread_manager::get_thread_manager(const int64_t& nthreads,
         auto tp = new thread_pool(nthreads);
         tm = new thread_manager(tp);
     }
-    // don't reallocate
-    /*else if((int64_t) tm->size() != nthreads)
-    {
-        if(verbose > 0)
-            tmcout << "mad::thread_manager exists - Allocating " << nthreads
-                   << "..." << std::endl;
-        tm->allocate_threads(nthreads);
-    }*/
     else
     {
         if(verbose > 0)

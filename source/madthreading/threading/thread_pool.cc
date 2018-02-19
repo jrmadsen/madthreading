@@ -116,7 +116,7 @@ thread_pool::~thread_pool()
     if(mad::details::allocator_list_tl::get_allocator_list_if_exists())
     {
         auto _self = std::this_thread::get_id();
-        ulong_type _id = mad::thread_pool::GetThreadIDs().find(_self)->second;
+        ulong_t _id = mad::thread_pool::GetThreadIDs().find(_self)->second;
         if(tids.find(_self) != tids.end())
             tids.erase(tids.find(_self));
         mad::details::allocator_list_tl::get_allocator_list()->Destroy(_id, 1);

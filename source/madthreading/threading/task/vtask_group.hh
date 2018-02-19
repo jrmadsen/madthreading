@@ -123,7 +123,7 @@ protected:
     clear_count_type    m_clear_freq;
     task_count_type     m_task_count;
     uint64_t            m_id;
-    thread_pool*       m_pool;
+    thread_pool*        m_pool;
     condition_t         m_task_cond;
     lock_t              m_task_lock;
 

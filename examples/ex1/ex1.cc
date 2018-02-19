@@ -20,11 +20,11 @@
 #include <timemory/timing_manager.hpp>
 
 using namespace std::placeholders;
-using mad::ulong_type;
+using mad::ulong_t;
 
 typedef std::mt19937_64 engine_type;
 
-static ulong_type rseed = time(NULL);
+static ulong_t rseed = time(NULL);
 static engine_type random_engine = engine_type(rseed);
 
 //============================================================================//

@@ -44,6 +44,7 @@ namespace mad
 {
 
 using auto_lock = std::unique_lock<mad::mutex>;
+using recursive_auto_lock = std::unique_lock<mad::recursive_mutex>;
 
 } // namespace mad
 

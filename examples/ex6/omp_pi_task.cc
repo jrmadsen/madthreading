@@ -27,28 +27,28 @@
 
 using namespace mad;
 
-static ulong_type MIN_BLK;
+static ulong_t MIN_BLK;
 
 //============================================================================//
 
-double_type pi_comp(ulong_type Nstart, ulong_type Nfinish, double_type step)
+double_t pi_comp(ulong_t Nstart, ulong_t Nfinish, double_t step)
 {
-    double_type sum = 0.0;
-    double_type sum1 = 0.0;
-    double_type sum2 = 0.0;
+    double_t sum = 0.0;
+    double_t sum1 = 0.0;
+    double_t sum2 = 0.0;
 
     if (Nfinish-Nstart < MIN_BLK)
     {
         pragma_simd()
-        for (ulong_type i = Nstart; i < Nfinish; ++i)
+        for (ulong_t i = Nstart; i < Nfinish; ++i)
         {
-            double_type x = (i+0.5)*step;
+            double_t x = (i+0.5)*step;
             sum = sum + 4.0/(1.0+x*x);
         }
     }
     else
     {
-        ulong_type iblk = Nfinish-Nstart;
+        ulong_t iblk = Nfinish-Nstart;
         #pragma omp task shared(sum1)
             sum1 = pi_comp(Nstart,         Nfinish-iblk/2,step);
         #pragma omp task shared(sum2)
@@ -63,10 +63,10 @@ double_type pi_comp(ulong_type Nstart, ulong_type Nfinish, double_type step)
 
 int main (int, char** argv)
 {
-    ulong_type num_steps = GetEnvNumSteps(500000000UL);
-    double_type step = 1.0/static_cast<double_type>(num_steps);
-    double_ts sum = 0.0;
-    ulong_type num_threads = thread_manager::GetEnvNumThreads(1);
+    ulong_t num_steps = GetEnvNumSteps(500000000UL);
+    double_t step = 1.0/static_cast<double_t>(num_steps);
+    atomic_double_t sum = 0.0;
+    ulong_t num_threads = thread_manager::GetEnvNumThreads(1);
     omp_set_num_threads(num_threads);
     MIN_BLK = num_steps / num_threads;
 
@@ -85,7 +85,7 @@ int main (int, char** argv)
     report(num_steps, step*sum, t.stop_and_return(), argv[0]);
     //========================================================================//
 
-    double_type pi = step * sum;
+    double_t pi = step * sum;
     return (fabs(pi - M_PI) > PI_EPSILON);
 }
 

@@ -32,9 +32,9 @@ using namespace mad;
 
 struct ProxyStruct
 {
-    typedef ulong_type arg_type;
+    typedef ulong_t arg_type;
     typedef const arg_type& cr_arg_type;
-    typedef double_type return_type;
+    typedef double_t return_type;
     typedef std::function<return_type(cr_arg_type, cr_arg_type)> function_type;
     typedef std::pair<arg_type, arg_type> range_type;
 
@@ -63,19 +63,19 @@ int main(int, char** argv)
 {
     typedef ProxyStruct::range_type range_t;
 
-    ulong_type num_steps = GetEnvNumSteps(500000000UL);
-    double_type step = 1.0/static_cast<double_type>(num_steps);
-    double_type sum = 0.0;
-    ulong_type num_threads = thread_manager::GetEnvNumThreads(1);
+    ulong_t num_steps = GetEnvNumSteps(500000000UL);
+    double_t step = 1.0/static_cast<double_t>(num_steps);
+    double_t sum = 0.0;
+    ulong_t num_threads = thread_manager::GetEnvNumThreads(1);
 
     //------------------------------------------------------------------------//
-    auto x = [step] (const ulong_type& i) { return (i-0.5)*step; };
+    auto x = [step] (const ulong_t& i) { return (i-0.5)*step; };
     //------------------------------------------------------------------------//
-    auto compute_block = [x] (const ulong_type& s, const ulong_type& e)
+    auto compute_block = [x] (const ulong_t& s, const ulong_t& e)
     {
-        double_type tl_sum = 0.0;
+        double_t tl_sum = 0.0;
         pragma_simd()
-        for(ulong_type i = s; i < e; ++i)
+        for(ulong_t i = s; i < e; ++i)
             tl_sum += 4.0/(1.0 + x(i)*x(i));
         return tl_sum;
     };
@@ -87,11 +87,11 @@ int main(int, char** argv)
 
     std::vector<ProxyStruct*> proxies(num_threads, 0);
     std::vector<pthread_t> threads(num_threads);
-    ulong_type diff = num_steps/num_threads;
-    for(ulong_type i = 0; i < threads.size(); ++i)
+    ulong_t diff = num_steps/num_threads;
+    for(ulong_t i = 0; i < threads.size(); ++i)
     {
-        ulong_type _f = diff*i; // first
-        ulong_type _l = _f + diff; // last
+        ulong_t _f = diff*i; // first
+        ulong_t _l = _f + diff; // last
         if(i+1 == threads.size())
             _l = num_steps;
 
@@ -104,12 +104,12 @@ int main(int, char** argv)
         threads[i] = std::move(thread);
     }
 
-    for(ulong_type i = 0; i < threads.size(); ++i)
+    for(ulong_t i = 0; i < threads.size(); ++i)
     {
         CORETHREADJOIN(threads[i]);
     }
 
-    for(ulong_type i = 0; i < proxies.size(); ++i)
+    for(ulong_t i = 0; i < proxies.size(); ++i)
     {
         sum += proxies.at(i)->m_value;
     }
@@ -117,7 +117,7 @@ int main(int, char** argv)
     report(num_steps, step*sum, t.stop_and_return(), argv[0]);
     //========================================================================//
 
-    double_type pi = step * sum;
+    double_t pi = step * sum;
     return (fabs(pi - M_PI) > PI_EPSILON);
 }
 

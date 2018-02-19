@@ -35,7 +35,7 @@ typedef vtask_group::task_count_type    task_count_type;
 typedef mad::task_group<void>           void_task_group;
 
 typedef const task_count_type& (vtask_group::*task_count_func_type)() const;
-typedef const mad::ulong_type& (vtask_group::*id_func_type)() const;
+typedef const mad::ulong_t& (vtask_group::*id_func_type)() const;
 typedef void (std::promise<int64_t>::*int64_promise_func_type)(const int64_t&);
 typedef void (void_task_group::*join_void_func)();
 

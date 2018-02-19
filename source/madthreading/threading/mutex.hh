@@ -29,7 +29,8 @@
 namespace mad
 {
 
-using mutex = std::recursive_mutex;
+using mutex = std::mutex;
+using recursive_mutex = std::recursive_mutex;
 
 } // namespace mad
 

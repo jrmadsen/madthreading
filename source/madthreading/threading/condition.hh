@@ -37,7 +37,7 @@
 namespace mad
 {
 
-using condition = std::condition_variable_any;
+using condition = std::condition_variable;
 
 } // namespace mad
 

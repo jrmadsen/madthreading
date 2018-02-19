@@ -29,21 +29,17 @@
 #include "madthreading/threading/thread_pool.hh"
 #include "madthreading/threading/task/task.hh"
 #include "madthreading/threading/thread_manager.hh"
-#include "madthreading/utility/fpe_detection.hh"
-
-namespace mad
-{
-
-namespace details
-{
+#include "madthreading/threading/auto_lock.hh"
+#include "madthreading/threading/mutex.hh"
+#include "madthreading/threading/condition.hh"
 
 //============================================================================//
 
-static ulong_ts m_group_count = 0;
+static mad::atomic<uint64_t> m_group_count = 0;
 
 //============================================================================//
 
-vtask_group::vtask_group(thread_pool* tp)
+mad::details::vtask_group::vtask_group(thread_pool* tp)
 : m_clear_count(0),
   m_clear_freq(1),
   m_task_count(0),
@@ -57,16 +53,17 @@ vtask_group::vtask_group(thread_pool* tp)
 
 //============================================================================//
 
-vtask_group::~vtask_group()
+mad::details::vtask_group::~vtask_group()
 { }
 
 //============================================================================//
 
-void vtask_group::wait()
+void mad::details::vtask_group::wait()
 {
 #ifdef VERBOSE_THREAD_POOL
     std::cout << "Joining " << pending() << " tasks..." << std::endl;
-    std::cout << std::boolalpha << "is alive: " << is_alive_flag << std::endl;
+    std::cout << std::boolalpha << "is alive: " << m_pool->is_alive()
+              << std::endl;
 #endif
 
     // return if thread pool isn't built
@@ -75,12 +72,12 @@ void vtask_group::wait()
 
     while ((int) m_pool->state() != (int) state::STOPPED)
     {
-        m_task_lock.lock();
+        mad::auto_lock _task_lock(m_task_lock);
 
         while(pending() > 0 && (int) m_pool->state() != (int) state::STOPPED)
         {
             #if defined(DEBUG)
-            long_type ntasks = pending();
+            long_t ntasks = pending();
             if(false)
             {
                 static mad::mutex _mutex;
@@ -90,7 +87,7 @@ void vtask_group::wait()
             #endif
             // Wait until signaled that a task has been competed
             // Unlock mutex while wait, then lock it back when signaled
-            m_task_cond.wait(m_task_lock);
+            m_task_cond.wait(_task_lock);
         }
 
         // if pending is not greater than zero, we are joined
@@ -100,7 +97,7 @@ void vtask_group::wait()
 
     if(m_task_count > 0)
     {
-        long_type ntask = m_task_count;
+        int64_t ntask = m_task_count;
         std::stringstream ss;
         ss << "\bError! Join operation failure! " << ntask << " tasks still "
            << "are running!" << std::endl;
@@ -111,7 +108,3 @@ void vtask_group::wait()
 }
 
 //============================================================================//
-
-} // namespace details
-
-} // namespace mad
