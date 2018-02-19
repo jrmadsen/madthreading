@@ -28,8 +28,8 @@
 //
 //
 
-#include "madthreading/threading/thread_manager.hh"
 #include "madthreading/threading/thread_pool.hh"
+#include "madthreading/threading/thread_manager.hh"
 
 //============================================================================//
 
@@ -44,7 +44,7 @@ mad::thread_manager* mad::thread_manager::instance()
         auto nthreads = std::thread::hardware_concurrency();
         std::cout << "Allocating mad::thread_manager with " << nthreads
                   << " thread(s)..." << std::endl;
-        auto tp = new mad::thread_pool(nthreads);
+        auto tp = new thread_pool(nthreads);
         new thread_manager(tp);
     }
     return f_instance;
@@ -69,8 +69,9 @@ void mad::thread_manager::check_instance(thread_manager* local_instance)
 
 //============================================================================//
 
-mad::thread_manager* mad::thread_manager::get_thread_manager(const int64_t& nthreads,
-                                                   const int& verbose)
+mad::thread_manager*
+mad::thread_manager::get_thread_manager(const int64_t& nthreads,
+                                        const int& verbose)
 {
     mad::thread_manager* tm = f_instance;
     if(!tm)
@@ -78,7 +79,7 @@ mad::thread_manager* mad::thread_manager::get_thread_manager(const int64_t& nthr
         if(verbose > 0)
             std::cout << "Allocating mad::thread_manager with " << nthreads
                       << " thread(s)..." << std::endl;
-        auto tp = new mad::thread_pool(nthreads);
+        auto tp = new thread_pool(nthreads);
         tm = new thread_manager(tp);
     }
     // don't reallocate
@@ -100,7 +101,7 @@ mad::thread_manager* mad::thread_manager::get_thread_manager(const int64_t& nthr
 
 //============================================================================//
 
-mad::thread_manager::thread_manager(mad::thread_pool*& _pool)
+mad::thread_manager::thread_manager(thread_pool*& _pool)
 : m_pool(_pool)
 {
     check_instance(this);
