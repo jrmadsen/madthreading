@@ -73,6 +73,7 @@ if(BUILD_SHARED_LIBS)
         ${EXTRA_LIBS} ${EXTERNAL_LIBRARIES})
 
     set(PROJECT_SHARED_LIBRARY ${PROJECT_NAME}-shared)
+    add_dependencies(${PROJECT_NAME}-shared timemory-library)
 
 endif()
 
@@ -93,6 +94,7 @@ if(BUILD_STATIC_LIBS)
         ${EXTRA_LIBS} ${EXTERNAL_LIBRARIES})
 
     set(PROJECT_STATIC_LIBRARY ${PROJECT_NAME}-static)
+    add_dependencies(${PROJECT_NAME}-static timemory-library)
 
 endif()
 
