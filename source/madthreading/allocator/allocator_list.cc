@@ -95,7 +95,7 @@ void allocator_list::Destroy(size_type nstat, int verbose)
         std::cout << "================= Deleting memory pools ================="
                   << std::endl;
         std::cout << "Thread ID : "
-                  << mad::thread_pool::GetThreadIDs()
+                  << thread_pool::GetThreadIDs()
                      .find(std::this_thread::get_id())->second
                   << ", nstat = " << nstat
                   << std::endl;
@@ -209,7 +209,7 @@ void allocator_list_tl::Destroy(size_type nstat, int verbose)
         std::cout << "================= Deleting memory pools ================="
                   << std::endl;
         std::cout << "Thread ID : "
-                  << mad::thread_pool::GetThreadIDs()
+                  << thread_pool::GetThreadIDs()
                      .find(std::this_thread::get_id())->second
                   << ", nstat = " << nstat
                   << std::endl;

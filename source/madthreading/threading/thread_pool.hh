@@ -49,18 +49,18 @@ namespace mad
 class thread_pool
 {
 public:
-    typedef details::vtask                          task_type;
-    typedef std::size_t                             size_type;
-    typedef std::shared_ptr<task_type>              task_pointer;
-    typedef std::vector<mad::thread*>               ThreadContainer_t;
-    typedef std::deque<task_pointer>                task_list_t;
-    typedef std::vector<bool>                       BoolContainer_t;
-    typedef mad::mutex                              lock_t;
-    typedef std::atomic<uint64_t>                   task_count_type;
-    typedef volatile int                            pool_state_type;
-    typedef mad::condition                          condition_t;
-    typedef std::map<mad::thread::id, uint64_t>     tid_type;
-    typedef std::map<mad::thread::id, task_list_t>  thread_task_list_t;
+    typedef details::vtask                      task_type;
+    typedef std::size_t                         size_type;
+    typedef std::shared_ptr<task_type>          task_pointer;
+    typedef std::vector<thread*>                ThreadContainer_t;
+    typedef std::deque<task_pointer>            task_list_t;
+    typedef std::vector<bool>                   BoolContainer_t;
+    typedef mutex                               lock_t;
+    typedef atomic_ulong_t                      task_count_type;
+    typedef volatile int                        pool_state_type;
+    typedef condition                           condition_t;
+    typedef std::map<thread::id, uint64_t>      tid_type;
+    typedef std::map<thread::id, task_list_t>   thread_task_list_t;
 
 public:
     // Constructor and Destructors
@@ -78,13 +78,13 @@ public:
 public:
     // add tasks for threads to process
     size_type add_task(task_pointer task);
-    size_type add_thread_task(mad::thread::id id, task_pointer task);
+    size_type add_thread_task(thread::id id, task_pointer task);
     // add a generic container with iterator
     template <typename Container_t>
     size_type add_tasks(Container_t&);
 
-    mad::thread* get_thread(size_type _n) const;
-    mad::thread* get_thread(std::thread::id id) const;
+    thread* get_thread(size_type _n) const;
+    thread* get_thread(std::thread::id id) const;
 
 public:
     // get the pool state
@@ -158,13 +158,13 @@ private:
 };
 
 //----------------------------------------------------------------------------//
-inline mad::thread*
+inline thread*
 thread_pool::get_thread(size_type _n) const
 {
     return (_n < m_main_threads.size()) ? m_main_threads[_n] : nullptr;
 }
 //----------------------------------------------------------------------------//
-inline mad::thread*
+inline thread*
 thread_pool::get_thread(std::thread::id id) const
 {
     for(const auto& itr : m_main_threads)

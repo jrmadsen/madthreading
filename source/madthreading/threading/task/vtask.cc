@@ -42,7 +42,7 @@ void vtask::operator --()
         m_vgroup->task_count() -= 1;
         if(m_vgroup->task_count().load() < 2)
         {
-            mad::auto_lock l(m_vgroup->task_lock());
+            auto_lock l(m_vgroup->task_lock());
             m_vgroup->task_cond().notify_all();
         }
     }

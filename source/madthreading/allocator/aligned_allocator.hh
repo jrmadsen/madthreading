@@ -169,8 +169,8 @@ bool operator !=(const simd_allocator<T1>&,
 template <typename _Tp>
 _Tp* simd_alloc(size_t n)
 {
-    return static_cast<_Tp*>(mad::aligned_alloc(n * sizeof(_Tp),
-                                                mad::SIMD_WIDTH));
+    return static_cast<_Tp*>(aligned_alloc(n * sizeof(_Tp),
+                                           mad::SIMD_WIDTH));
 }
 
 //========================================================================//
@@ -188,11 +188,11 @@ public:
     { }
 
     simd_array(size_type _n)
-    : m_data(mad::simd_alloc<_Tp>(_n))
+    : m_data(simd_alloc<_Tp>(_n))
     { }
 
     simd_array(size_type _n, const _Tp& _init)
-    : m_data(mad::simd_alloc<_Tp>(_n))
+    : m_data(simd_alloc<_Tp>(_n))
     {
         for(size_type i = 0; i < _n; ++i)
             m_data[i] = _init;
@@ -200,7 +200,7 @@ public:
 
     ~simd_array()
     {
-        mad::aligned_free(m_data);
+        aligned_free(m_data);
     }
 
     // conversion function to const _Tp*
@@ -216,7 +216,7 @@ public:
         if(this != &rhs)
         {
             if(m_data)
-                mad::aligned_free(m_data);
+                aligned_free(m_data);
             m_data = static_cast<_Tp*>(rhs.m_data);
             // otherwise will be deleted
             const_cast<simd_array&>(rhs).m_data = nullptr;

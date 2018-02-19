@@ -494,8 +494,8 @@ allocator<T, USE_TLP>::~allocator() throw()
 template <typename T, bool USE_TLP>
 T* allocator<T, USE_TLP>::malloc_single()
 {
-    static mad::mutex mutex;
-    mad::auto_lock l(mutex);
+    static mutex mutex;
+    auto_lock l(mutex);
     return static_cast<T*>(m_mem.alloc());
 }
 
