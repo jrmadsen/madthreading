@@ -27,12 +27,12 @@ using namespace mad;
 class ComputePi
 {
 public:
-    typedef tbb::blocked_range<ulong_type> range_t;
+    typedef tbb::blocked_range<ulong_t> range_t;
     typedef range_t::const_iterator const_iterator;
 
 public:
     // primary constructor
-    ComputePi(double_type step)
+    ComputePi(double_t step)
     : m_step(step), m_sum(0.0) { }
 
     // split copy constructor required by tbb::parallel_reduce
@@ -40,7 +40,7 @@ public:
     : m_step(rhs.m_step), m_sum(0.0) { }
 
     // for computing integral
-    _inline_ double_type x(ulong_type i) const { return (i-0.5)*m_step; }
+    _inline_ double_t x(ulong_t i) const { return (i-0.5)*m_step; }
 
     _inline_ void operator()(const range_t& range)
     {
@@ -55,12 +55,12 @@ public:
     _inline_ void join(ComputePi& rhs) { m_sum += rhs.m_sum; }
 
     // access sum
-    double_type& sum() { return m_sum; }
-    const double_type& sum() const { return m_sum; }
+    double_t& sum() { return m_sum; }
+    const double_t& sum() const { return m_sum; }
 
 private:
-    double_type m_step;
-    double_type m_sum;
+    double_t m_step;
+    double_t m_sum;
 };
 
 //============================================================================//
@@ -69,9 +69,9 @@ int main(int, char** argv)
 {
     typedef ComputePi::range_t range_t;
 
-    ulong_type num_steps = GetEnvNumSteps(500000000UL);
-    double_type step = 1.0/static_cast<double_type>(num_steps);
-    ulong_type num_threads = thread_manager::GetEnvNumThreads(1);
+    ulong_t num_steps = GetEnvNumSteps(500000000UL);
+    double_t step = 1.0/static_cast<double_t>(num_steps);
+    ulong_t num_threads = thread_manager::GetEnvNumThreads(1);
 
     tbb::task_scheduler_init init(num_threads);
 
@@ -88,7 +88,7 @@ int main(int, char** argv)
     report(num_steps, step*pi_body.sum(), t.stop_and_return(), argv[0]);
     //========================================================================//
 
-    double_type pi = step * pi_body.sum();
+    double_t pi = step * pi_body.sum();
     return (fabs(pi - M_PI) > PI_EPSILON);
 }
 
