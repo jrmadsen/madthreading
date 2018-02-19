@@ -59,7 +59,6 @@ public:
     typedef thread_manager                      this_type;
     typedef thread_pool                         pool_type;
     typedef pool_type::size_type                size_type;
-    typedef std::random_access_iterator_tag     iterator_category;
     typedef std::vector<details::vtask*>        task_list_t;
 
 public:
