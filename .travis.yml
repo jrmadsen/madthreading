@@ -156,9 +156,10 @@ install:
         -DBUILD_CXXSTD=${CXXSTD} -DENABLE_UNIT_TEST=ON
         -DUSE_TBB=${ENABLE_TBB} -DUSE_OPENMP=${ENABLE_OMP}
         -DUSE_TCMALLOC=OFF -DUSE_SSE=${ENABLE_SSE}
-        -DUSE_PYBIND11=ON -DPYTHON_EXECUTABLE=$(which python) ${PWD}/..
+        -DUSE_PYBIND11=OFF -DPYTHON_EXECUTABLE=$(which python) ${PWD}/..
     - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
-    - make -j2
+    - make VERBOSE=1
+    - make install
     
     
 script:
