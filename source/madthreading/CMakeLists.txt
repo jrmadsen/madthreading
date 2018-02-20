@@ -70,10 +70,10 @@ if(BUILD_SHARED_LIBS)
                    LINKER_LANGUAGE  CXX)
 
     target_link_libraries(${PROJECT_NAME}-shared
-        ${EXTRA_LIBS} ${EXTERNAL_LIBRARIES})
+        ${EXTRA_LIBS} ${EXTERNAL_LIBRARIES} timemory-shared)
 
     set(PROJECT_SHARED_LIBRARY ${PROJECT_NAME}-shared)
-    add_dependencies(${PROJECT_NAME}-shared timemory-library)
+    add_dependencies(${PROJECT_NAME}-shared timemory-shared)
 
 endif()
 
@@ -91,10 +91,10 @@ if(BUILD_STATIC_LIBS)
                    LINKER_LANGUAGE CXX)
 
     target_link_libraries(${PROJECT_NAME}-static
-        ${EXTRA_LIBS} ${EXTERNAL_LIBRARIES})
+        ${EXTRA_LIBS} ${EXTERNAL_LIBRARIES} timemory-static)
 
     set(PROJECT_STATIC_LIBRARY ${PROJECT_NAME}-static)
-    add_dependencies(${PROJECT_NAME}-static timemory-library)
+    add_dependencies(${PROJECT_NAME}-static timemory-static)
 
 endif()
 

@@ -8,8 +8,8 @@ set(__configurecxxstd_isloaded YES)
 include(MacroUtilities)
 
 # make C++11 required for compilers that recognise standards
-set(CMAKE_CXX_STANDARD "11")
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD "11" CACHE STRING "C++ STL standard")
+set(CMAKE_CXX_STANDARD_REQUIRED ON CACHE BOOL "Standard is required" FORCE)
 
 # - Rough n'Ready setup of CXX compile features for Intel
 #
@@ -170,6 +170,7 @@ else()
     message(FATAL_ERROR "${PROJECT_NAME} requested to be compiled against C++ standard '${BUILD_CXXSTD}'\nbut detected compiler '${CMAKE_CXX_COMPILER_ID}', version '${CMAKE_CXX_COMPILER_VERSION}'\ndoes not support any features of that standard")
 endif()
 
+set(CMAKE_CXX_STANDARD ${BUILD_CXXSTD} CACHE STRING "C++ STL standard" FORCE)
 set(BUILD_CXXSTD "c++${BUILD_CXXSTD}")
 
 if(CMAKE_C_COMPILER_IS_GNU OR CMAKE_C_COMPILER_IS_INTEL)

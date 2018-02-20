@@ -34,9 +34,11 @@ set(CMAKE_INSTALL_PYTHONDIR
 set(CMAKE_INSTALL_FULL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_PYTHONDIR})
 set(PYTHON_INSTALL_DIR      ${CMAKE_INSTALL_PYTHONDIR})
 
-add_library(timemory-library STATIC IMPORTED)
-set_target_properties(timemory-library PROPERTIES
-    IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/libtimemory${CMAKE_STATIC_LIBRARY_SUFFIX})
-list(APPEND EXTERNAL_LIBRARIES timemory-library)
+set_property(TARGET timemory-static PROPERTY IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
+set_property(TARGET timemory-shared PROPERTY IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
+#add_library(timemory-library STATIC IMPORTED)
+#set_target_properties(timemory-library PROPERTIES
+#    IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/libtimemory${CMAKE_STATIC_LIBRARY_SUFFIX})
+#list(APPEND EXTERNAL_LIBRARIES timemory-library)
 
 add_subdirectory(madthreading)
