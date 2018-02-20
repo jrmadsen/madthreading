@@ -26,14 +26,6 @@
 #ifndef vtask_group_hh_
 #define vtask_group_hh_
 
-#include "madthreading/threading/threading.hh"
-#include "madthreading/threading/task/vtask.hh"
-#include "madthreading/threading/mutex.hh"
-#include "madthreading/threading/condition.hh"
-#include "madthreading/allocator/allocator.hh"
-#include "madthreading/atomics/atomic.hh"
-#include "madthreading/types.hh"
-
 #include <iostream>
 #include <deque>
 #include <vector>
@@ -45,6 +37,14 @@
 #include <map>
 #include <atomic>
 #include <cstdint>
+
+#include "madthreading/threading/threading.hh"
+#include "madthreading/threading/task/vtask.hh"
+#include "madthreading/threading/mutex.hh"
+#include "madthreading/threading/condition.hh"
+#include "madthreading/allocator/allocator.hh"
+#include "madthreading/atomics/atomic.hh"
+#include "madthreading/types.hh"
 
 //----------------------------------------------------------------------------//
 

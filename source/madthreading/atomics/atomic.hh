@@ -28,10 +28,8 @@
 //
 //
 
-
 #ifndef atomic_hh_
 #define atomic_hh_
-
 
 #include "madthreading/atomics/atomic_typedefs.hh"
 

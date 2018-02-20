@@ -19,15 +19,6 @@
 #ifndef vtask_hh_
 #define vtask_hh_
 
-#include "madthreading/macros.hh"
-#include "madthreading/threading/threading.hh"
-#include "madthreading/threading/auto_lock.hh"
-#include "madthreading/allocator/allocator.hh"
-#include "madthreading/threading/condition.hh"
-#include "madthreading/threading/auto_lock.hh"
-#include "madthreading/threading/mutex.hh"
-#include "madthreading/types.hh"
-
 #include <functional>
 #include <utility>
 #include <tuple>
@@ -38,6 +29,15 @@
 #include <thread>
 #include <atomic>
 #include <cstdint>
+
+#include "madthreading/macros.hh"
+#include "madthreading/threading/threading.hh"
+#include "madthreading/threading/auto_lock.hh"
+#include "madthreading/allocator/allocator.hh"
+#include "madthreading/threading/condition.hh"
+#include "madthreading/threading/auto_lock.hh"
+#include "madthreading/threading/mutex.hh"
+#include "madthreading/types.hh"
 
 namespace mad
 {

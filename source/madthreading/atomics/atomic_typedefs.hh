@@ -39,6 +39,7 @@
 
 #include <functional>
 #include <atomic>
+
 #include "../threading/threading.hh"
 #include "../macros.hh"
 

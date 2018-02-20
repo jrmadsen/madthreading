@@ -34,6 +34,7 @@
 
 #include <deque>
 #include <vector>
+
 #include "madthreading/threading/tls.hh"
 
 #define ThreadGlobal

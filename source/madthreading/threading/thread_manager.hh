@@ -32,17 +32,16 @@
 #ifndef thread_manager_hh_
 #define thread_manager_hh_
 
+#include <algorithm>
+#include <iomanip>
+#include <cmath>
+#include <cassert>
+
 #include "madthreading/macros.hh"
 #include "madthreading/threading/threading.hh"
 #include "madthreading/threading/task/task.hh"
 #include "madthreading/threading/task/task_group.hh"
 #include "madthreading/threading/thread_pool.hh"
-
-#include <algorithm>
-#include <numeric>
-#include <iomanip>
-#include <cmath>
-#include <cassert>
 
 #if defined(USE_OPENMP)
 #   include <omp.h>

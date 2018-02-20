@@ -29,8 +29,9 @@
 #ifndef macros_hh_
 #define macros_hh_
 
-#include <madthreading/config.hh>
 #include <type_traits>
+
+#include <madthreading/config.hh>
 
 //============================================================================//
 //  CXX{11,14,17}

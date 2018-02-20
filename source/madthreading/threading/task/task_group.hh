@@ -12,9 +12,9 @@
 #ifndef task_group_hh_
 #define task_group_hh_
 
-#include "madthreading/threading/task/vtask_group.hh"
-
 #include <future>
+
+#include "madthreading/threading/task/vtask_group.hh"
 
 //----------------------------------------------------------------------------//
 

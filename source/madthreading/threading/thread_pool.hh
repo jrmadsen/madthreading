@@ -25,15 +25,6 @@
 #ifndef thread_pool_hh_
 #define thread_pool_hh_
 
-#include "madthreading/threading/threading.hh"
-#include "madthreading/threading/mutex.hh"
-#include "madthreading/threading/condition.hh"
-#include "madthreading/allocator/allocator.hh"
-#include "madthreading/atomics/atomic.hh"
-#include "madthreading/threading/task/vtask_group.hh"
-#include "madthreading/threading/task/vtask.hh"
-#include "madthreading/types.hh"
-
 #include <iostream>
 #include <deque>
 #include <vector>
@@ -42,6 +33,15 @@
 #include <stack>
 #include <atomic>
 #include <cstdint>
+
+#include "madthreading/threading/threading.hh"
+#include "madthreading/threading/mutex.hh"
+#include "madthreading/threading/condition.hh"
+#include "madthreading/allocator/allocator.hh"
+#include "madthreading/atomics/atomic.hh"
+#include "madthreading/threading/task/vtask_group.hh"
+#include "madthreading/threading/task/vtask.hh"
+#include "madthreading/types.hh"
 
 namespace mad
 {

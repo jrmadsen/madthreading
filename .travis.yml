@@ -121,6 +121,8 @@ matrix:
          
          
 before_install:
+    - apt-get update
+    - apt-get -y upgrade
     - eval "${MATRIX_EVAL}"
     - export CC=${CC}
     - export CXX=${CXX}
@@ -143,8 +145,8 @@ before_install:
 install:
     - env
     - echo "--> ${PWD}"
-    - mkdir -p build-madthreading
-    - cd build-madthreading
+    - mkdir -p build-project
+    - cd build-project
     - echo "CC = ${CC} $(${CC} -dumpversion)"
     - echo "CXX = ${CXX} $(${CXX} -dumpversion)"
     - echo "--> ${PWD}"

@@ -31,10 +31,11 @@
 #ifndef task_hh_
 #define task_hh_
 
-#include "madthreading/threading/task/vtask.hh"
-#include "madthreading/threading/task/task_group.hh"
 #include <stdexcept>
 #include <functional>
+
+#include "madthreading/threading/task/vtask.hh"
+#include "madthreading/threading/task/task_group.hh"
 
 #define forward_args_t(_Args, _args) std::forward<_Args>(std::move(_args))...
 
