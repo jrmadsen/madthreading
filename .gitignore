@@ -1,2 +1,7 @@
+
 # QtCreater generated file
 CMakeLists.txt.user
+
+# Visual Studio code files
+/.vscode
+
