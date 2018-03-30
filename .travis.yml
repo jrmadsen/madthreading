@@ -61,7 +61,7 @@ matrix:
             - libtbb-dev
             - libgomp1
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && CXXSTD=14 && ENABLE_SSE=OFF && ENABLE_TBB=ON && ENABLE_OMP=ON"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && CXXSTD=14 && ENABLE_SSE=ON && ENABLE_TBB=ON && ENABLE_OMP=ON"
     # GCC 7
     - os: linux
       dist: trusty
@@ -79,7 +79,7 @@ matrix:
             - libtbb-dev
             - libgomp1
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && CXXSTD=14 && ENABLE_SSE=OFF && ENABLE_TBB=ON && ENABLE_OMP=ON"
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && CXXSTD=14 && ENABLE_SSE=ON && ENABLE_TBB=ON && ENABLE_OMP=ON"
     # Clang 4.0
     - os: linux
       dist: trusty
@@ -98,7 +98,7 @@ matrix:
             - libtbb-dev
             - libiomp-dev
       env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && CXXSTD=14 && ENABLE_SSE=OFF && ENABLE_TBB=OFF && ENABLE_OMP=ON"
+        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && CXXSTD=11 && ENABLE_SSE=ON && ENABLE_TBB=ON && ENABLE_OMP=ON"
     # Clang 5.0
     - os: linux
       dist: trusty
@@ -117,7 +117,7 @@ matrix:
             - libtbb-dev
             - libiomp-dev
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && CXXSTD=14 && ENABLE_SSE=OFF && ENABLE_TBB=OFF && ENABLE_OMP=ON"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && CXXSTD=11 && ENABLE_SSE=ON && ENABLE_TBB=ON && ENABLE_OMP=ON"
          
          
 before_install:
@@ -156,7 +156,7 @@ install:
         -DBUILD_CXXSTD=${CXXSTD} -DENABLE_UNIT_TEST=ON
         -DUSE_TBB=${ENABLE_TBB} -DUSE_OPENMP=${ENABLE_OMP}
         -DUSE_TCMALLOC=OFF -DUSE_SSE=${ENABLE_SSE}
-        -DUSE_PYBIND11=OFF -DPYTHON_EXECUTABLE=$(which python) ${PWD}/..
+        -DUSE_ARCH=ON -DPYTHON_EXECUTABLE=$(which python) ${PWD}/..
     - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
     - make VERBOSE=1
     - make install
