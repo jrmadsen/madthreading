@@ -55,7 +55,6 @@ namespace mad
 namespace fpe
 {
 
-#ifdef CXX11
 enum class fpe
 {
     divbyzero,
@@ -68,31 +67,6 @@ enum class fpe
     underflow,
     upward
 };
-#else
-// this is a way to simulate the usage of enum class pre-C++11
-struct fpe
-{
-    enum fpe_enum
-    {
-        divbyzero,
-        downward,
-        inexact,
-        invalid,
-        overflow,
-        tonearest,
-        towardzero,
-        underflow,
-        upward
-    };
-
-    void operator=(const fpe_enum& val) { fpe_val = val; }
-    // makes it valid in switch statements
-    operator fpe_enum() const { return fpe_val; }
-
-private:
-    fpe_enum fpe_val;
-};
-#endif
 
 //============================================================================//
 
@@ -331,6 +305,8 @@ inline void DisableInvalidOperationDetection()
 }
 
 //============================================================================//
+
+} // namespace fpe
 
 } // namespace mad
 
