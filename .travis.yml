@@ -98,7 +98,7 @@ matrix:
             - libtbb-dev
             - libiomp-dev
       env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && CXXSTD=11 && ENABLE_SSE=ON && ENABLE_TBB=ON && ENABLE_OMP=ON"
+        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && CXXSTD=11 && ENABLE_SSE=ON && ENABLE_TBB=OFF && ENABLE_OMP=ON"
     # Clang 5.0
     - os: linux
       dist: trusty
@@ -117,7 +117,7 @@ matrix:
             - libtbb-dev
             - libiomp-dev
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && CXXSTD=11 && ENABLE_SSE=ON && ENABLE_TBB=ON && ENABLE_OMP=ON"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && CXXSTD=11 && ENABLE_SSE=ON && ENABLE_TBB=OFF && ENABLE_OMP=ON"
          
          
 before_install:
