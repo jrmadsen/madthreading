@@ -57,27 +57,23 @@ add_subdirectory(unit_test)
 
 #------------------------------------------------------------------------------#
 
-if(USE_PYBIND11)
+# used by module
+set(PROJECT_LIBRARIES ${PROJECT_NAME}-shared ${EXTRA_LIBS})
 
-    # used by module
-    set(PROJECT_LIBRARIES ${PROJECT_NAME}-shared ${EXTRA_LIBS})
+string(REPLACE "-Wshadow " "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 
-    string(REPLACE "-Wshadow " "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+# modules
+get_property(MODULE_FILES GLOBAL PROPERTY MODULE_FILES)
 
-    # modules
-    get_property(MODULE_FILES GLOBAL PROPERTY MODULE_FILES)
-
-    # remove duplicates
-    if(NOT "${MODULE_FILES}" STREQUAL "")
-        list(REMOVE_DUPLICATES MODULE_FILES)
-    endif()
-
-    # iterate
-    foreach(_module ${MODULE_FILES})
-        include(${_module})
-    endforeach()
-
+# remove duplicates
+if(NOT "${MODULE_FILES}" STREQUAL "")
+    list(REMOVE_DUPLICATES MODULE_FILES)
 endif()
+
+# iterate
+foreach(_module ${MODULE_FILES})
+    include(${_module})
+endforeach()
 
 #------------------------------------------------------------------------------#
 
@@ -96,3 +92,5 @@ set(Madthreading_DIR ${PROJECT_BINARY_DIR})
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
+
+include(Testing)

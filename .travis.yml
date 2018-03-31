@@ -156,11 +156,15 @@ install:
         -DBUILD_CXXSTD=${CXXSTD} -DENABLE_UNIT_TEST=ON
         -DUSE_TBB=${ENABLE_TBB} -DUSE_OPENMP=${ENABLE_OMP}
         -DUSE_TCMALLOC=OFF -DUSE_SSE=${ENABLE_SSE}
-        -DUSE_ARCH=ON -DPYTHON_EXECUTABLE=$(which python) ${PWD}/..
+        -DUSE_ARCH=ON -DPYTHON_EXECUTABLE=$(which python)
+        -DBUILD_TESTING=ON -DCTEST_SITE=travis -DCTEST_MODEL=Continous
+        -DCTEST_LOCAL_CHECKOUT=ON
+        ${PWD}/..
     - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
-    - make VERBOSE=1
-    - make install
-    
+    #- make VERBOSE=1
+    #- make install
+    - ctest -S cdash/Stages.cmake -DSTAGES="Build;Test" -DTRIGGER=Test -V --output-on-failure
+
     
 script:
     - echo -e '#!/bin/bash\n\nset -o errexit\n' > ./run_exe.sh
