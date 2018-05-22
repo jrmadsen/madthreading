@@ -105,7 +105,8 @@ int main(int argc, char** argv)
     if(device_count == 0)
         return 0;
 
-    auto num_threads = mad::thread_manager::GetEnvNumThreads(4);
+    auto hw_concurr = std::thread::hardware_concurrency();
+    auto num_threads = mad::thread_manager::GetEnvNumThreads(2*hw_concurr);
     mad::thread_pool* tp = new mad::thread_pool(num_threads);
     mad::thread_manager* tm = new mad::thread_manager(tp);
 

@@ -74,6 +74,29 @@ static const int NONINIT = 2;
 }
 
 //============================================================================//
+
+std::string get_state(const int _state)
+{
+    std::stringstream ss;
+    switch(_state)
+    {
+        case state::STARTED:
+            ss << "started";
+            break;
+        case state::STOPPED:
+            ss << "stopped";
+            break;
+        case state::NONINIT:
+            ss << "not initialized";
+            break;
+        default:
+            ss << "unknown state " << _state << " (> 2)";
+            break;
+    }
+    return ss.str();
+}
+
+//============================================================================//
 // static member function that calls the member function we want the thread to
 // run
 void thread_pool::start_thread(thread_pool* tp)

@@ -57,7 +57,7 @@ public:
     typedef std::vector<bool>                   BoolContainer_t;
     typedef mutex                               lock_t;
     typedef atomic_ulong_t                      task_count_type;
-    typedef volatile int                        pool_state_type;
+    typedef atomic_int_t                        pool_state_type;
     typedef condition                           condition_t;
     typedef std::map<thread::id, uint64_t>      tid_type;
     typedef std::map<thread::id, task_list_t>   thread_task_list_t;
@@ -151,9 +151,15 @@ private:
       m_stop_threads(ThreadContainer_t()),
       m_main_tasks(task_list_t()),
       m_thread_tasks(thread_task_list_t())
-    { }
+    {
+        throw std::runtime_error(__FUNCTION__);
+    }
 
-    thread_pool& operator=(const thread_pool&) { return *this; }
+    thread_pool& operator=(const thread_pool&)
+    {
+        throw std::runtime_error(__FUNCTION__);
+        return *this;
+    }
 
 };
 

@@ -59,6 +59,7 @@ foreach(executable ${executables})
         COMPILE_FLAGS "-Wno-unknown-pragmas ${TARGET_CXX_FLAGS}"
         LINK_FLAGS "${TARGET_LINK_FLAGS}"
         COMPILE_DEFINITIONS "${TARGET_DEFINITIONS}")
+    install(TARGETS ${executable} DESTINATION bin)
 endforeach()
 #------------------------------------------------------------------------------#
 

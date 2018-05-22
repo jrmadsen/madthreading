@@ -31,13 +31,16 @@ namespace py = pybind11;
 typedef mad::thread_manager             thread_manager;
 typedef mad::thread_manager::size_type  size_type;
 
-PYBIND11_MODULE(pythreading, t)
+PYBIND11_MODULE(threading, t)
 {
-    py::class_<thread_manager, std::unique_ptr<thread_manager, py::nodelete>>
-            tman(t, "thread_manager");
+    auto tman_init = [=] (int64_t n)
+    {
+        return thread_manager::get_thread_manager(n, true);
+    };
 
-    tman.def(py::init([](int64_t n) {
-                 return thread_manager::get_thread_manager(n, true); }));
+    py::class_<thread_manager,
+            std::unique_ptr<thread_manager, py::nodelete>>(t, "thread_manager")
+            .def(py::init(tman_init), "Thread manager creation");
 }
 
 //----------------------------------------------------------------------------//

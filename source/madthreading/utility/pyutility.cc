@@ -29,7 +29,7 @@
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(pyutility, util)
+PYBIND11_MODULE(utility, util)
 {
 
     util.doc() = "Utility functions";

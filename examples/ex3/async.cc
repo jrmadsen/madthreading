@@ -25,17 +25,27 @@
 #include <string>
 #include <vector>
 
-#include "madthreading/threading/thread_manager.hh"
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <pybind11/functional.h>
+#include <pybind11/chrono.h>
+#include <pybind11/numpy.h>
 
-constexpr int64_t fibonacci_max = 45;
+#include <timemory/auto_timer.hpp>
+#include <timemory/manager.hpp>
+
+#include <madthreading/threading/thread_manager.hh>
+
+namespace py = pybind11;
+typedef py::array_t<int64_t, py::array::c_style | py::array::forcecast> iarray_t;
+constexpr int64_t fibonacci_max = 43;
+constexpr int64_t cxxfib = 40;
 
 //============================================================================//
 //  Declaration of helper function
 //============================================================================//
 void output_message(int64_t);
 void write(const std::string&);
-typedef void (*write_func_type)(const std::string&);
-typedef std::future<int64_t>(*func_op_int64_t)(int64_t);
 
 //============================================================================//
 //  Main code
@@ -52,15 +62,16 @@ int64_t fibonacci(int64_t n)
 // calculate fibonacci to do various amounts of work
 int64_t async_work_np()
 {
+    //TIMEMORY_AUTO_TIMER();
     // static atomic counter
-    static std::atomic<int64_t> ncall;
+    //static std::atomic<int64_t> ncall;
     // thread-local counter
-    int64_t _ncall = ncall++;
+    //int64_t _ncall = ncall++;
     // simple message reporting we are in C++
-    output_message(_ncall);
+    //output_message(_ncall);
     // do fibonacci. Do not do with value larger than 43 since those take
     // alot of time
-    return fibonacci(40);
+    return fibonacci(cxxfib);
 }
 
 //----------------------------------------------------------------------------//
@@ -68,49 +79,85 @@ int64_t async_work_np()
 int64_t async_work(int64_t _ncall)
 {
     // simple message reporting we are in C++
-    output_message(_ncall);
+    //output_message(_ncall);
     // do fibonacci. Do not do with value larger than 43 since those take
     // alot of time
-    return fibonacci(40);
+    //TIMEMORY_AUTO_TIMER();
+    return fibonacci(cxxfib);
 }
 
-//----------------------------------------------------------------------------//
-// called from Python in a loop. In a standard MT situation, this would normally
-// block before returning to Python Interp or you would have to move the
-// loop down into the C++ layer for performance
-std::future<int64_t> async_run()
+//============================================================================//
+
+template <typename _Tp>
+class py_future : public std::shared_future<_Tp>
 {
-    // async will use a thread pool and defer executation until a later
-    // time or when the std::future it returns calls its member function
-    // "get()"
-    return mad::thread_manager::instance()->async<int64_t>(async_work_np);
-}
+public:
+    typedef std::shared_future<_Tp> future_type;
+
+public:
+    py_future() : future_type() {}
+    explicit py_future(const py_future& rhs) : future_type(rhs) { }
+    explicit py_future(const future_type& rhs) : future_type(rhs) { }
+    explicit py_future(std::future<_Tp>& rhs) : future_type(rhs.share()) { }
+};
+
+//============================================================================//
 
 //============================================================================//
 //  Python wrappers
 //============================================================================//
 
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-#include <pybind11/functional.h>
-#include <pybind11/chrono.h>
-
-namespace py = pybind11;
-
 PYBIND11_MODULE(async, t)
 {
+    auto py_future_init = [=] () { return new py_future<int64_t>(); };
+
     // we have to wrap each return type
-    py::class_<std::future<int64_t>> fint (t, "int64_future_t");
-    fint.def("get", &std::future<int64_t>::get, "Return the result")
-        .def("wait", &std::future<int64_t>::wait,
+    py::class_<py_future<int64_t>, std::unique_ptr<py_future<int64_t>, py::nodelete>>
+            (t, "int64_future_t")
+        .def(py::init(py_future_init), "Initialization")
+        .def("get", &py_future<int64_t>::get, "Return the result")
+        .def("wait", &py_future<int64_t>::wait,
              "Wait for the result to become avail");
 
+    //------------------------------------------------------------------------//
+    // called from Python in a loop. In a standard MT situation, this would
+    // normally block before returning to Python Interp or you would have to
+    // move the loop down into the C++ layer for performance
+    auto run_func = [&] ()
+    {
+        // async will use a thread pool and defer executation until a later
+        // time or when the std::future it returns calls its member function
+        // "get()"
+        std::cout << mad::thread_manager::instance() << std::endl;
+        auto f = mad::thread_manager::instance()->async<int64_t>(async_work_np);
+        return new py_future<int64_t>(f);
+    };
+    //------------------------------------------------------------------------//
+    auto work_func = [&] (int64_t n)
+    {
+        std::cout << mad::thread_manager::instance() << std::endl;
+        auto f = mad::thread_manager::instance()->async<int64_t>(async_work, n);
+        return new py_future<int64_t>(f);
+    };
+    //------------------------------------------------------------------------//
+    auto report_func = [=] ()
+    {
+        std::stringstream ss;
+        mad::manager::instance()->report(ss, true);
+        std::cout << ss.str() << std::endl;
+    };
+    //------------------------------------------------------------------------//
+    auto write_func = [&] (const std::string& str)
+    {
+        write(str);
+    };
+    //------------------------------------------------------------------------//
+
     // the function called from Python loop
-    t.def("run", &async_run, "Run asynchron")
-     .def("write", (write_func_type) &write, "Print but using std::cout");
-    t.def("work", [] (int64_t n)
-    { return mad::thread_manager::instance()->async<int64_t>(async_work, n); },
-    "run async function");
+    t.def("write", write_func, "Print but using std::cout")
+     .def("run", run_func, "Run asynchron", py::return_value_policy::automatic_reference)
+     .def("work", work_func, "run async function", py::return_value_policy::automatic_reference)
+     .def("report", report_func, "report timing");
 }
 
 //============================================================================//

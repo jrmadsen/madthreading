@@ -74,6 +74,8 @@ if(BUILD_SHARED_LIBS)
 
     set(PROJECT_SHARED_LIBRARY ${PROJECT_NAME}-shared)
     add_dependencies(${PROJECT_NAME}-shared timemory-shared)
+    install(TARGETS ${PROJECT_NAME}-shared
+        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/madthreading)
 
 endif()
 

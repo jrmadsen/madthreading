@@ -75,6 +75,14 @@ foreach(_module ${MODULE_FILES})
     include(${_module})
 endforeach()
 
+# module initialization file
+configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/__init__.py.in
+    ${PROJECT_BINARY_DIR}/__init__.py @ONLY)
+
+# installation
+install(FILES ${PROJECT_BINARY_DIR}/__init__.py
+    DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/madthreading)
+
 #------------------------------------------------------------------------------#
 
 include(Documentation)

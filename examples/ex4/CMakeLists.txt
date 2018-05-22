@@ -26,3 +26,4 @@ add_executable(ex4 ex4.cc ${PROJECT_SOURCE_DIR}/../Common.hh)
 target_link_libraries(ex4 ${Madthreading_LIBRARIES})
 set_target_properties(ex4 PROPERTIES COMPILE_FLAGS "${VEC_FLAGS}")
 
+install(TARGETS ex4 DESTINATION bin)

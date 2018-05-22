@@ -182,6 +182,11 @@ if(BUILD_EXAMPLES)
     endif(USE_SSE AND AVX2_FOUND)
     mad_test(Example5 ./ex5)
 
+    mad_test(pi_serial)
+    mad_test(pi_lambda_serial)
+    mad_test(pi_cxx11)
+    mad_test(pi_thread_pool)
+
     if(OpenMP_FOUND)
         mad_test(OpenMP_pi_loop ./omp_pi_loop)
         mad_test(OpenMP_pi_spmd_simple ./omp_pi_spmd_simple)
@@ -189,13 +194,14 @@ if(BUILD_EXAMPLES)
         mad_test(OpenMP_pi_task ./omp_pi_task)
     endif(OpenMP_FOUND)
 
-    mad_test(pi_cxx11)
-    mad_test(pi_lambda_serial)
-    mad_test(pi_lambda_tbb)
-    mad_test(pi_pthreads)
-    mad_test(pi_serial)
-    mad_test(pi_tbb)
-    mad_test(pi_thread_pool)
+    if(TBB_FOUND)
+        mad_test(pi_lambda_tbb)
+        mad_test(pi_tbb)
+    endif(TBB_FOUND)
+
+    if(NOT WIN32)
+        mad_test(pi_pthreads)
+    endif(NOT WIN32)
 
 endif(BUILD_EXAMPLES)
 

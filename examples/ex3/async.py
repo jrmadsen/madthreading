@@ -3,65 +3,105 @@
 import os
 import sys
 import time
-import async
-import pythreading
+import numpy as np
+import traceback
+import timemory
+import madthreading.async
+import madthreading.threading
+
+print("async file: {}".format(madthreading.async.__file__))
+
+#timanager = timemory.manager()
+thmanager = madthreading.threading.thread_manager(4)
+timemory.enable_signal_detection()
 
 waitForFutures = False
 pyfib = 27
+nitr = 50
+futures = []
+sum = 0
 
-pythreading.thread_manager(4)
 
+#------------------------------------------------------------------------------#
 def fibonacci(n):
     if n < 2:
-        return n 
+        return n
     return fibonacci(n-1) + fibonacci(n-2)
 
-c_start = time.clock()
-w_start = time.time()
 
-async.write("(Python) Starting loop calling C++ function scheduling "
-            "asynchronous calculations...")
+#------------------------------------------------------------------------------#
+#@timemory.util.auto_timer()
+def run(_sum, _pyfib, _n, _futures):
+    global futures
+    global sum
+    print("(Python) Calculting fibonacci({})...".format(_pyfib))
+    _sum += fibonacci(pyfib)
+    print("(Python) Getting future for {}...".format(_n))
+    _sum += _futures[_n].get()
 
-futures = []
-for i in range(0, 100):
-    async.write("(Python) Running async iteration {}...".format(i))
-    if i < 50:
-        futures.append(async.run())
-    else:
-        futures.append(async.work(i))
 
-async.write("(Python) Finished any calls to C++ code... Any future C++ output "
-            "demonstrates C++ running in the background alongside Python...")
+#------------------------------------------------------------------------------#
+#@timemory.util.auto_timer()
+def main():
+    global futures
+    global sum
 
-if waitForFutures == True:
+    #timer = timemory.timer("Total execution time")
+    #timer.start()
+
+    print("{} {}".format("(Python) Starting loop calling C++ function ",
+                               "scheduling asynchronous calculations..."))
+
+    for i in range(0, nitr):
+        print("(Python) Running async iteration {}...".format(i))
+        if i < nitr/2:
+            f = madthreading.async.run()
+            futures.append(f)
+        else:
+            f = madthreading.async.work(i)
+            print('Adding async.work({})'.format(i))
+            futures.append(f)
+
+    print("{} {} {}".format("(Python) Finished any calls to C++ code...",
+                                  "Any future C++ output demonstrates C++ running",
+                                  "in the background alongside Python..."))
+
+    if waitForFutures == True:
+        for n in range(0, len(futures)):
+            print("(Python) Waiting on future {}...".format(n))
+            futures[n].wait()
+
+
     for n in range(0, len(futures)):
-        async.write("(Python) Waiting on future {}...".format(n))
-        futures[n].wait()
+        # do work in Python to try to exceed the ~400% utilization of C++
+        run(sum, pyfib, n, futures)
 
-sum = 0
-for n in range(0, len(futures)):
-    # do work in Python to try to exceed the ~400% utilization of C++
-    sum += fibonacci(pyfib)
-    async.write("(Python) Getting future for {}...".format(n))
-    sum += futures[n].get()
+    #timer.stop()
 
-c_end = time.clock()
-w_end = time.time()
+    print("")
+    print("(Python) Sum = {}".format(sum))
+    print("")
+    #print("{}".format(timer))
 
-c_diff = c_end - c_start 
-w_diff = w_end - w_start
-cpu_usage = (c_diff / w_diff) * 100.
+    madthreading.async.report()
 
-async.write("")
-async.write("(Python) Sum = {}".format(sum))
-async.write("")
-async.write("CPU time : {} seconds".format(c_diff))
-async.write("Wall time : {} seconds".format(w_diff))
-async.write("")
-async.write("% CPU : {:6.2f}%".format(cpu_usage))
+    return (sum == 10253057300)
 
-ans = (sum == 10253057300)
-if ans == True:
-    sys.exit(0)
-else:
-    sys.exit(1)
+
+#------------------------------------------------------------------------------#
+if __name__ == "__main__":
+    ans = False
+    try:
+        ans = main()
+        print('{}'.format(timanager))
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_traceback, limit=100)
+        print ('Exception - {}'.format(e))
+        ans = False
+
+    if ans == True:
+        sys.exit(0)
+    else:
+        sys.exit(1)
+

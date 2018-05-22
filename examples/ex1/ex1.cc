@@ -17,7 +17,7 @@
 #include <madthreading/threading/auto_lock.hh>
 #include <madthreading/threading/threading.hh>
 #include <timemory/auto_timer.hpp>
-#include <timemory/timing_manager.hpp>
+#include <timemory/manager.hpp>
 
 using namespace std::placeholders;
 using mad::ulong_t;
@@ -167,7 +167,7 @@ int main(int argc, char** argv)
         std::cout << " sum = " << sum << std::endl;
     }
 
-    mad::timing_manager::instance()->report();
+    mad::manager::instance()->report();
 
     delete tm;
     return 0;

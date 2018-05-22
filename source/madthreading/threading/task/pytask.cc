@@ -39,7 +39,7 @@ typedef const mad::ulong_t& (vtask_group::*id_func_type)() const;
 typedef void (std::promise<int64_t>::*int64_promise_func_type)(const int64_t&);
 typedef void (void_task_group::*join_void_func)();
 
-PYBIND11_MODULE(pytask, t)
+PYBIND11_MODULE(task, t)
 {
     py::class_<void_task_group> task_group(t, "task_group");
     task_group.def(py::init<>())

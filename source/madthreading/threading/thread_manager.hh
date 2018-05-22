@@ -81,11 +81,13 @@ public:
     static long id(_Tp thread_self)
     {
         long _id = -1;
-        static ::mad::mutex _mtx;
-        auto_lock l(_mtx);
+        static mad::recursive_mutex mtx;
+        mad::recursive_auto_lock l(mtx);
+
         thread_manager* _tm = thread_manager::instance();
         if(!_tm)
             return _id;
+
         if(_tm->m_pool->GetThreadIDs().find(thread_self) !=
            _tm->m_pool->GetThreadIDs().end())
             _id = _tm->m_pool->GetThreadIDs().find(thread_self)->second;
@@ -112,6 +114,8 @@ public:
         long _id = thread_manager::id(thread_self);
         if(_id < 0)
             return "";
+        static mad::recursive_mutex mtx;
+        mad::recursive_auto_lock l(mtx);
         thread_manager* _tm = thread_manager::instance();
         if(!_tm)
             return "";
@@ -153,14 +157,15 @@ public:
     // direct insertion of a packaged_task
     //------------------------------------------------------------------------//
     template <typename _Ret, typename _Func, typename... _Args>
-    std::future<_Ret> async(_Func func, _Args... args)
+    std::shared_future<_Ret> async(_Func func, _Args... args)
     {
         typedef packaged_task<_Ret, _Ret, _Args...>     task_type;
         typedef std::shared_ptr<task_type>              task_pointer;
 
         task_pointer _ptask(new task_type(func, std::forward<_Args>(args)...));
+        auto f = _ptask->get_future().share();
         m_pool->add_task(_ptask);
-        return _ptask->get_future();
+        return f;
     }
 
 public:

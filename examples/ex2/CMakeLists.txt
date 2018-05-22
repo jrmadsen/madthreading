@@ -18,3 +18,5 @@ endif()
 
 add_executable(ex2 ex2.cc ${PROJECT_SOURCE_DIR}/../Common.hh)
 target_link_libraries(ex2 ${Madthreading_LIBRARIES})
+
+install(TARGETS ex2 DESTINATION bin)

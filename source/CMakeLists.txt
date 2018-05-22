@@ -14,6 +14,7 @@ set(PYBIND11_CPP_STANDARD -std=c++${CMAKE_CXX_STANDARD}
     CACHE STRING "PyBind11 CXX standard" FORCE)
 set(TIMEMORY_NAMESPACE mad CACHE STRING "Namespace of TiMemory" FORCE)    
 set(TIMEMORY_SUBMODULE ON CACHE BOOL "Let TiMemory know it is a submodule")
+set(SHARED_PYTHON_LINKING ON CACHE BOOL "TiMemory uses shared library linking")
 add_definitions(-DNAME_TIM=${TIMEMORY_NAMESPACE})
 add_option(USE_MPI "Compile TiMemory with MPI support" OFF)
 

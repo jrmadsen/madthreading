@@ -104,7 +104,6 @@ private:
     pool_chunk* m_chunks;
     pool_link*  m_head;
     long m_nchunks;
-
 };
 
 // ------------------------------------------------------------
