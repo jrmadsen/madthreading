@@ -36,7 +36,7 @@ function(GET_TEMPORARY_DIRECTORY DIR_VAR DIR_BASE DIR_MODEL)
     # create a root working directory
     set(_TMP_ROOT "${CMAKE_BINARY_DIR}/cdash/${DIR_MODEL}")
     set(${DIR_VAR} "${_TMP_ROOT}" PARENT_SCOPE)
-    execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${_TMP_ROOT}) 
+    execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${_TMP_ROOT})
 endfunction()
 
 
@@ -116,7 +116,7 @@ if(NOT DASHBOARD_MODE AND BUILD_TESTING)
         GET_TEMPORARY_DIRECTORY(CMAKE_DASHBOARD_ROOT
             "${CMAKE_PROJECT_NAME}-cdash" ${CTEST_MODEL})
     endif(NOT DEFINED CMAKE_DASHBOARD_ROOT)
-    
+
     # set the CMake configure options
     add_ctest_options(CMAKE_CONFIGURE_OPTIONS
         CMAKE_BUILD_TYPE
@@ -176,7 +176,7 @@ if(BUILD_EXAMPLES)
 
     mad_test(Example1 ./ex1)
     mad_test(Example2 ./ex2)
-    mad_test(Example3 ${PYTHON_EXECUTABLE} ./async.py)
+    #mad_test(Example3 ${PYTHON_EXECUTABLE} ./async.py)
     if(USE_SSE AND AVX2_FOUND)
         mad_test(Example4 ./ex4)
     endif(USE_SSE AND AVX2_FOUND)
