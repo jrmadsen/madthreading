@@ -7,3 +7,5 @@ CMakeLists.txt.user
 
 # edit files
 *~
+
+/pybind11
