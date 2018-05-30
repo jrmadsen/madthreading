@@ -18,7 +18,7 @@
 
 #include <timemory/timer.hpp>
 #include <timemory/auto_timer.hpp>
-#include <timemory/timing_manager.hpp>
+#include <timemory/manager.hpp>
 
 #include "thread_context.hpp"
 #include "particle.hpp"
