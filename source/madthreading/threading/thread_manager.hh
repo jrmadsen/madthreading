@@ -43,10 +43,6 @@
 #include "madthreading/threading/task/task_group.hh"
 #include "madthreading/threading/thread_pool.hh"
 
-#if defined(USE_OPENMP)
-#   include <omp.h>
-#endif
-
 namespace mad
 {
 

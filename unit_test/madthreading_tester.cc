@@ -8,8 +8,23 @@
 
 #include <UnitTest++.h>
 
-#ifdef USE_OPENMP
-    #include <omp.h>
+#ifndef do_pragma
+#   define do_pragma(x) _Pragma(#x)
+#endif
+
+//============================================================================//
+//  OpenMP
+//============================================================================//
+
+#if defined(USE_OPENMP) && !defined(__INTEL_COMPILER)
+#   include <omp.h>
+#   ifndef pragma_simd
+#       define pragma_simd(args) do_pragma(omp simd args)
+#   endif
+#else
+#   ifndef pragma_simd
+#       define pragma_simd(args) {;}
+#   endif
 #endif
 
 #include <madthreading/types.hh>
