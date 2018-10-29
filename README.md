@@ -1,4 +1,8 @@
 # madthreading
+
+## This repository is no longer under development
+## Functionality has been migrated to [Parallel Tasking Library (PTL)](https://github.com/jrmadsen/PTL)
+
 A low-overhead, task-based threading API using a pool of C++11 threads (i.e. thread pool)
 
 Madthreading is a general multithreading API similar to Intel's Thread Building
